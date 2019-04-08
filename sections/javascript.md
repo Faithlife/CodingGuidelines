@@ -40,12 +40,18 @@ if (typeof foo === 'number') {
 }
 ```
 
-## Use Default Exports
-Files exposing a single primary API should use a default export.
+## Use Named Exports
+Prefer named exports even for files with a single export.
 
-Files exporting a collection of utilities can use named exports, but prefer splitting utilities into separate files with default exports and re-exporting from an index file when the collection gets excessively large. It is also acceptable to use named exports for ancillary APIs or types in files that use a default export for the primary API.
+Named exports require the name to appear at the import site (even if it is locally aliased), which has a few benefits:
 
-Many files that each export one thing is easier to read and maintain than a single file that exports many things. Use of default exports for primary entry points is also standard-practice in the JavaScript ecosystem.
+1) text searches (e.g. Github.com search) can more easily locate uses of the type/function 
+2) renames of the exported type require the imports to be updated, rather than silently diverging the names
+
+### `React.lazy`
+`React.lazy`, by design, currently only supports default exports: https://reactjs.org/docs/code-splitting.html#named-exports
+
+To use an app component as a `React.lazy` code splitting point, create a new module that re-exports the component as the `default` export. The file should be named with the `CodeSplitting` suffix.
 
 ## File Names Should Match Export Names
 This consistency makes code easier to locate, and it works better with refactoring tools like VSCode fixes that default to files names matching the name of the function or class being extracted.
@@ -53,11 +59,11 @@ This consistency makes code easier to locate, and it works better with refactori
 ```js
 // bad
 // user-account.ts
-export default UserAccount;
+export class UserAccount {};
 
 // good
 // UserAccount.ts
-export default UserAccount;
+export class UserAccount {};
 ```
 
 ## Avoid Importing Sibling or Ancestor Index
@@ -66,11 +72,11 @@ Use `index.js` files to expose a focused API for the modules in a directory. Mod
 ```js
 // bad
 import { HelperComponent } from './';
-import { util } from '../../';
+import { utilityFunction } from '../../';
 
 // good
-import HelperComponent from './HelperComponent';
-import util from '../../util';
+import { HelperComponent } from './HelperComponent';
+import { utilityFunction } from '../../util';
 ```
 
 ## Handle Cancellation in Async Work
