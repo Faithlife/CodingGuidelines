@@ -51,7 +51,7 @@ Named exports require the name to appear at the import site (even if it is local
 ### `React.lazy`
 `React.lazy`, by design, currently only supports default exports: https://reactjs.org/docs/code-splitting.html#named-exports
 
-To use an app component as a `React.lazy` code splitting point, create a new module that re-exports the component as the `default` export. The file should be named with the `CodeSplitting` suffix.
+To use an app component as a `React.lazy` code splitting point, create a new module that re-exports the component as the `default` export. The file should be named with the `.CodeSplitting` suffix.
 
 ## File Names Should Match Export Names
 This consistency makes code easier to locate, and it works better with refactoring tools like VSCode fixes that default to files names matching the name of the function or class being extracted.
