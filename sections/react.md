@@ -172,10 +172,10 @@ When applying computed styles to React elements, prefer setting CSS variables an
 
 ```js
 // bad
-<div className={styles.badWidget} styles={{ top: offset.top }} />
+<div className={styles.badWidget} style={{ top: offset.top }} />
 
 // good
-<div className={styles.goodWidget} styles={{ '--offset-top': offset.top }} />
+<div className={styles.goodWidget} style={{ '--offset-top': offset.top }} />
 ```
 
 ```css
