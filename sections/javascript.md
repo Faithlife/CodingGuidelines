@@ -35,6 +35,9 @@ if (typeof foo === 'number') {
 }
 ```
 
+## Provide Type Annotations for Public APIs
+Library projects intended for consumption by other projects should publish TypeScript type annotations describing the public API of the library. Use the `types` field of `package.json` to indicate the location of the typings files so tools can locate them automatically. Type annotations allow editors to provide better hints, even in projects that aren't using TypeScript.
+
 ## Use Named Exports
 Prefer named exports even for files with a single export.
 
