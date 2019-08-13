@@ -1,11 +1,6 @@
 
 # JavaScript Coding Guidelines
 
-## Use TypeScript
-Prefer TypeScript over JavaScript for all new projects.
-
-When possible, use the `strict` compiler setting to opt in to strict null checks and improved flow analysis. This setting significantly improves the capabilities of TypeScript's tooling. It's usually prohibitively costly to migrate existing projects to pass the stricter requirements, so enable it when the project is bootstrapped.
-
 ## Use Strict Comparison Operators
 Using strict comparisons makes code more explicit by clarifying which specific values are expected. It also saves readers from having to memorize coercion rules.
 
