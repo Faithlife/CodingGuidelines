@@ -35,6 +35,19 @@ if (typeof foo === 'number') {
 }
 ```
 
+## Avoid Returning Meaningless Results from Arrow Functions
+Arrow functions using a concise body will implicitly return the value of the expression. If the function does not have a meaningful return value, avoid using concise body syntax. Instead, use a block body to signal that the value of the expression is unused by the call site.
+
+```js
+// confusing: readers can't tell if the caller of handleClick() uses the implicitly-returned result of setState()
+const handleClick = e => setState(e.target.value);
+
+// clear: the function does not return a meaningful value
+const handleClick = e => {
+	setState(e.target.value);
+};
+```
+
 ## Provide Type Annotations for Public APIs
 Library projects intended for consumption by other projects should publish TypeScript type annotations describing the public API of the library. Use the `types` field of `package.json` to indicate the location of the typings files so tools can locate them automatically. Type annotations allow editors to provide better hints, even in projects that aren't using TypeScript.
 
