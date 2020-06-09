@@ -20,7 +20,6 @@ csharp_new_line_before_finally = true
 csharp_new_line_before_members_in_anonymous_types = true
 csharp_new_line_before_members_in_object_initializers = true
 csharp_new_line_before_open_brace = all
-csharp_new_line_within_query_expression_clauses = true
 csharp_prefer_braces = false : warning
 csharp_prefer_simple_default_expression = true : suggestion
 csharp_preferred_modifier_order = public, private, protected, internal, new, abstract, virtual, sealed, override, static, readonly, extern, unsafe, volatile, async : error
