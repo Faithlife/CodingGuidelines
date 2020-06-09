@@ -158,7 +158,6 @@ resharper_field_can_be_made_read_only_global_highlighting = error
 resharper_field_can_be_made_read_only_local_highlighting = error
 resharper_format_string_placeholders_mismatch_highlighting = none
 resharper_heuristic_unreachable_code_highlighting = hint
-resharper_identifier_typo_highlighting = none
 resharper_implicitly_captured_closure_highlighting = none
 resharper_indent_switch_labels = false
 resharper_inline_out_variable_declaration_highlighting = warning
