@@ -3,7 +3,11 @@
 
 ## Use .editorconfig
 
-See [documentation](editorconfig.md).
+See [.editorconfig for C#](editorconfig.md).
+
+## Use .gitattributes
+
+See [.gitattributes for C#](gitattributes.md).
 
 ## Only Override ToString for Debugging Purposes
 
