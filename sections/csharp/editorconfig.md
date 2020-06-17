@@ -212,6 +212,10 @@ csharp_preserve_single_line_blocks = true
 
 Let the developer decide when and where to wrap lines.
 
+## Naming Conventions
+
+See [documentation](https://docs.microsoft.com/en-us/visualstudio/ide/editorconfig-naming-conventions).
+
 ```
 dotnet_naming_rule.local_functions_rule.severity = warning
 dotnet_naming_rule.local_functions_rule.style = upper_camel_case_style
