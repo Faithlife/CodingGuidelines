@@ -3,7 +3,7 @@
 
 ## Use .editorconfig
 
-See [documentaiton](editorconfig.md).
+See [documentation](editorconfig.md).
 
 ## Only Override ToString for Debugging Purposes
 
