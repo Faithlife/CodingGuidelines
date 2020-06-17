@@ -162,7 +162,7 @@ csharp_indent_case_contents = true
 csharp_indent_switch_labels = false
 ```
 
-We used to use `csharp_indent_switch_labels = false` but recently decided to stick with the default.
+We historically did not indent `switch` statement `case` labels, but we now [use the default style](https://github.com/Faithlife/CodingGuidelines/issues/12).
 
 ```
 csharp_indent_labels = one_less_than_current
@@ -177,7 +177,7 @@ Our standard indentation rules.
 csharp_space_after_cast = true
 ```
 
-Non-standard but still popular.
+Non-standard but [still popular](https://github.com/Faithlife/CodingGuidelines/issues/13).
 
 ```
 csharp_space_after_keywords_in_control_flow_statements = true
