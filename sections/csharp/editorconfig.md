@@ -10,9 +10,7 @@ indent_style = tab
 
 We have always used tabs of width 4 for C#.
 
-## Language Conventions
-
-The properties listed below are in the same order as in the [documentation](https://docs.microsoft.com/en-us/visualstudio/ide/editorconfig-language-conventions).
+## [Language Conventions](https://docs.microsoft.com/en-us/visualstudio/ide/editorconfig-language-conventions)
 
 ```
 dotnet_style_qualification_for_field = false : warning
@@ -133,9 +131,7 @@ csharp_style_prefer_switch_expression = true : suggestion
 
 Use shorter, modern syntax.
 
-## Formatting Conventions
-
-The properties listed below are in the same order as in the [documentation](https://docs.microsoft.com/en-us/visualstudio/ide/editorconfig-formatting-conventions).
+## [Formatting Conventions](https://docs.microsoft.com/en-us/visualstudio/ide/editorconfig-formatting-conventions)
 
 ```
 dotnet_sort_system_directives_first = true
@@ -212,9 +208,7 @@ csharp_preserve_single_line_blocks = true
 
 Let the developer decide when and where to wrap lines.
 
-## Naming Conventions
-
-See [documentation](https://docs.microsoft.com/en-us/visualstudio/ide/editorconfig-naming-conventions).
+## [Naming Conventions](https://docs.microsoft.com/en-us/visualstudio/ide/editorconfig-naming-conventions)
 
 ```
 dotnet_naming_rule.local_functions_rule.severity = warning
@@ -255,3 +249,125 @@ dotnet_naming_symbols.private_static_readonly_symbols.required_modifiers = stati
 ```
 
 Typical .NET naming and casing rules. Use `m_`, `s_`, and `c_` prefixes for private fields.
+
+## [StyleCop: Special Rules](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SpecialRules.md)
+
+```
+dotnet_diagnostic.SA0001.severity = none
+```
+
+## [StyleCop: Spacing Rules](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SpacingRules.md)
+
+```
+dotnet_diagnostic.SA1003.severity = none
+dotnet_diagnostic.SA1008.severity = none
+dotnet_diagnostic.SA1009.severity = none
+```
+
+These spacing rules don't work well with spaces after casts.
+
+```
+dotnet_diagnostic.SA1011.severity = none
+dotnet_diagnostic.SA1013.severity = none
+```
+
+These spacing rules don't work well with `!` suffixes.
+
+## [StyleCop: Readability Rules](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/ReadabilityRules.md)
+
+```
+dotnet_diagnostic.SA1101.severity = none
+dotnet_diagnostic.SX1101.severity = error
+```
+
+We don't use `this.`.
+
+```
+dotnet_diagnostic.SA1116.severity = none
+dotnet_diagnostic.SA1117.severity = none
+```
+
+The developer can decide how parameter lists are line wrapped.
+
+```
+dotnet_diagnostic.SA1122.severity = none
+```
+
+We don't use `string.Empty`.
+
+```
+dotnet_diagnostic.SA1133.severity = none
+dotnet_diagnostic.SA1134.severity = none
+```
+
+The developer can decide how attributes are arranged.
+
+## [StyleCop: Ordering Rules](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/OrderingRules.md)
+
+```
+dotnet_diagnostic.SA1201.severity = none
+dotnet_diagnostic.SA1202.severity = none
+dotnet_diagnostic.SA1203.severity = none
+dotnet_diagnostic.SA1204.severity = none
+```
+
+We aren't strict about the ordering of type elements.
+
+## [StyleCop: Naming Rules](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/NamingRules.md)
+
+```
+dotnet_diagnostic.SA1303.severity = none
+dotnet_diagnostic.SA1308.severity = none
+dotnet_diagnostic.SA1310.severity = none
+dotnet_diagnostic.SA1311.severity = none
+```
+
+We use `m_`, `s_`, and `c_` field prefixes.
+
+## [StyleCop: Maintainability Rules](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/MaintainabilityRules.md)
+
+```
+dotnet_diagnostic.SA1407.severity = none
+```
+
+We don't require extra parentheses.
+
+## [StyleCop: Layout Rules](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/LayoutRules.md)
+
+```
+dotnet_diagnostic.SA1503.severity = none
+```
+
+We don't require braces around single statements.
+
+```
+dotnet_diagnostic.SA1513.severity = none
+```
+
+We don't require a blank line after braces.
+
+```
+dotnet_diagnostic.SA1516.severity = none
+```
+
+Sometimes it's nice to omit the blank line between type elements.
+
+## [StyleCop: Documentation Rules](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/DocumentationRules.md)
+
+```
+dotnet_diagnostic.SA1600.severity = none
+dotnet_diagnostic.SA1601.severity = none
+dotnet_diagnostic.SA1602.severity = none
+dotnet_diagnostic.SA1604.severity = none
+dotnet_diagnostic.SA1605.severity = none
+dotnet_diagnostic.SA1611.severity = none
+dotnet_diagnostic.SA1615.severity = none
+dotnet_diagnostic.SA1618.severity = none
+dotnet_diagnostic.SA1619.severity = none
+dotnet_diagnostic.SA1623.severity = none
+dotnet_diagnostic.SA1633.severity = none
+dotnet_diagnostic.SA1642.severity = none
+dotnet_diagnostic.SA1643.severity = none
+```
+
+XML documentation is not required.
