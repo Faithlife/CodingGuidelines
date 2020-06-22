@@ -273,11 +273,17 @@ dotnet_diagnostic.SA1013.severity = none
 
 These spacing rules don't work well with `!` suffixes.
 
+```
+dotnet_diagnostic.SA1027.severity = none
+```
+
+We use tabs. This rule could be enabled with a `stylecop.json` that sets `settings.indentation.useTabs` to `true`.
+
 ## [StyleCop: Readability Rules](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/ReadabilityRules.md)
 
 ```
 dotnet_diagnostic.SA1101.severity = none
-dotnet_diagnostic.SX1101.severity = error
+dotnet_diagnostic.SX1101.severity = warning
 ```
 
 We don't use `this.`.
@@ -303,6 +309,12 @@ dotnet_diagnostic.SA1134.severity = none
 The developer can decide how attributes are arranged.
 
 ## [StyleCop: Ordering Rules](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/OrderingRules.md)
+
+```
+dotnet_diagnostic.SA1200.severity = none
+```
+
+We put `using` directives outside the namespace. This rule could be enabled with a `stylecop.json` that sets `settings.orderingRules.usingDirectivesPlacement` to `outsideNamespace`.
 
 ```
 dotnet_diagnostic.SA1201.severity = none
@@ -371,3 +383,148 @@ dotnet_diagnostic.SA1643.severity = none
 ```
 
 XML documentation is not required.
+
+## [FxCop: Design Warnings](https://docs.microsoft.com/en-us/visualstudio/code-quality/design-warnings)
+
+```
+dotnet_diagnostic.CA1062.severity = none
+```
+
+Consider enabling this if and when it is easier to throw `ArgumentNullException` on null parameters.
+
+```
+dotnet_diagnostic.CA1063.severity = none
+```
+
+## [FxCop: Globalization Warnings](https://docs.microsoft.com/en-us/visualstudio/code-quality/globalization-warnings)
+
+```
+dotnet_diagnostic.CA1303.severity = none
+```
+
+## [FxCop: Performance Warnings](https://docs.microsoft.com/en-us/visualstudio/code-quality/performance-warnings)
+
+```
+dotnet_diagnostic.CA1815.severity = none
+dotnet_diagnostic.CA1816.severity = none
+dotnet_diagnostic.CA1826.severity = none
+```
+
+## [FxCop: Reliability Warnings](https://docs.microsoft.com/en-us/visualstudio/code-quality/reliability-warnings)
+
+```
+dotnet_diagnostic.CA2000.severity = none
+```
+
+## [ReSharper: Generalized EditorConfig Properties](https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html)
+
+```
+resharper_csharp_int_align = false
+```
+
+Don't align things.
+
+```
+resharper_csharp_keep_existing_arrangement = true
+resharper_csharp_wrap_lines = false
+```
+
+Trust the developer to wrap lines.
+
+## [ReSharper: Blank Lines](https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html)
+
+```
+resharper_csharp_blank_lines_after_block_statements = 0
+```
+
+Don't force a blank line after every block.
+
+## [ReSharper: Code Style](https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html)
+
+```
+resharper_csharp_trailing_comma_in_multiline_lists = true
+```
+
+## [ReSharper: Tabs, Indents, Alignment](https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html)
+
+```
+resharper_csharp_indent_nested_for_stmt = true
+resharper_csharp_indent_nested_foreach_stmt = true
+resharper_csharp_indent_nested_while_stmt = true
+```
+
+Don't stack loop statements.
+
+```
+resharper_csharp_align_multiline_parameter = false
+resharper_csharp_align_multiline_extends_list = false
+resharper_csharp_align_linq_query = false
+resharper_csharp_align_multiline_binary_expressions_chain = false
+resharper_csharp_align_multiline_calls_chain = false
+resharper_csharp_align_multiline_array_and_object_initializer = false
+resharper_csharp_align_multiline_switch_expression = false
+resharper_csharp_indent_anonymous_method_block = false
+resharper_csharp_align_first_arg_by_paren = false
+resharper_csharp_align_multiline_argument = false
+resharper_csharp_align_tuple_components = false
+resharper_csharp_align_multiline_expression = false
+resharper_csharp_align_multiline_for_stmt = false
+resharper_csharp_align_multiple_declaration = false
+resharper_csharp_align_multline_type_parameter_list = false
+resharper_csharp_align_multline_type_parameter_constrains = false
+```
+
+Don't align things.
+
+## [ReSharper: Line Breaks](https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html)
+
+```
+resharper_csharp_new_line_before_while = false
+```
+
+## [ReSharper: Spaces](https://www.jetbrains.com/help/rider/EditorConfig_CSHARP_SpacesPageSchema.html)
+
+```
+resharper_csharp_space_within_single_line_array_initializer_braces = true
+```
+
+## [ReSharper: Formatting](https://www.jetbrains.com/help/resharper/Reference__Code_Inspections_CSHARP.html#FormattingIssues)
+
+```
+resharper_invert_if_highlighting = none
+```
+
+## [ReSharper: Potential Code Quality Issues](https://www.jetbrains.com/help/resharper/Reference__Code_Inspections_CSHARP.html#CodeSmell)
+
+```
+resharper_access_to_disposed_closure_highlighting = none
+resharper_access_to_modified_closure_highlighting = none
+```
+
+This happens legitimately too frequently to highlight.
+
+## [ReSharper: Redundancies in Symbol Declarations](https://www.jetbrains.com/help/resharper/Reference__Code_Inspections_CSHARP.html#DeclarationRedundancy)
+
+```
+resharper_unused_member_global_highlighting = none
+resharper_unused_member_local_highlighting = suggestion
+```
+
+Members are frequently unused in libraries, unit tests, etc.
+
+## [ReSharper: Spelling Issues](https://www.jetbrains.com/help/resharper/Reference__Code_Inspections_CSHARP.html#Spelling)
+
+```
+resharper_comment_typo_highlighting = none
+resharper_identifier_typo_highlighting = none
+resharper_string_literal_typo_highlighting = none
+```
+
+## [ReSharper: Syntax Style](https://www.jetbrains.com/help/resharper/Reference__Code_Inspections_CSHARP.html#CodeStyleIssues)
+
+```
+resharper_arrange_constructor_or_destructor_body_highlighting = hint
+resharper_arrange_method_or_operator_body_highlighting = hint
+```
+
+Whether a method should use an expression body is subjective.
