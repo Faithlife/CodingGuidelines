@@ -328,6 +328,12 @@ We aren't strict about the ordering of type elements.
 ## [StyleCop: Naming Rules](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/NamingRules.md)
 
 ```
+dotnet_diagnostic.SA1300.severity = none
+```
+
+This fails on `v1` in namespaces, which could be permitted via `stylecop.json`.
+
+```
 dotnet_diagnostic.SA1303.severity = none
 dotnet_diagnostic.SA1308.severity = none
 dotnet_diagnostic.SA1310.severity = none
@@ -387,7 +393,20 @@ XML documentation is not required.
 ## [FxCop: Design Warnings](https://docs.microsoft.com/en-us/visualstudio/code-quality/design-warnings)
 
 ```
-dotnet_diagnostic.CA1062.severity = none
+dotnet_diagnostic.CA1031.severity = suggestion
+```
+
+General exception types should not normally be caught, but sometimes it is appropriate.
+
+```
+dotnet_diagnostic.CA1054.severity = none
+dotnet_diagnostic.CA1055.severity = none
+```
+
+The `Uri` type is a pain.
+
+```
+dotnet_diagnostic.CA1062.severity = suggestion
 ```
 
 Consider enabling this if and when it is easier to throw `ArgumentNullException` on null parameters.
@@ -396,25 +415,77 @@ Consider enabling this if and when it is easier to throw `ArgumentNullException`
 dotnet_diagnostic.CA1063.severity = none
 ```
 
+The full `Dispose` pattern is rarely needed because finalizers should never be used.
+
 ## [FxCop: Globalization Warnings](https://docs.microsoft.com/en-us/visualstudio/code-quality/globalization-warnings)
 
 ```
 dotnet_diagnostic.CA1303.severity = none
 ```
 
+We don't localize exception messages.
+
+```
+dotnet_diagnostic.CA1308.severity = suggestion
+```
+
+Case normalization is normally done on ASCII, so using lowercase is usually fine.
+
+## [FxCop: Naming Warnings](https://docs.microsoft.com/en-us/visualstudio/code-quality/naming-warnings)
+
+```
+dotnet_diagnostic.CA1707.severity = none
+```
+
+Underscores are frequently used in test method names.
+
 ## [FxCop: Performance Warnings](https://docs.microsoft.com/en-us/visualstudio/code-quality/performance-warnings)
 
 ```
-dotnet_diagnostic.CA1815.severity = none
-dotnet_diagnostic.CA1816.severity = none
-dotnet_diagnostic.CA1826.severity = none
+dotnet_diagnostic.CA1815.severity = suggestion
 ```
+
+Only implement efficient equality for value types if it is used.
+
+```
+dotnet_diagnostic.CA1816.severity = none
+```
+
+Don't bother supressing finalization, since finalizers should never be used.
+
+```
+dotnet_diagnostic.CA1819.severity = suggestion
+```
+
+Byte array properties are fine for DTOs, which are common.
+
+```
+dotnet_diagnostic.CA1822.severity = suggestion
+```
+
+Just because a property could be static doesn't mean it should be.
+
+```
+dotnet_diagnostic.CA1826.severity = suggestion
+```
+
+`First`, `Last`, etc. can be more clear than indexers.
 
 ## [FxCop: Reliability Warnings](https://docs.microsoft.com/en-us/visualstudio/code-quality/reliability-warnings)
 
 ```
 dotnet_diagnostic.CA2000.severity = none
 ```
+
+Ownership of Disposable objects is frequently transferred.
+
+## [FxCop: Usage Warnings](https://docs.microsoft.com/en-us/visualstudio/code-quality/usage-warnings)
+
+```
+dotnet_diagnostic.CA2227.severity = none
+```
+
+Read-write collection properties are fine for DTOs, which are common.
 
 ## [ReSharper: Generalized EditorConfig Properties](https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html)
 
@@ -480,6 +551,9 @@ Don't align things.
 
 ```
 resharper_csharp_new_line_before_while = false
+resharper_csharp_wrap_before_ternary_opsigns = true
+resharper_csharp_wrap_ternary_expr_style = chop_if_long
+resharper_csharp_nested_ternary_style = compact
 ```
 
 ## [ReSharper: Spaces](https://www.jetbrains.com/help/rider/EditorConfig_CSHARP_SpacesPageSchema.html)
