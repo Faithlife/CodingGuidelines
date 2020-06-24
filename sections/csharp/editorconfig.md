@@ -58,7 +58,6 @@ dotnet_style_prefer_conditional_expression_over_return = true : suggestion
 dotnet_style_prefer_compound_assignment = true : suggestion
 dotnet_style_coalesce_expression = true : warning
 dotnet_style_null_propagation = true : suggestion
-dotnet_style_prefer_is_null_check_over_reference_equality_method = true : suggestion
 ```
 
 Use shorter, modern syntax.
