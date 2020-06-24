@@ -550,7 +550,7 @@ Don't align things.
 ## [ReSharper: Line Breaks](https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html)
 
 ```
-resharper_csharp_new_line_before_while = false
+resharper_csharp_new_line_before_while = true
 resharper_csharp_wrap_before_ternary_opsigns = true
 resharper_csharp_wrap_ternary_expr_style = chop_if_long
 resharper_csharp_nested_ternary_style = compact
