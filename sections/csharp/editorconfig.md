@@ -37,13 +37,13 @@ dotnet_style_readonly_field = true : suggestion
 Always use modifiers, in the preferred order, and use `readonly` when possible.
 
 ```
-dotnet_style_parentheses_in_arithmetic_binary_operators = never_if_unnecessary : none
-dotnet_style_parentheses_in_relational_binary_operators = never_if_unnecessary : none
-dotnet_style_parentheses_in_other_binary_operators = never_if_unnecessary : none
-dotnet_style_parentheses_in_other_operators = never_if_unnecessary : none
+dotnet_style_parentheses_in_arithmetic_binary_operators = always_for_clarity : none
+dotnet_style_parentheses_in_relational_binary_operators = never_if_unnecessary : suggestion
+dotnet_style_parentheses_in_other_binary_operators = always_for_clarity : none
+dotnet_style_parentheses_in_other_operators = never_if_unnecessary : suggestion
 ```
 
-Allow the developer to decide when parentheses around operators improve clarity.
+Allow the developer to decide when parentheses around certain arithmetic and Boolean operators improve clarity.
 
 ```
 dotnet_style_object_initializer = true : suggestion
@@ -244,7 +244,7 @@ dotnet_naming_symbols.private_static_fields_symbols.applicable_kinds = field
 dotnet_naming_symbols.private_static_fields_symbols.required_modifiers = static
 dotnet_naming_symbols.private_static_readonly_symbols.applicable_accessibilities = private
 dotnet_naming_symbols.private_static_readonly_symbols.applicable_kinds = field
-dotnet_naming_symbols.private_static_readonly_symbols.required_modifiers = static,readonly
+dotnet_naming_symbols.private_static_readonly_symbols.required_modifiers = static, readonly
 ```
 
 Typical .NET naming and casing rules. Use `m_`, `s_`, and `c_` prefixes for private fields.
@@ -513,6 +513,13 @@ Don't force a blank line after every block.
 ## [ReSharper: Code Style](https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html)
 
 ```
+resharper_csharp_parentheses_non_obvious_operations = shift, bitwise, conditional
+resharper_csharp_parentheses_redundancy_style = remove_if_not_clarifies_precedence
+```
+
+Use clarifying parentheses with these binary operators: `<<`, `>>`, `&`, `|`, `^`, `&&`, `||`.
+
+```
 resharper_csharp_trailing_comma_in_multiline_lists = true
 ```
 
@@ -595,6 +602,12 @@ resharper_string_literal_typo_highlighting = none
 ```
 
 ## [ReSharper: Syntax Style](https://www.jetbrains.com/help/resharper/Reference__Code_Inspections_CSHARP.html#CodeStyleIssues)
+
+```
+resharper_arrange_missing_parentheses_highlighting = hint
+```
+
+Sometimes it is nice to add clarifying parentheses.
 
 ```
 resharper_arrange_constructor_or_destructor_body_highlighting = hint
