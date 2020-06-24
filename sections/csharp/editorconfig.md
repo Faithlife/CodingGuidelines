@@ -346,6 +346,7 @@ We use `m_`, `s_`, and `c_` field prefixes.
 
 ```
 dotnet_diagnostic.SA1407.severity = none
+dotnet_diagnostic.SA1408.severity = none
 ```
 
 We don't require extra parentheses.
