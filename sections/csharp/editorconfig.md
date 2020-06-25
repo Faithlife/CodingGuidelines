@@ -513,7 +513,8 @@ Don't force a blank line after every block.
 ## [ReSharper: Code Style](https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html)
 
 ```
-resharper_csharp_parentheses_non_obvious_operations = shift, bitwise, conditional
+resharper_csharp_parentheses_group_non_obvious_operations = conditional
+resharper_csharp_parentheses_non_obvious_operations = shift, bitwise
 resharper_csharp_parentheses_redundancy_style = remove_if_not_clarifies_precedence
 ```
 
@@ -521,7 +522,10 @@ Use clarifying parentheses with these binary operators: `<<`, `>>`, `&`, `|`, `^
 
 ```
 resharper_csharp_trailing_comma_in_multiline_lists = true
+resharper_arrange_trailing_comma_in_multiline_lists_highlighting = warning
 ```
+
+Use trailing commas with multiline lists.
 
 ## [ReSharper: Tabs, Indents, Alignment](https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html)
 
