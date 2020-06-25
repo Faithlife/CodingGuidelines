@@ -584,11 +584,31 @@ resharper_access_to_modified_closure_highlighting = none
 
 This happens legitimately too frequently to highlight.
 
+```
+resharper_is_expression_always_true_highlighting = hint
+```
+
+We often use `is object` instead of `!= null`. Consider bumping this to a suggestion when we start using `is not null`.
+
+```
+resharper_pattern_always_of_type_highlighting = none
+```
+
+We often use `is string value` to introduce a new variable while confirming it is not null.
+
+```
+resharper_compare_of_floats_by_equality_operator_highlighting = suggestion
+```
+
+Floating-point equality is too often legitimate for a warning, but a suggestion seems reasonable.
+
 ## [ReSharper: Redundancies in Symbol Declarations](https://www.jetbrains.com/help/resharper/Reference__Code_Inspections_CSHARP.html#DeclarationRedundancy)
 
 ```
 resharper_unused_member_global_highlighting = none
 resharper_unused_member_local_highlighting = suggestion
+resharper_unused_auto_property_accessor_global_highlighting = none
+resharper_unused_auto_property_accessor_local_highlighting = suggestion
 ```
 
 Members are frequently unused in libraries, unit tests, etc.
