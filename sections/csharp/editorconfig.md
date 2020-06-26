@@ -442,6 +442,12 @@ Underscores are frequently used in test method names.
 ## [FxCop: Performance Warnings](https://docs.microsoft.com/en-us/visualstudio/code-quality/performance-warnings)
 
 ```
+dotnet_diagnostic.CA1812.severity = none
+```
+
+Types are often created only by reflection.
+
+```
 dotnet_diagnostic.CA1815.severity = suggestion
 ```
 
@@ -559,6 +565,12 @@ resharper_csharp_align_multline_type_parameter_constrains = false
 Don't align things.
 
 ## [ReSharper: Line Breaks](https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html)
+
+```
+resharper_csharp_max_line_length = 200
+```
+
+A reasonable line length when ReSharper wraps code.
 
 ```
 resharper_csharp_new_line_before_while = true
