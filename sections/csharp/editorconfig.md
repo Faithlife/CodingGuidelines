@@ -567,17 +567,18 @@ Don't align things.
 ## [ReSharper: Line Breaks](https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html)
 
 ```
-resharper_csharp_max_line_length = 200
+resharper_csharp_wrap_before_ternary_opsigns = true
+resharper_csharp_wrap_ternary_expr_style = wrap_if_long
+resharper_csharp_nested_ternary_style = simple_wrap
 ```
 
-A reasonable line length when ReSharper wraps code.
+Don't rewrap ternary expressions.
 
 ```
 resharper_csharp_new_line_before_while = true
-resharper_csharp_wrap_before_ternary_opsigns = true
-resharper_csharp_wrap_ternary_expr_style = chop_if_long
-resharper_csharp_nested_ternary_style = compact
 ```
+
+Put the `while` in `do...while` on its own line.
 
 ## [ReSharper: Spaces](https://www.jetbrains.com/help/rider/EditorConfig_CSHARP_SpacesPageSchema.html)
 
