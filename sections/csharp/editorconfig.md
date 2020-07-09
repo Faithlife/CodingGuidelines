@@ -31,7 +31,7 @@ Always use language keywords (e.g. `int`) instead of framework type names (e.g. 
 ```
 dotnet_style_require_accessibility_modifiers = for_non_interface_members : warning
 csharp_preferred_modifier_order = public, private, protected, internal, new, abstract, virtual, sealed, override, static, readonly, extern, unsafe, volatile, async : warning
-dotnet_style_readonly_field = true : suggestion
+dotnet_style_readonly_field = true : warning
 ```
 
 Always use modifiers, in the preferred order, and use `readonly` when possible.
@@ -135,7 +135,7 @@ Use shorter, modern syntax.
 ```
 dotnet_sort_system_directives_first = true
 dotnet_separate_import_directive_groups = false
-csharp_using_directive_placement = outside_namespace : suggestion
+csharp_using_directive_placement = outside_namespace : warning
 ```
 
 Organize using directives.
