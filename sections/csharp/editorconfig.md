@@ -1,5 +1,7 @@
 # .editorconfig for C# files
 
+This document describes the standard `.editorconfig` settings for C# files, which are extracted info [`files/.editorconfig`](files/.editorconfig) file via [`files/UpdateEditorConfig.ps1`](files/UpdateEditorConfig.ps1).
+
 The standard settings for `charset`, `end_of_line`, `insert_final_newline`, and `trim_trailing_whitespace` should be inherited from [the `[*]` section](../editorconfig.md).
 
 ```editorconfig
