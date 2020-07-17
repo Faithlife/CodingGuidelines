@@ -292,6 +292,7 @@ We don't use `this.`.
 ```editorconfig
 dotnet_diagnostic.SA1116.severity = none
 dotnet_diagnostic.SA1117.severity = none
+dotnet_diagnostic.SA1118.severity = none
 ```
 
 The developer can decide how parameter lists are line wrapped.
@@ -322,6 +323,7 @@ dotnet_diagnostic.SA1201.severity = none
 dotnet_diagnostic.SA1202.severity = none
 dotnet_diagnostic.SA1203.severity = none
 dotnet_diagnostic.SA1204.severity = none
+dotnet_diagnostic.SA1214.severity = suggestion
 ```
 
 We aren't strict about the ordering of type elements.
@@ -359,6 +361,12 @@ dotnet_diagnostic.SA1503.severity = none
 ```
 
 We don't require braces around single statements.
+
+```editorconfig
+dotnet_diagnostic.SA1504.severity = none
+```
+
+Using a single-line getter with a multi-line setter doesn't seem so bad, and it's hard to get automatic style formatters to respect it.
 
 ```editorconfig
 dotnet_diagnostic.SA1513.severity = none
@@ -440,6 +448,12 @@ dotnet_diagnostic.CA1707.severity = none
 ```
 
 Underscores are frequently used in test method names.
+
+```editorconfig
+dotnet_diagnostic.CA1720.severity = suggestion
+```
+
+Using `Float` as a enum value isn't a problem.
 
 ## [FxCop: Performance Warnings](https://docs.microsoft.com/en-us/visualstudio/code-quality/performance-warnings)
 
