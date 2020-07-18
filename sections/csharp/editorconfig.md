@@ -524,6 +524,12 @@ resharper_csharp_wrap_lines = false
 
 Trust the developer to wrap lines.
 
+```editorconfig
+resharper_apply_auto_detected_rules = false
+```
+
+We want to enforce our rules, not guess what they are by looking at existing code.
+
 ## [ReSharper: Blank Lines](https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html)
 
 ```editorconfig

@@ -193,6 +193,7 @@ dotnet_style_readonly_field = true : warning
 dotnet_style_require_accessibility_modifiers = for_non_interface_members : warning
 resharper_access_to_disposed_closure_highlighting = none
 resharper_access_to_modified_closure_highlighting = none
+resharper_apply_auto_detected_rules = false
 resharper_arrange_constructor_or_destructor_body_highlighting = hint
 resharper_arrange_method_or_operator_body_highlighting = hint
 resharper_arrange_missing_parentheses_highlighting = hint
