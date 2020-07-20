@@ -411,6 +411,7 @@ General exception types should not normally be caught, but sometimes it is appro
 ```editorconfig
 dotnet_diagnostic.CA1054.severity = none
 dotnet_diagnostic.CA1055.severity = none
+dotnet_diagnostic.CA1056.severity = none
 ```
 
 The `Uri` type is a pain.
