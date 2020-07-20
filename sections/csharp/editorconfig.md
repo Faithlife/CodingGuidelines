@@ -156,7 +156,7 @@ Braces on their own lines.
 
 ```editorconfig
 csharp_indent_case_contents = true
-csharp_indent_switch_labels = false
+csharp_indent_switch_labels = true
 ```
 
 We historically did not indent `switch` statement `case` labels, but we now [use the default style](https://github.com/Faithlife/CodingGuidelines/issues/12).
