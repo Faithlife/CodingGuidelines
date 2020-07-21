@@ -69,6 +69,7 @@ csharp_style_var_when_type_is_apparent = true : suggestion
 csharp_using_directive_placement = outside_namespace : warning
 dotnet_code_quality_unused_parameters = all : suggestion
 dotnet_diagnostic.CA1031.severity = suggestion
+dotnet_diagnostic.CA1032.severity = suggestion
 dotnet_diagnostic.CA1054.severity = none
 dotnet_diagnostic.CA1055.severity = none
 dotnet_diagnostic.CA1056.severity = none

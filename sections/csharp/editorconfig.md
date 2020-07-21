@@ -409,6 +409,12 @@ dotnet_diagnostic.CA1031.severity = suggestion
 General exception types should not normally be caught, but sometimes it is appropriate.
 
 ```editorconfig
+dotnet_diagnostic.CA1032.severity = suggestion
+```
+
+Custom exception types do not necessarily need the three standard constructors.
+
+```editorconfig
 dotnet_diagnostic.CA1054.severity = none
 dotnet_diagnostic.CA1055.severity = none
 dotnet_diagnostic.CA1056.severity = none
