@@ -98,7 +98,7 @@ API clients and fetch helpers should generally accept and respect an [AbortSigna
 Async code should always clean up after itself. Avoid writing code that may produce surprising side effects or error messages if a caller doesn't wait for an async action to complete. `setTimeout` and `setInterval` should generally have a corresponding `clearTimeout` or `clearInterval`, even if the duration is very short. debounced and throttled functions should be canceled when they're no longer needed. Avoid making assumptions about mutable state inside async continuations (e.g., check if a React component is still mounted before setting local component state).
 
 ## Justify `eslint-disable` With Explanatory Comment
-If you use an `eslint-disable` comment to disable a lint rule, add another rule on the preceding line describing the reason for disabling the rule.
+If you use an `eslint-disable` comment to disable a lint rule, add another comment on the preceding line describing the reason for disabling the rule.
 
 ## Be Mindful of Dependency Weight
 While it's beneficial to leverage existing solutions, it's also important to consider the associated costs. JavaScript applications tend to have deep dependency trees that can bloat the application bundle. Once a dependency is added and built upon, it can be prohibitively difficult to remove later when application performance is suffering.
