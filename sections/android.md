@@ -11,4 +11,4 @@ Be sure to use the Android CLI flag when running ktlint on Android code.
 
 ## Android Lint
 
-Android Lint is generally more concerned with semantic issues than syntatic issues. It's recommended for CI builds. Faithlife's [Android Lint ruleset](https://github.com/Faithlife/AndroidLint/) specifies additional rules and is extendable to enforce house rules.
+Android Lint is generally more concerned with semantic issues than syntactic issues. It's recommended for CI builds. Faithlife's [Android Lint ruleset](https://github.com/Faithlife/AndroidLint/) specifies additional rules and is extendable to enforce house rules.
