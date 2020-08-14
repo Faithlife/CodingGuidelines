@@ -1,6 +1,17 @@
 
 # JavaScript Coding Guidelines
 
+## Use eslint
+
+Use [eslint](https://eslint.org) and [eslint-config-faithlife](https://www.npmjs.com/package/eslint-config-faithlife).
+eslint should be run as part of the CI build. Lint errors should fail the build.
+
+`eslint-config-faithlife` includes [Prettier](https://prettier.io) rules. Enabling your editor's format-on-save option is recommended.
+
+### Justify `eslint-disable` With Explanatory Comment
+
+If you use an `eslint-disable` comment to disable a lint rule, add another comment on the preceding line describing the reason for disabling the rule.
+
 ## Use Strict Comparison Operators
 Using strict comparisons makes code more explicit by clarifying which specific values are expected. It also saves readers from having to memorize coercion rules.
 
@@ -56,7 +67,7 @@ Prefer named exports even for files with a single export.
 
 Named exports require the name to appear at the import site (even if it is locally aliased), which has a few benefits:
 
-1) text searches (e.g. Github.com search) can more easily locate uses of the type/function 
+1) text searches (e.g. Github.com search) can more easily locate uses of the type/function
 2) renames of the exported type require the imports to be updated, rather than silently diverging the names
 
 ### Exceptions
@@ -96,9 +107,6 @@ In projects that have established patterns for cancellation, be consistent. In n
 API clients and fetch helpers should generally accept and respect an [AbortSignal](https://developer.mozilla.org/en-US/docs/Web/API/AbortController/signal) in each `Promise`-returning method. Utilities that use `setTimeout` or `setInterval` should expose a mechanism for clearing the timeout or interval.
 
 Async code should always clean up after itself. Avoid writing code that may produce surprising side effects or error messages if a caller doesn't wait for an async action to complete. `setTimeout` and `setInterval` should generally have a corresponding `clearTimeout` or `clearInterval`, even if the duration is very short. debounced and throttled functions should be canceled when they're no longer needed. Avoid making assumptions about mutable state inside async continuations (e.g., check if a React component is still mounted before setting local component state).
-
-## Justify `eslint-disable` With Explanatory Comment
-If you use an `eslint-disable` comment to disable a lint rule, add another comment on the preceding line describing the reason for disabling the rule.
 
 ## Be Mindful of Dependency Weight
 While it's beneficial to leverage existing solutions, it's also important to consider the associated costs. JavaScript applications tend to have deep dependency trees that can bloat the application bundle. Once a dependency is added and built upon, it can be prohibitively difficult to remove later when application performance is suffering.
