@@ -8,3 +8,5 @@
 * [C#](sections/csharp/README.md)
 * [JavaScript](sections/javascript.md)
 * [React](sections/react.md)
+* [Kotlin](sections/kotlin.md)
+* [Android](sections/android.md)
