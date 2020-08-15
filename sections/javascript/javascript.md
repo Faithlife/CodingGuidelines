@@ -1,6 +1,14 @@
 
 # JavaScript Coding Guidelines
 
+## Use .editorconfig
+
+See [.editorconfig for JavaScript](./editorconfig.md).
+
+## Use .gitattributes
+
+See [.gitattributes](../gitattributes.md).
+
 ## Use eslint
 
 Use [eslint](https://eslint.org) and [eslint-config-faithlife](https://www.npmjs.com/package/eslint-config-faithlife).
