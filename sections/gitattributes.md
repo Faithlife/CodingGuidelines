@@ -24,15 +24,17 @@ To convert a repository, follow these steps:
 
 * Commit your working tree.
 * Add or change your `.gitattributes` as documented above and commit it.
-* Run `git status` to confirm that your working tree is clean.
+  * `git add -A && git commit -m "Use LF."`
 * Normalize line endings:
   * `git add --renormalize .`
 * Commit any changes.
+  * `git commit -m "Convert CRLF to LF."`
 * Delete your local files:
   * `git rm --cached -r .`
 * Restore your local files:
   * `git reset --hard`
-* Commit any changes.
-* Add the CRLF to LF commit ID(s) to a `.git-blame-ignore-revs` file at the root of your repository.
+* Add the CRLF to LF commit ID to a `.git-blame-ignore-revs` file at the root of your repository.
+  * `git rev-parse HEAD >> .git-blame-ignore-revs`
+  * `git add -A && git commit -m "Ignore CRLF to LF for git blame."`
 * If you haven’t already, ensure that `git blame` ignores the commit IDs in the file:
   * `git config --global blame.ignoreRevsFile .git-blame-ignore-revs`
