@@ -323,10 +323,21 @@ dotnet_diagnostic.SA1201.severity = none
 dotnet_diagnostic.SA1202.severity = none
 dotnet_diagnostic.SA1203.severity = none
 dotnet_diagnostic.SA1204.severity = none
-dotnet_diagnostic.SA1214.severity = suggestion
 ```
 
 We aren't strict about the ordering of type elements.
+
+```editorconfig
+dotnet_diagnostic.SA1206.severity = none
+```
+
+We prefer to put `new` before `static`.
+
+```editorconfig
+dotnet_diagnostic.SA1214.severity = suggestion
+```
+
+We aren't strict about the ordering of `readonly` fields.
 
 ## [StyleCop: Naming Rules](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/NamingRules.md)
 
@@ -393,6 +404,7 @@ dotnet_diagnostic.SA1615.severity = none
 dotnet_diagnostic.SA1618.severity = none
 dotnet_diagnostic.SA1619.severity = none
 dotnet_diagnostic.SA1623.severity = none
+dotnet_diagnostic.SA1629.severity = none
 dotnet_diagnostic.SA1633.severity = none
 dotnet_diagnostic.SA1642.severity = none
 dotnet_diagnostic.SA1643.severity = none
@@ -515,6 +527,12 @@ dotnet_diagnostic.CA2227.severity = none
 ```
 
 Read-write collection properties are fine for DTOs, which are common.
+
+```editorconfig
+dotnet_diagnostic.CA2237.severity = none
+```
+
+We don't worry about `ISerializable`.
 
 ## [ReSharper: Generalized EditorConfig Properties](https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html)
 
