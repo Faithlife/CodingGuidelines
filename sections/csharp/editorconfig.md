@@ -666,6 +666,12 @@ resharper_compare_of_floats_by_equality_operator_highlighting = suggestion
 
 Floating-point equality is too often legitimate for a warning, but a suggestion seems reasonable.
 
+```editorconfig
+resharper_localizable_element_highlighting = none
+```
+
+We don't localize exception messages.
+
 ## [ReSharper: Redundancies in Symbol Declarations](https://www.jetbrains.com/help/resharper/Reference__Code_Inspections_CSHARP.html#DeclarationRedundancy)
 
 ```editorconfig
