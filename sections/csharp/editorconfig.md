@@ -415,6 +415,12 @@ XML documentation is not required.
 ## [FxCop: Design Warnings](https://docs.microsoft.com/en-us/visualstudio/code-quality/design-warnings)
 
 ```editorconfig
+dotnet_diagnostic.CA1030.severity = none
+```
+
+"Raise" doesn't always mean ".NET event."
+
+```editorconfig
 dotnet_diagnostic.CA1031.severity = suggestion
 ```
 
@@ -467,6 +473,12 @@ dotnet_diagnostic.CA1707.severity = none
 ```
 
 Underscores are frequently used in test method names.
+
+```editorconfig
+dotnet_diagnostic.CA1716.severity = none
+```
+
+We don't worry about conflicts with Visual Basic keywords.
 
 ```editorconfig
 dotnet_diagnostic.CA1720.severity = suggestion
@@ -527,6 +539,12 @@ dotnet_diagnostic.CA2227.severity = none
 ```
 
 Read-write collection properties are fine for DTOs, which are common.
+
+```editorconfig
+dotnet_diagnostic.CA2234.severity = none
+```
+
+`System.Uri` isn't always the nicest way to store a URI.
 
 ```editorconfig
 dotnet_diagnostic.CA2237.severity = none
