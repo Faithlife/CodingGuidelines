@@ -33,7 +33,7 @@ To convert a repository, follow these steps:
   * `git rm --cached -r .`
 * Restore your local files:
   * `git reset --hard`
-* Add the CRLF to LF commit ID to a `.git-blame-ignore-revs` file at the root of your repository.
+* If there were changes, add the CRLF to LF commit ID to a `.git-blame-ignore-revs` file at the root of your repository.
   * `git rev-parse HEAD >> .git-blame-ignore-revs`
   * `git add -A && git commit -m "Ignore CRLF to LF for git blame."`
 * If you haven’t already, ensure that `git blame` ignores the commit IDs in the file:
