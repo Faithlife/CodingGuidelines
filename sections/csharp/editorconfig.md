@@ -56,7 +56,7 @@ dotnet_style_prefer_inferred_anonymous_type_member_names = true : suggestion
 dotnet_style_prefer_auto_properties = true : suggestion
 dotnet_style_prefer_is_null_check_over_reference_equality_method = true : suggestion
 dotnet_style_prefer_conditional_expression_over_assignment = true : suggestion
-dotnet_style_prefer_conditional_expression_over_return = true : suggestion
+dotnet_style_prefer_conditional_expression_over_return = true : none
 dotnet_style_prefer_compound_assignment = true : suggestion
 dotnet_style_coalesce_expression = true : warning
 dotnet_style_null_propagation = true : suggestion
@@ -110,7 +110,7 @@ Don't use braces around single-line blocks.
 
 ```editorconfig
 csharp_style_unused_value_assignment_preference = discard_variable : suggestion
-csharp_style_unused_value_expression_statement_preference = discard_variable : suggestion
+csharp_style_unused_value_expression_statement_preference = discard_variable : none
 ```
 
 Use discard variables.
