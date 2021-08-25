@@ -14,7 +14,7 @@ This causes git to change newlines from CRLF to LF when files are committed, ens
 
 ## Changing CRLF to LF
 
-Existing repositories with no `.gitattributes` file or a `.gitattributes` file that doesn't look like the above (e.g. with `* -text`) may have files with CRLF and/or mixed linefeeds.
+Existing repositories with no `.gitattributes` file or a `.gitattributes` file that doesn't look like the above (e.g. with `* -text`) may have files with CRLF and/or mixed line feeds.
 
 Existing repositories should be changed to use LF and the `.gitattributes` setting above.
 

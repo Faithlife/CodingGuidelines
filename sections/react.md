@@ -4,7 +4,7 @@
 ## Write Focused Components
 Like functions, well-designed React components should focus on a specific piece of functionality. Prefer factoring code into many small, focused components over monolithic components that cover major feature areas. Most apps tend to have a few large components that pull together several unrelated features. These should be rare, and in cases where they're needed prefer composing many smaller components rather than implementing functionality directly within the monolithic component.
 
-Small and focused components are easier to read and understand. They're also easier to reuse if the need arrises, and they provide React with optimization opportunities because you can easily use `React.memo` to avoid unnecessary re-renders.
+Small and focused components are easier to read and understand. They're also easier to reuse if the need arises, and they provide React with optimization opportunities because you can easily use `React.memo` to avoid unnecessary re-renders.
 
 * Component state should generally be focused on one specific thing. Unrelated data in state is a sign that you could consider extracting components or custom hooks.
 * Component handlers should be strictly related to the UI rendered. Consider extracting components or hooks for custom behavior that's not necessarily tied to specific UI.
