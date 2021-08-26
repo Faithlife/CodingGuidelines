@@ -4,7 +4,7 @@ Faithlife's corporate mission includes the statement:
 
 > We are committed to increasing biblical literacy and accessibility for every Christian around the world.
 
-Our customers already speak dozens of different languages, and our support for localized products is only going to grow over time. Recent launches of Logos Bible Software have happened simultaneously in multiple international markets. If you're building a customer-facing product, there's a high chance it will need to be translated into another language in the future, and you should code it with [i18n](https://en.wikipedia.org/wiki/Internationalization_and_localization) in mind. 
+Our customers already speak dozens of different languages, and our support for localized products is only going to grow over time. Recent launches of Logos Bible Software have happened simultaneously in multiple international markets. If you're building a customer-facing product, there's a high chance it will need to be translated into another language in the future, and you should code it with [internationalization (i18n) and localization (l10n)](https://en.wikipedia.org/wiki/Internationalization_and_localization) in mind.
 
 There is a small up-front cost to supporting i18n, e.g., creating `OurResources.resx` or `localization.json` and setting up automated tasks to sync strings with Crowdin, etc. Once this is done, there is negligible developer cost for adding new UI strings to those files as features are developed.
 
