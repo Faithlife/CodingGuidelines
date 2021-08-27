@@ -3,6 +3,7 @@
 
 ## Sections
 
+* [General Coding Guidelines](sections/general.md)
 * [.editorconfig](sections/editorconfig.md)
 * [.gitattributes](sections/gitattributes.md)
 * [C#](sections/csharp/README.md)
