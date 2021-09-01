@@ -24,7 +24,7 @@ Async work is often complicated, and function components that manage async work 
 ## Internationalize All User-Visible Text
 All components should be internationalized by default.
 
-See [Internationalization.md].
+See [Internationalization](internationalization.md).
 
 ## Destructure Props and State
 Props and state should be destructured into locals at the top of the methods that use them. In class components, this makes it easy to see which data a method uses, reduces bloat in the method body, and makes the code easier to extract out of the component or convert to a function component. In function components, it makes it easier to quickly understand the component's API, and reduces code bloat.
