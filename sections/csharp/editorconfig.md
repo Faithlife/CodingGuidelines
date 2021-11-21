@@ -625,6 +625,7 @@ resharper_csharp_align_multiline_for_stmt = false
 resharper_csharp_align_multiple_declaration = false
 resharper_csharp_align_multline_type_parameter_list = false
 resharper_csharp_align_multline_type_parameter_constrains = false
+resharper_csharp_align_multiline_statement_conditions = false
 ```
 
 Don't align things.
