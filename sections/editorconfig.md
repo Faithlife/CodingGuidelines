@@ -6,7 +6,7 @@ As much as possible, we should use `.editorconfig` (rather than other configurat
 
 The top of the `.editorconfig` file should look like this:
 
-```
+```editorconfig
 root = true
 
 [*]
@@ -19,3 +19,31 @@ trim_trailing_whitespace = true
 ```
 
 These settings make good defaults. Extension-specific settings can follow in their own sections.
+
+## C\#
+
+See [.editorconfig for C#](csharp/editorconfig.md).
+
+## JavaScript/TypeScript
+
+See [.editorconfig for JavaScript/TypeScript](javascript/editorconfig.md).
+
+## JSON
+
+```editorconfig
+[*.json]
+resharper_comment_typo_highlighting = none
+resharper_identifier_typo_highlighting = none
+resharper_string_literal_typo_highlighting = none
+```
+
+Don't highlight "typos" (non-English words) in JSON.
+
+## dotnet
+
+```editorconfig
+[dotnet-tools.json]
+insert_final_newline = false
+```
+
+`dotnet tool install` removes the final newline.

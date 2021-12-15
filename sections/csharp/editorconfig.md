@@ -1,4 +1,4 @@
-# .editorconfig for C# files
+# .editorconfig for C\#
 
 This document describes the standard `.editorconfig` settings for C# files, which are extracted info [`files/.editorconfig`](files/.editorconfig) file via [`files/UpdateEditorConfig.ps1`](files/UpdateEditorConfig.ps1).
 
