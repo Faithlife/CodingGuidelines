@@ -132,6 +132,12 @@ csharp_style_prefer_switch_expression = true : suggestion
 
 Use shorter, modern syntax.
 
+```editorconfig
+csharp_style_namespace_declarations = file_scoped : suggestion
+```
+
+Use file-scoped namespaces.
+
 ## [Formatting Conventions](https://docs.microsoft.com/en-us/visualstudio/ide/editorconfig-formatting-conventions)
 
 ```editorconfig
