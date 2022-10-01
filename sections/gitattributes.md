@@ -18,7 +18,9 @@ Existing repositories with no `.gitattributes` file or a `.gitattributes` file t
 
 Existing repositories should be changed to use LF and the `.gitattributes` setting above.
 
-Please note that changing CRLF to LF can adversely affect blame. This can be somewhat mitigated by using a [`.git-blame-ignore-revs`](https://www.moxio.com/blog/43/ignoring-bulk-change-commits-with-git-blame) file, but GitHub [does not respect](https://github.community/t/support-ignore-revs-file-in-githubs-blame-view/3256) the file as of this writing. However, the benefits of LF everywhere (and solving the problems of mixed-line endings) outweigh the costs of difficulties with blame.
+Please note that changing CRLF to LF can adversely affect blame.
+This can be mitigated by using a [`.git-blame-ignore-revs`](https://www.moxio.com/blog/43/ignoring-bulk-change-commits-with-git-blame) file, which will cause GitHub to [ignore those commits in the blame view](https://docs.github.com/en/repositories/working-with-files/using-files/viewing-a-file#ignore-commits-in-the-blame-view).
+The benefits of LF everywhere (and solving the problems of mixed-line endings) outweigh the costs of difficulties with blame.
 
 To convert a repository, follow these steps:
 
