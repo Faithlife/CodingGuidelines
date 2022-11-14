@@ -6,8 +6,9 @@ The standard settings for `charset`, `end_of_line`, `insert_final_newline`, and 
 
 ```editorconfig
 [*.cs]
-indent_size = 4
+indent_size = tab
 indent_style = tab
+tab_width = 4
 ```
 
 We have always used tabs of width 4 for C#.
