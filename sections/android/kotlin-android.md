@@ -1,4 +1,3 @@
-
 # Android Kotlin Coding Guidelines
 
 Follow the [Android Kotlin Style Guide](https://developer.android.com/kotlin/style-guide) from Google with minimal deviations.
