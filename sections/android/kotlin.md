@@ -1,4 +1,3 @@
-
 # Kotlin Coding Guidelines
 
 Follow the [official coding conventions](https://kotlinlang.org/docs/reference/coding-conventions.html) with minimal deviations.

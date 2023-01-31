@@ -10,7 +10,6 @@
 * [JavaScript](sections/javascript/javascript.md)
 * [TypeScript](sections/javascript/typescript.md)
 * [React](sections/react.md)
-* [Kotlin](sections/kotlin.md)
-* [Android](sections/android.md)
+* [Android](sections/android/README.md)
 * [Source Control](sections/source-control/readme.md)
 * [Internationalization](sections/internationalization.md)
