@@ -13,7 +13,7 @@ tab_width = 4
 
 We have always used tabs of width 4 for C#.
 
-## [Language Conventions](https://docs.microsoft.com/en-us/visualstudio/ide/editorconfig-language-conventions)
+## [Style: Language Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/language-rules)
 
 ```editorconfig
 dotnet_style_qualification_for_field = false : warning
@@ -139,7 +139,7 @@ csharp_style_namespace_declarations = file_scoped : suggestion
 
 Use file-scoped namespaces.
 
-## [Formatting Conventions](https://docs.microsoft.com/en-us/visualstudio/ide/editorconfig-formatting-conventions)
+## [Style: Formatting Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/ide0055)
 
 ```editorconfig
 dotnet_sort_system_directives_first = true
@@ -216,7 +216,7 @@ csharp_preserve_single_line_blocks = true
 
 Let the developer decide when and where to wrap lines.
 
-## [Naming Conventions](https://docs.microsoft.com/en-us/visualstudio/ide/editorconfig-naming-conventions)
+## [Style: Naming Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/naming-rules)
 
 ```editorconfig
 dotnet_naming_rule.local_functions_rule.severity = warning
@@ -419,7 +419,7 @@ dotnet_diagnostic.SA1643.severity = none
 
 XML documentation is not required.
 
-## [FxCop: Design Warnings](https://docs.microsoft.com/en-us/visualstudio/code-quality/design-warnings)
+## [Quality: Design Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/design-warnings)
 
 ```editorconfig
 dotnet_diagnostic.CA1030.severity = none
@@ -459,7 +459,7 @@ dotnet_diagnostic.CA1063.severity = none
 
 The full `Dispose` pattern is rarely needed because finalizers should never be used.
 
-## [FxCop: Globalization Warnings](https://docs.microsoft.com/en-us/visualstudio/code-quality/globalization-warnings)
+## [Quality: Globalization Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/globalization-warnings)
 
 ```editorconfig
 dotnet_diagnostic.CA1303.severity = none
@@ -473,7 +473,7 @@ dotnet_diagnostic.CA1308.severity = suggestion
 
 Case normalization is normally done on ASCII, so using lowercase is usually fine.
 
-## [FxCop: Naming Warnings](https://docs.microsoft.com/en-us/visualstudio/code-quality/naming-warnings)
+## [Quality: Naming Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/naming-warnings)
 
 ```editorconfig
 dotnet_diagnostic.CA1707.severity = none
@@ -493,7 +493,7 @@ dotnet_diagnostic.CA1720.severity = suggestion
 
 Using `Float` as a enum value isn't a problem.
 
-## [FxCop: Performance Warnings](https://docs.microsoft.com/en-us/visualstudio/code-quality/performance-warnings)
+## [Quality: Performance Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/performance-warnings)
 
 ```editorconfig
 dotnet_diagnostic.CA1812.severity = none
@@ -531,7 +531,7 @@ dotnet_diagnostic.CA1826.severity = suggestion
 
 `First`, `Last`, etc. can be more clear than indexers.
 
-## [FxCop: Reliability Warnings](https://docs.microsoft.com/en-us/visualstudio/code-quality/reliability-warnings)
+## [Quality: Reliability Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/reliability-warnings)
 
 ```editorconfig
 dotnet_diagnostic.CA2000.severity = none
@@ -539,7 +539,7 @@ dotnet_diagnostic.CA2000.severity = none
 
 Ownership of Disposable objects is frequently transferred.
 
-## [FxCop: Usage Warnings](https://docs.microsoft.com/en-us/visualstudio/code-quality/usage-warnings)
+## [Quality: Usage Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/usage-warnings)
 
 ```editorconfig
 dotnet_diagnostic.CA2227.severity = none
