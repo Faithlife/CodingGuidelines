@@ -641,6 +641,12 @@ dotnet_diagnostic.CA1308.severity = suggestion
 
 Case normalization is normally done on ASCII, so using lowercase is usually fine.
 
+```editorconfig
+dotnet_diagnostic.CA1309.severity = suggestion
+```
+
+This rule can trigger even when the string comparison is explicitly set, e.g. to `StringComparison.InvariantCulture`.
+
 ## [Quality: Maintainability Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/maintainability-warnings)
 
 ```editorconfig
