@@ -584,6 +584,12 @@ XML documentation is not required.
 ## [Quality: Design Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/design-warnings)
 
 ```editorconfig
+dotnet_diagnostic.CA1014.severity = none
+```
+
+`CLSCompliantAttribute` is not necessary.
+
+```editorconfig
 dotnet_diagnostic.CA1030.severity = none
 ```
 
@@ -634,6 +640,14 @@ dotnet_diagnostic.CA1308.severity = suggestion
 ```
 
 Case normalization is normally done on ASCII, so using lowercase is usually fine.
+
+## [Quality: Maintainability Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/maintainability-warnings)
+
+```editorconfig
+dotnet_diagnostic.CA1508.severity = suggestion
+```
+
+Too many false positives for dead conditional code, at least for now.
 
 ## [Quality: Naming Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/naming-warnings)
 
