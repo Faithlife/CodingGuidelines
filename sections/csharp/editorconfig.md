@@ -13,6 +13,12 @@ tab_width = 4
 
 We have always used tabs of width 4 for C#.
 
+```editorconfig
+dotnet_analyzer_diagnostic.severity = warning
+```
+
+Enable code style enforcement (`IDE????` rules). These rules do not respect the `value : severity` syntax (e.g. `true : suggestion`), so `dotnet_diagnostic.IDE????.severity` rules immediately follow their corresponding settings, when possible.
+
 ## [Style: Language Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/language-rules)
 
 ```editorconfig
@@ -20,6 +26,8 @@ dotnet_style_qualification_for_field = false : warning
 dotnet_style_qualification_for_property = false : warning
 dotnet_style_qualification_for_method = false : warning
 dotnet_style_qualification_for_event = false : warning
+dotnet_diagnostic.IDE0003.severity = warning
+dotnet_diagnostic.IDE0009.severity = warning
 ```
 
 Never use `this.` qualifier.
@@ -27,124 +35,269 @@ Never use `this.` qualifier.
 ```editorconfig
 dotnet_style_predefined_type_for_locals_parameters_members = true : warning
 dotnet_style_predefined_type_for_member_access = true : warning
+dotnet_diagnostic.IDE0049.severity = warning
 ```
 
 Always use language keywords (e.g. `int`) instead of framework type names (e.g. `Int32`).
 
 ```editorconfig
-dotnet_style_require_accessibility_modifiers = for_non_interface_members : warning
 csharp_preferred_modifier_order = public, private, protected, internal, new, abstract, virtual, sealed, override, static, readonly, extern, unsafe, volatile, async : warning
+dotnet_diagnostic.IDE0036.severity = warning
+dotnet_style_require_accessibility_modifiers = for_non_interface_members : warning
+dotnet_diagnostic.IDE0040.severity = warning
 dotnet_style_readonly_field = true : warning
+dotnet_diagnostic.IDE0044.severity = warning
+csharp_prefer_static_local_function = true : suggestion
+dotnet_diagnostic.IDE0062.severity = suggestion
 ```
 
-Always use modifiers, in the preferred order, and use `readonly` when possible.
+Always use modifiers, in the preferred order. Use `readonly` when possible. Suggest `static` on local functions.
 
 ```editorconfig
 dotnet_style_parentheses_in_arithmetic_binary_operators = always_for_clarity : none
 dotnet_style_parentheses_in_relational_binary_operators = never_if_unnecessary : suggestion
 dotnet_style_parentheses_in_other_binary_operators = always_for_clarity : none
 dotnet_style_parentheses_in_other_operators = never_if_unnecessary : suggestion
+dotnet_diagnostic.IDE0047.severity = suggestion
+dotnet_diagnostic.IDE0048.severity = suggestion
 ```
 
 Allow the developer to decide when parentheses around certain arithmetic and Boolean operators improve clarity.
 
 ```editorconfig
 dotnet_style_object_initializer = true : suggestion
+dotnet_diagnostic.IDE0017.severity = suggestion
+csharp_style_inlined_variable_declaration = true : suggestion
+dotnet_diagnostic.IDE0018.severity = suggestion
 dotnet_style_collection_initializer = true : suggestion
-dotnet_style_explicit_tuple_names = true : warning
-dotnet_style_prefer_inferred_tuple_names = true : suggestion
-dotnet_style_prefer_inferred_anonymous_type_member_names = true : suggestion
+dotnet_diagnostic.IDE0028.severity = suggestion
 dotnet_style_prefer_auto_properties = true : suggestion
-dotnet_style_prefer_is_null_check_over_reference_equality_method = true : suggestion
+dotnet_diagnostic.IDE0032.severity = suggestion
+dotnet_style_explicit_tuple_names = true : warning
+dotnet_diagnostic.IDE0033.severity = warning
+csharp_prefer_simple_default_expression = true : suggestion
+dotnet_diagnostic.IDE0034.severity = suggestion
+dotnet_style_prefer_inferred_tuple_names = true : suggestion
+dotnet_diagnostic.IDE0037.severity = suggestion
+csharp_style_prefer_local_over_anonymous_function = true : suggestion
+dotnet_diagnostic.IDE0039.severity = suggestion
+csharp_style_deconstructed_variable_declaration = true : suggestion
+dotnet_diagnostic.IDE0042.severity = suggestion
 dotnet_style_prefer_conditional_expression_over_assignment = true : suggestion
+dotnet_diagnostic.IDE0045.severity = suggestion
 dotnet_style_prefer_conditional_expression_over_return = true : none
+dotnet_diagnostic.IDE0046.severity = none
 dotnet_style_prefer_compound_assignment = true : suggestion
-dotnet_style_coalesce_expression = true : warning
-dotnet_style_null_propagation = true : suggestion
+dotnet_diagnostic.IDE0054.severity = suggestion
+dotnet_diagnostic.IDE0074.severity = suggestion
+csharp_style_prefer_index_operator = true : suggestion
+dotnet_diagnostic.IDE0056.severity = suggestion
+csharp_style_prefer_range_operator = true : suggestion
+dotnet_diagnostic.IDE0057.severity = suggestion
+dotnet_style_prefer_simplified_interpolation = true : suggestion
+dotnet_diagnostic.IDE0071.severity = suggestion
+dotnet_style_prefer_simplified_boolean_expressions = true : warning
+dotnet_diagnostic.IDE0075.severity = warning
+csharp_style_implicit_object_creation_when_type_is_apparent = true : suggestion
+dotnet_diagnostic.IDE0090.severity = suggestion
+csharp_style_prefer_tuple_swap = true : warning
+dotnet_diagnostic.IDE0180.severity = warning
+dotnet_style_prefer_inferred_anonymous_type_member_names = true : suggestion
 ```
 
-Use shorter, modern syntax.
+Use modern expression syntax.
 
 ```editorconfig
-dotnet_code_quality_unused_parameters = all : suggestion
+dotnet_diagnostic.IDE0010.severity = suggestion
+dotnet_diagnostic.IDE0072.severity = suggestion
 ```
 
-Flag unused parameters.
+Don't require missing cases to be added to switch statements/expressions.
+
+```editorconfig
+dotnet_diagnostic.IDE0070.severity = suggestion
+```
+
+Don't force `HashCode.Combine` to be used.
+
+```editorconfig
+dotnet_diagnostic.IDE0082.severity = warning
+```
+
+Require `nameof(T)` instead of `typeof(T).Name`.
+
+```editorconfig
+csharp_style_namespace_declarations = file_scoped : suggestion
+dotnet_diagnostic.IDE0160.severity = suggestion
+dotnet_diagnostic.IDE0161.severity = suggestion
+```
+
+Use file-scoped namespaces.
+
+```editorconfig
+csharp_style_throw_expression = true : suggestion
+dotnet_diagnostic.IDE0016.severity = suggestion
+dotnet_style_coalesce_expression = true : warning
+dotnet_diagnostic.IDE0029.severity = warning
+dotnet_diagnostic.IDE0030.severity = warning
+dotnet_style_null_propagation = true : suggestion
+dotnet_diagnostic.IDE0031.severity = suggestion
+dotnet_style_prefer_is_null_check_over_reference_equality_method = true : suggestion
+dotnet_diagnostic.IDE0041.severity = suggestion
+csharp_style_prefer_null_check_over_type_check = true : suggestion
+dotnet_diagnostic.IDE0150.severity = suggestion
+csharp_style_conditional_delegate_call = true : suggestion
+dotnet_diagnostic.IDE1005.severity = suggestion
+```
+
+Use modern null-checking syntax.
 
 ```editorconfig
 csharp_style_var_elsewhere = true : suggestion
 csharp_style_var_for_built_in_types = true : suggestion
 csharp_style_var_when_type_is_apparent = true : suggestion
+dotnet_diagnostic.IDE0007.severity = suggestion
+dotnet_diagnostic.IDE0008.severity = suggestion
 ```
 
 Use `var` everywhere.
 
 ```editorconfig
+csharp_style_expression_bodied_constructors = true : suggestion
+dotnet_diagnostic.IDE0021.severity = suggestion
 csharp_style_expression_bodied_methods = true : suggestion
-csharp_style_expression_bodied_constructors = false : suggestion
+dotnet_diagnostic.IDE0022.severity = suggestion
 csharp_style_expression_bodied_operators = true : suggestion
+dotnet_diagnostic.IDE0023.severity = suggestion
+dotnet_diagnostic.IDE0024.severity = suggestion
 csharp_style_expression_bodied_properties = true : suggestion
+dotnet_diagnostic.IDE0025.severity = suggestion
 csharp_style_expression_bodied_indexers = true : suggestion
+dotnet_diagnostic.IDE0026.severity = suggestion
 csharp_style_expression_bodied_accessors = true : suggestion
+dotnet_diagnostic.IDE0027.severity = suggestion
 csharp_style_expression_bodied_lambdas = true : suggestion
+dotnet_diagnostic.IDE0053.severity = suggestion
 csharp_style_expression_bodied_local_functions = true : suggestion
+dotnet_diagnostic.IDE0061.severity = suggestion
 ```
 
-Use expression-bodied members everywhere but constructors.
+Use expression-bodied members everywhere.
 
 ```editorconfig
-csharp_style_pattern_matching_over_is_with_cast_check = true : suggestion
 csharp_style_pattern_matching_over_as_with_null_check = true : suggestion
-csharp_style_inlined_variable_declaration = true : suggestion
-csharp_prefer_simple_default_expression = true : suggestion
-csharp_style_throw_expression = true : suggestion
-csharp_style_conditional_delegate_call = true : suggestion
+dotnet_diagnostic.IDE0019.severity = suggestion
+csharp_style_pattern_matching_over_is_with_cast_check = true : suggestion
+dotnet_diagnostic.IDE0020.severity = suggestion
+dotnet_diagnostic.IDE0038.severity = suggestion
+csharp_style_prefer_switch_expression = true : suggestion
+dotnet_diagnostic.IDE0066.severity = suggestion
+csharp_style_prefer_pattern_matching = true : suggestion
+dotnet_diagnostic.IDE0078.severity = suggestion
+csharp_style_prefer_not_pattern = true : suggestion
+dotnet_diagnostic.IDE0083.severity = suggestion
+csharp_style_prefer_extended_property_pattern = true : suggestion
+dotnet_diagnostic.IDE0170.severity = suggestion
 ```
 
-Use shorter, modern syntax.
+Suggest pattern matching.
 
 ```editorconfig
 csharp_prefer_braces = when_multiline : suggestion
-```
-
-Don't use braces around single-line blocks.
-
-```editorconfig
-csharp_style_unused_value_assignment_preference = discard_variable : suggestion
-csharp_style_unused_value_expression_statement_preference = discard_variable : none
-```
-
-Use discard variables.
-
-```editorconfig
-csharp_style_prefer_index_operator = true : suggestion
-csharp_style_prefer_range_operator = true : suggestion
-```
-
-Use the new index/range syntax.
-
-```editorconfig
-csharp_style_deconstructed_variable_declaration = true : suggestion
-csharp_style_pattern_local_over_anonymous_function = true : suggestion
-csharp_prefer_static_local_function = true : suggestion
+dotnet_diagnostic.IDE0011.severity = suggestion
 csharp_prefer_simple_using_statement = true : suggestion
-csharp_style_prefer_switch_expression = true : suggestion
+dotnet_diagnostic.IDE0063.severity = suggestion
 ```
 
-Use shorter, modern syntax.
+Don't use braces around single-line blocks. Suggest `using` statement.
 
 ```editorconfig
-csharp_style_namespace_declarations = file_scoped : suggestion
+csharp_using_directive_placement = outside_namespace : warning
+dotnet_diagnostic.IDE0065.severity = warning
 ```
 
-Use file-scoped namespaces.
+Put `using` directives outside the namespace.
+
+```editorconfig
+dotnet_style_namespace_match_folder = true : warning
+dotnet_diagnostic.IDE0130.severity = warning
+```
+
+Namespace names should match folder names.
+
+## [Style: Unnecessary Code Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/unnecessary-code-rules)
+
+```editorconfig
+dotnet_diagnostic.IDE0001.severity = warning
+dotnet_diagnostic.IDE0002.severity = warning
+```
+
+Remove unnecessary name qualification.
+
+```editorconfig
+dotnet_diagnostic.IDE0004.severity = warning
+```
+
+Remove unnecessary casts.
+
+```editorconfig
+dotnet_diagnostic.IDE0005.severity = warning
+```
+
+Remove unnecessary using directives.
+
+```editorconfig
+dotnet_diagnostic.IDE0035.severity = warning
+```
+
+Remove unreachable code.
+
+```editorconfig
+dotnet_diagnostic.IDE0051.severity = warning
+dotnet_diagnostic.IDE0052.severity = warning
+```
+
+Remove unused private members.
+
+```editorconfig
+csharp_style_unused_value_expression_statement_preference = discard_variable : none
+dotnet_diagnostic.IDE0058.severity = none
+csharp_style_unused_value_assignment_preference = discard_variable : warning
+dotnet_diagnostic.IDE0059.severity = warning
+```
+
+Don't require discard variables for unused return values, but prefer them to unused local variables.
+
+```editorconfig
+dotnet_code_quality_unused_parameters = all : suggestion
+dotnet_diagnostic.IDE0060.severity = suggestion
+```
+
+Flag unused parameters.
+
+```editorconfig
+dotnet_diagnostic.IDE0080.severity = suggestion
+```
+
+Suggest removing unnecessary null-forgiving operator (`!`).
+
+```editorconfig
+dotnet_diagnostic.IDE0100.severity = warning
+```
+
+Don't use equality operators with `true` and `false`.
+
+```editorconfig
+dotnet_diagnostic.IDE0110.severity = warning
+```
+
+Don't use unnecessary discard patterns.
 
 ## [Style: Formatting Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/ide0055)
 
 ```editorconfig
 dotnet_sort_system_directives_first = true
 dotnet_separate_import_directive_groups = false
-csharp_using_directive_placement = outside_namespace : warning
 ```
 
 Organize using directives.
