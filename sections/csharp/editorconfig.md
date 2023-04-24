@@ -721,6 +721,14 @@ dotnet_diagnostic.CA2000.severity = none
 
 Ownership of Disposable objects is frequently transferred.
 
+## [Quality: Security Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/security-warnings)
+
+```editorconfig
+dotnet_diagnostic.CA5351.severity = none
+```
+
+Trust that older cryptographic algorithms are being used safely.
+
 ## [Quality: Usage Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/usage-warnings)
 
 ```editorconfig
@@ -740,6 +748,12 @@ dotnet_diagnostic.CA2237.severity = none
 ```
 
 We don't worry about `ISerializable`.
+
+```editorconfig
+dotnet_diagnostic.CA2254.severity = none
+```
+
+Don't require placeholder logging.
 
 ## [ReSharper: Generalized EditorConfig Properties](https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html)
 
