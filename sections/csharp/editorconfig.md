@@ -411,6 +411,15 @@ dotnet_naming_symbols.private_static_readonly_symbols.required_modifiers = stati
 
 Typical .NET naming and casing rules. Use `m_`, `s_`, and `c_` prefixes for private fields.
 
+## [SYSLIB: Source-generated Code Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/naming-rules)
+
+```editorconfig
+dotnet_diagnostic.SYSLIB1045.severity = suggestion
+dotnet_diagnostic.SYSLIB1054.severity = none
+```
+
+Don't require `GeneratedRegexAttribute` or `LibraryImportAttribute`.
+
 ## [StyleCop: Special Rules](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SpecialRules.md)
 
 ```editorconfig
@@ -683,6 +692,12 @@ dotnet_diagnostic.CA1826.severity = suggestion
 ```
 
 `First`, `Last`, etc. can be more clear than indexers.
+
+```editorconfig
+dotnet_diagnostic.CA1848.severity = suggestion
+```
+
+The `LoggerMessage` pattern is overkill for most projects.
 
 ## [Quality: Reliability Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/reliability-warnings)
 
