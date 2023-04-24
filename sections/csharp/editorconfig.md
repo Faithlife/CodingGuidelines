@@ -163,7 +163,7 @@ dotnet_diagnostic.IDE0008.severity = suggestion
 Use `var` everywhere.
 
 ```editorconfig
-csharp_style_expression_bodied_constructors = true : suggestion
+csharp_style_expression_bodied_constructors = false : suggestion
 dotnet_diagnostic.IDE0021.severity = suggestion
 csharp_style_expression_bodied_methods = true : suggestion
 dotnet_diagnostic.IDE0022.severity = suggestion
@@ -182,7 +182,7 @@ csharp_style_expression_bodied_local_functions = true : suggestion
 dotnet_diagnostic.IDE0061.severity = suggestion
 ```
 
-Use expression-bodied members everywhere.
+Suggest expression-bodied members everywhere but constructors.
 
 ```editorconfig
 csharp_style_pattern_matching_over_as_with_null_check = true : suggestion
