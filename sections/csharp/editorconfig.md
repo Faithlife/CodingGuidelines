@@ -19,7 +19,7 @@ dotnet_analyzer_diagnostic.severity = warning
 
 Enable code style enforcement (`IDE????` rules). These rules do not respect the `value : severity` syntax (e.g. `true : suggestion`), so `dotnet_diagnostic.IDE????.severity` rules immediately follow their corresponding settings, when possible.
 
-## [Style: Language Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/language-rules)
+## [Style: Language and Unnecessary Code Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/language-rules)
 
 ```editorconfig
 dotnet_style_qualification_for_field = false : warning
@@ -225,8 +225,6 @@ dotnet_diagnostic.IDE0130.severity = warning
 
 Namespace names should match folder names.
 
-## [Style: Unnecessary Code Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/unnecessary-code-rules)
-
 ```editorconfig
 dotnet_diagnostic.IDE0001.severity = warning
 dotnet_diagnostic.IDE0002.severity = warning
@@ -292,6 +290,13 @@ dotnet_diagnostic.IDE0110.severity = warning
 ```
 
 Don't use unnecessary discard patterns.
+
+```editorconfig
+csharp_style_prefer_primary_constructors = false : suggestion
+dotnet_diagnostic.IDE0290.severity = suggestion
+```
+
+Primary constructors are not always appropriate.
 
 ## [Style: Formatting Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/ide0055)
 
