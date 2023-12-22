@@ -294,6 +294,7 @@ Don't use unnecessary discard patterns.
 ```editorconfig
 csharp_style_prefer_primary_constructors = false : suggestion
 dotnet_diagnostic.IDE0290.severity = suggestion
+resharper_convert_to_primary_constructor_highlighting = hint
 ```
 
 Primary constructors are not always appropriate.

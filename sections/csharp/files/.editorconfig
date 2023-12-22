@@ -306,6 +306,7 @@ resharper_arrange_missing_parentheses_highlighting = hint
 resharper_arrange_trailing_comma_in_multiline_lists_highlighting = warning
 resharper_comment_typo_highlighting = none
 resharper_compare_of_floats_by_equality_operator_highlighting = suggestion
+resharper_convert_to_primary_constructor_highlighting = hint
 resharper_csharp_align_first_arg_by_paren = false
 resharper_csharp_align_linq_query = false
 resharper_csharp_align_multiline_argument = false
