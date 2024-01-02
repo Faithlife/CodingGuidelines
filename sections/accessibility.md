@@ -18,6 +18,8 @@ If you only want to show the focus indicator when a user is navigating with a ke
 ```
 
 ## Navigation/Landmarks
+When desiging the layout of the page, it is important to ask the question what the purpose of a section is and wrap it with the appropriate semantic element. There are lots of good elements to designate sections of the page for various purposes such as `main`, `banner`, `region`, `aside`, etc. See [W3C Landmark General Principles](https://www.w3.org/WAI/ARIA/apg/patterns/landmarks/examples/general-principles.html) for more. By using the semantically correct elements we can give meaning to the page beyond the visible layout.
+
 When creating navigation sections (sidebars, headers, etc), they should be wrapped in the appropriate `nav` element along with `ul` to create a navigable list. Also either use a `aria-label` or `aria-labelledby` attribute to add a title to the `nav` element.
 
 ```html
@@ -33,15 +35,33 @@ When creating navigation sections (sidebars, headers, etc), they should be wrapp
 </nav>
 ```
 
-For more examples, such as `main`, `banner`, `region`, etc. See [W3C Landmark General Principles](https://www.w3.org/WAI/ARIA/apg/patterns/landmarks/examples/general-principles.html)
-
 ## Semantic HTML
+When creating page components, it is important to use the appropriate html elements or at least label their role so that they match what the component is meant to do. For example, buttons initiate an action while links go somewhere. It is fine to style a link as a button as long as you add `role="button" to the link or vise versa. For more semantic elements, see https://www.w3schools.com/html/html5_semantic_elements.asp
 
-https://www.w3schools.com/html/html5_semantic_elements.asp
+### Links vs buttons
+```html
+<div>
+  <a class="buttonstyle" role="button" href="/">
+    Do Something
+  </a>
+  <button class="linkstyle" role="link">
+    Go Somewhere
+  </button>
+</div>
+```
 
-## Accessible Forms
+### Non-text component labels
+Any element that is a non-text component such as an icon or an image must have a text label. These can be `aria-label`, `aria-labelledby` or `alt`. Prefer aria label attributes.
+
+```html
+<div>
+  <CloseIcon aria-label="close" />
+  <img src="..." aria-label="Picture of a lion and a lamb" />
+</div>
+```
 
 ## Mouse and Pointer Events
+Ensure that all mouse and pointer events have a non-pointer version. All actions that can be performed with a mouse should be able to be performed without a mouse. For example, a right click menu should have a way to activate the menu with a keyboard. Drag and drop to add an element to a list should have an alternative way to add the element to a list, such as a keyboard shortcut or right click menu item. 
 
 ## Other Points for Consideration
 
