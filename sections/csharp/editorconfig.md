@@ -939,3 +939,11 @@ resharper_arrange_method_or_operator_body_highlighting = hint
 ```
 
 Whether a method should use an expression body is subjective.
+
+## [NUnit Analyzers](https://github.com/nunit/nunit.analyzers)
+
+```editorconfig
+dotnet_diagnostic.NUnit2045.severity = suggestion
+```
+
+`Assert.Multiple` is awkward and not always correct.
