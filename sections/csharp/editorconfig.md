@@ -299,6 +299,15 @@ resharper_convert_to_primary_constructor_highlighting = hint
 
 Primary constructors are not always appropriate.
 
+```editorconfig
+dotnet_diagnostic.IDE0300.severity = suggestion
+dotnet_diagnostic.IDE0301.severity = suggestion
+dotnet_diagnostic.IDE0305.severity = suggestion
+dotnet_diagnostic.IDE0306.severity = suggestion
+```
+
+Collection expressions are preferred, but not required.
+
 ## [Style: Formatting Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/ide0055)
 
 ```editorconfig
