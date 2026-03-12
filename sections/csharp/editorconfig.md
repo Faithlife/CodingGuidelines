@@ -308,6 +308,12 @@ dotnet_diagnostic.IDE0306.severity = suggestion
 
 Collection expressions are preferred, but not required.
 
+```editorconfig
+dotnet_diagnostic.IDE0370.severity = suggestion
+```
+
+As of this writing, detection of unnecessary nullable warning suppressions using the null-forgiving operator (!) is problematic for multitargeted projects.
+
 ## [Style: Formatting Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/ide0055)
 
 ```editorconfig
@@ -730,6 +736,7 @@ dotnet_diagnostic.CA1826.severity = suggestion
 
 ```editorconfig
 dotnet_diagnostic.CA1848.severity = suggestion
+dotnet_diagnostic.CA1873.severity = suggestion
 ```
 
 The `LoggerMessage` pattern is overkill for most projects.

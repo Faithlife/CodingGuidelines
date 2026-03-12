@@ -1,4 +1,4 @@
-[*.cs]
+[*.{cs,cshtml,razor}]
 indent_size = tab
 indent_style = tab
 tab_width = 4
@@ -101,6 +101,7 @@ dotnet_diagnostic.CA1819.severity = suggestion
 dotnet_diagnostic.CA1822.severity = suggestion
 dotnet_diagnostic.CA1826.severity = suggestion
 dotnet_diagnostic.CA1848.severity = suggestion
+dotnet_diagnostic.CA1873.severity = suggestion
 dotnet_diagnostic.CA2000.severity = none
 dotnet_diagnostic.CA2227.severity = none
 dotnet_diagnostic.CA2234.severity = none
@@ -187,6 +188,7 @@ dotnet_diagnostic.IDE0300.severity = suggestion
 dotnet_diagnostic.IDE0301.severity = suggestion
 dotnet_diagnostic.IDE0305.severity = suggestion
 dotnet_diagnostic.IDE0306.severity = suggestion
+dotnet_diagnostic.IDE0370.severity = suggestion
 dotnet_diagnostic.IDE1005.severity = suggestion
 dotnet_diagnostic.NUnit2045.severity = suggestion
 dotnet_diagnostic.SA0001.severity = none
