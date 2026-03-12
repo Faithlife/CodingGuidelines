@@ -5,7 +5,7 @@ This document describes the standard `.editorconfig` settings for C# files, whic
 The standard settings for `charset`, `end_of_line`, `insert_final_newline`, and `trim_trailing_whitespace` should be inherited from [the `[*]` section](../editorconfig.md).
 
 ```editorconfig
-[*.cs]
+[*.{cs,cshtml,razor}]
 indent_size = tab
 indent_style = tab
 tab_width = 4
