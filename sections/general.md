@@ -8,12 +8,9 @@
 
 More important than universal style guidelines is a *consistent* coding style within a source code file or project. That is, if you break any of these style rules, at least be consistent about it.
 
-
 ## Write Good Code
 
-What makes good code good? I’m glad you asked. A nice little article by the late [Paul DiLascia](http://en.wikipedia.org/wiki/Paul_Dilascia) sums it up nicely. Read it at:
-
-http://msdn.microsoft.com/en-us/magazine/cc163962.aspx
+What makes good code good? I’m glad you asked. A nice little article by the late [Paul DiLascia](http://en.wikipedia.org/wiki/Paul_Dilascia) sums it up nicely. Read it at [learn.microsoft.com](https://learn.microsoft.com/en-us/archive/msdn-magazine/2004/july/%7B-end-bracket-%7D-what-makes-good-code-good).
 
 In short, “all good programming exhibits the same time-honored qualities: **simplicity**, **readability**, **modularity**, **layering**, **design**, **efficiency**, **elegance**, and **clarity**.” And the occasional clever hack...
 
@@ -33,13 +30,11 @@ In short, “all good programming exhibits the same time-honored qualities: **si
 
 — Paul DiLascia
 
-
 ### Write Readable Code
 
 **Readability** means what it says: that others can read your code. Readability means you bother to write comments, to follow conventions, and pause to name your variables wisely. Like choosing “taxrate” instead of “tr”.
 
 — Paul DiLascia
-
 
 ### Write Modular Code
 
@@ -49,7 +44,6 @@ In short, “all good programming exhibits the same time-honored qualities: **si
 
 Note: A good guideline to remember here is the object-oriented design practice to “favor composition over inheritance.”
 
-
 ### Write Layered Code
 
 **Layering** means that internally, your program resembles a layer cake. The app sits on the framework sits on the OS sits on the hardware. Even within your app, you need layers, like file-document-view-frame. Higher layers call ones below, which raise events back up. (Calls go down; events go up.) Lower layers should never know what higher ones are up to. The essence of an event/callback is to provide blind upward notification. If your doc calls the frame directly, something stinks. Modules and layers are defined by APIs, which delineate their boundaries. Thus, design is critical.
@@ -57,7 +51,6 @@ Note: A good guideline to remember here is the object-oriented design practice t
 — Paul DiLascia
 
 [Jeffrey Pallermo](http://jeffreypalermo.com/) proposed a slightly different view on the traditional layered architecture called the [“onion” architecture](http://jeffreypalermo.com/blog/the-onion-architecture-part-1/). Instead of viewing an architecture like a wedding cake, view it like an onion, with core dependencies deeper inside and working outward to the more infrastructural dependencies such as data and file access, tests, and user interfaces. Jeffrey [presented the onion architecture](http://jeffreypalermo.com/blog/architecture-analysis-onion-architecture-webcast/) for the [International Association of Software Architects](http://www.iasahome.org/web/home/home) in 2010.
-
 
 ### Write Designed Code
 
@@ -71,13 +64,11 @@ Note: A good guideline to remember here is the object-oriented design practice t
 
 — Paul DiLascia
 
-
 ### Write Elegant Code
 
 **Elegance** is like beauty: hard to describe but easy to recognize. Elegance combines simplicity, efficiency, and brilliance, and produces a feeling of pride. Elegance is when you replace a procedure with a table, or realize that you can use recursion—which is almost always elegant.
 
 — Paul DiLascia
-
 
 ### Write Clear Code
 
@@ -87,13 +78,11 @@ Clarity of code. Clarity of design. Clarity of purpose. You must understand—re
 
 — Paul DiLascia
 
-
 ### Use Clever Hacks Sparingly
 
 There’s so much I’ve left out, but there’s one more thing I hesitate to add. Use it sparingly and only in desperation: the clever hack. The clever hack is when you sacrifice your principles to expedience. When you hardcode some condition or make a call up the layer cake—or commit some other embarrassment—because it works and there’s no time to do it right. But remember: it must be clever! It’s the cleverness that redeems the hack and gives it a kind of perverse elegance. And if the hack doesn’t work, don’t blame me! Happy programming!
 
 — Paul DiLascia
-
 
 ## Remove Unnecessary Dependencies
 
