@@ -27,17 +27,6 @@ In short, “all good programming exhibits the same time-honored qualities: **si
 * [Write Clear Code](#write-clear-code)
 * [Use Clever Hacks Sparingly](#use-clever-hacks-sparingly)
 
-[“Uncle” Bob Martin](http://butunclebob.com/), author of [Clean Code](http://www.amazon.com/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882/) and [Agile Principles, Patterns, and Practices in C#](http://www.amazon.com/Agile-Principles-Patterns-Practices-C/dp/0131857258/), recommends writing [SOLID](http://www.lostechies.com/blogs/chad_myers/archive/2008/03/07/pablo-s-topic-of-the-month-march-solid-principles.aspx) code:
-
-* **S**ingle Responsibility Principle— [PDF](https://drive.google.com/file/d/0ByOwmqah_nuGNHEtcU5OekdDMkk/view)
-* **O**pen/Closed Principle— [PDF](https://drive.google.com/file/d/0BwhCYaYDn8EgN2M5MTkwM2EtNWFkZC00ZTI3LWFjZTUtNTFhZGZiYmUzODc1/view)
-* **L**iskov Substitution Principle— [PDF](https://drive.google.com/file/d/0BwhCYaYDn8EgNzAzZjA5ZmItNjU3NS00MzQ5LTkwYjMtMDJhNDU5ZTM0MTlh/view)
-* **I**nterface Segregation Principle— [PDF](https://drive.google.com/file/d/0BwhCYaYDn8EgOTViYjJhYzMtMzYxMC00MzFjLWJjMzYtOGJiMDc5N2JkYmJi/view)
-* **D**ependency Injection Principle— [PDF](https://drive.google.com/file/d/0BwhCYaYDn8EgMjdlMWIzNGUtZTQ0NC00ZjQ5LTkwYzQtZjRhMDRlNTQ3ZGMz/view)
-
-See also [Dimecast SOLID videos](https://www.youtube.com/playlist?list=PLbJwoU-LyMclDU2ZFgwdVfu24XwKkP4g4).
-
-
 ### Write Simple Code
 
 **Simplicity** means you don’t do in ten lines what you can do in five. It means you make extra effort to be concise, but not to the point of obfuscation. It means you abhor open coding and functions that span pages. Simplicity—of organization, implementation, design—makes your code more reliable and bug free. There’s less to go wrong.
