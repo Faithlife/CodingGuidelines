@@ -4,5 +4,5 @@ This convention ensures that the repository has a `global.json` that uses the .N
 
 ```yaml
 conventions:
-- path: Faithlife/CodingConventions/dotnet-sdk10
+- path: Faithlife/CodingConventions/conventions/dotnet-sdk10
 ```
