@@ -7,44 +7,34 @@ function Assert-ConformingGlobalJson {
 		[string] $Path
 	)
 
-	$invalidSdkVersionMessage = 'global.json must contain a parseable sdk.version that uses the .NET 10 SDK or later.'
-
 	if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
-		throw 'Repository must have a global.json that uses the .NET 10 SDK or later.'
+		return $false
 	}
 
 	try {
 		$sdkVersion = (Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json -AsHashtable).sdk.version
 	}
 	catch {
-		throw $invalidSdkVersionMessage
+		return $false
 	}
 
 	if ($sdkVersion -isnot [string]) {
-		throw $invalidSdkVersionMessage
+		return $false
 	}
 
 	$versionMatch = [System.Text.RegularExpressions.Regex]::Match($sdkVersion, '^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)')
 
 	if (-not $versionMatch.Success) {
-		throw $invalidSdkVersionMessage
+		return $false
 	}
 
-	if ([int] $versionMatch.Groups['major'].Value -lt 10) {
-		throw 'global.json must use the .NET 10 SDK or later.'
-	}
-
-	return
+	return [int] $versionMatch.Groups['major'].Value -ge 10
 }
 
 $globalJsonPath = Join-Path -Path (Get-Location) -ChildPath 'global.json'
 
-try {
-	Assert-ConformingGlobalJson -Path $globalJsonPath
+if (Assert-ConformingGlobalJson -Path $globalJsonPath) {
 	return
-}
-catch {
-	Write-Host $_.Exception.Message
 }
 
 $copilotInstructions = @"
@@ -73,8 +63,11 @@ If you make changes, build the code again and keep fixing issues until it builds
 
 Get-Command -Name copilot -ErrorAction Stop | Out-Null
 
+Write-Host 'global.json does not conform; starting Copilot to update it.'
 $copilotInstructions | & copilot --no-ask-user --allow-all-tools --add-dir (Get-Location).Path
 
-Assert-ConformingGlobalJson -Path $globalJsonPath
+if (-not (Assert-ConformingGlobalJson -Path $globalJsonPath)) {
+	throw 'Copilot failed to update global.json to the required .NET SDK configuration.'
+}
 
 return
