@@ -64,7 +64,7 @@ If you make changes, build the code again and keep fixing issues until it builds
 Get-Command -Name copilot -ErrorAction Stop | Out-Null
 
 Write-Host 'global.json does not conform; starting Copilot to update it.'
-$copilotInstructions | & copilot --no-ask-user --allow-all-tools --add-dir (Get-Location).Path
+$copilotInstructions | & copilot --no-ask-user --allow-all-tools --allow-all-paths --model auto
 
 if (-not (Assert-ConformingGlobalJson -Path $globalJsonPath)) {
 	throw 'Copilot failed to update global.json to the required .NET SDK configuration.'
