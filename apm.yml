@@ -1,0 +1,9 @@
+name: CodingGuidelines
+version: 1.0.0
+description: APM project for CodingGuidelines
+author: Ed Ball
+dependencies:
+  apm:
+  - Faithlife/RepoConventions/skills/create-repo-conventions
+  mcp: []
+scripts: {}

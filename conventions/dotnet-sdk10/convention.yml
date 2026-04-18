@@ -1,0 +1,4 @@
+conventions:
+- path: ../dotnet-sdk
+  settings:
+    version: 10
