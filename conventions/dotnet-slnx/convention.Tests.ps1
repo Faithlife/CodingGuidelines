@@ -17,7 +17,7 @@ function Invoke-DotnetSlnxConvention {
 
 	Push-Location $TestDirectory
 	try {
-		& $conventionScriptPath
+		return @(& $conventionScriptPath 6>&1)
 	}
 	finally {
 		Pop-Location
@@ -58,13 +58,17 @@ Describe 'dotnet-slnx convention' {
 			Set-SolutionFileContent -Path $solutionPath
 			Set-Content -LiteralPath $dotSettingsPath -Value 'dotsettings' -Encoding utf8NoBOM
 
-			Invoke-DotnetSlnxConvention -TestDirectory $testDirectory
+			$output = Invoke-DotnetSlnxConvention -TestDirectory $testDirectory
 
 			(Test-Path -LiteralPath $solutionPath) | Should Be $false
 			(Test-Path -LiteralPath $slnxPath) | Should Be $true
 			(Test-Path -LiteralPath $dotSettingsPath) | Should Be $false
 			(Test-Path -LiteralPath $slnxDotSettingsPath) | Should Be $true
 			((Get-Content -LiteralPath $slnxDotSettingsPath -Raw).TrimEnd("`r", "`n")) | Should Be 'dotsettings'
+			$output.Count | Should Be 3
+			$output[0].ToString() | Should Be "Migrating solution '$solutionPath' to '$slnxPath'."
+			$output[1].ToString() | Should Be "Removing migrated solution file '$solutionPath'."
+			$output[2].ToString() | Should Be "Renaming '$dotSettingsPath' to '$slnxDotSettingsPath'."
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

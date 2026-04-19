@@ -8,6 +8,7 @@ foreach ($solutionFile in $solutionFiles) {
 	$slnPath = $solutionFile.FullName
 	$slnxPath = [System.IO.Path]::ChangeExtension($slnPath, '.slnx')
 
+	Write-Host "Migrating solution '$slnPath' to '$slnxPath'."
 	& dotnet sln $slnPath migrate | Out-Null
 
 	if ($LASTEXITCODE -ne 0) {
@@ -18,6 +19,7 @@ foreach ($solutionFile in $solutionFiles) {
 		throw "Expected migrated solution '$slnxPath' was not created."
 	}
 
+	Write-Host "Removing migrated solution file '$slnPath'."
 	Remove-Item -LiteralPath $slnPath
 }
 
@@ -37,5 +39,6 @@ foreach ($dotSettingsFile in $dotSettingsFiles) {
 		throw "Cannot rename '$($dotSettingsFile.FullName)' because '$slnxDotSettingsPath' already exists."
 	}
 
+	Write-Host "Renaming '$($dotSettingsFile.FullName)' to '$slnxDotSettingsPath'."
 	Move-Item -LiteralPath $dotSettingsFile.FullName -Destination $slnxDotSettingsPath
 }
