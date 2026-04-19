@@ -1,0 +1,118 @@
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+
+$conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
+
+function New-TestDirectory {
+	$path = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString('N'))
+	[System.IO.Directory]::CreateDirectory($path) | Out-Null
+	return $path
+}
+
+function Invoke-DotnetSlnxConvention {
+	param(
+		[Parameter(Mandatory = $true)]
+		[string] $TestDirectory
+	)
+
+	Push-Location $TestDirectory
+	try {
+		& $conventionScriptPath
+	}
+	finally {
+		Pop-Location
+	}
+}
+
+function Set-SolutionFileContent {
+	param(
+		[Parameter(Mandatory = $true)]
+		[string] $Path
+	)
+
+	$solutionContent = @"
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Global
+    GlobalSection(SolutionProperties) = preSolution
+        HideSolutionNode = FALSE
+    EndGlobalSection
+EndGlobal
+"@
+
+	Set-Content -LiteralPath $Path -Value $solutionContent -Encoding utf8NoBOM
+}
+
+Describe 'dotnet-slnx convention' {
+	It 'migrates solution files and renames matching DotSettings files' {
+		$testDirectory = New-TestDirectory
+
+		try {
+			$solutionPath = Join-Path $testDirectory 'Test.sln'
+			$slnxPath = Join-Path $testDirectory 'Test.slnx'
+			$dotSettingsPath = Join-Path $testDirectory 'Test.sln.DotSettings'
+			$slnxDotSettingsPath = Join-Path $testDirectory 'Test.slnx.DotSettings'
+
+			Set-SolutionFileContent -Path $solutionPath
+			Set-Content -LiteralPath $dotSettingsPath -Value 'dotsettings' -Encoding utf8NoBOM
+
+			Invoke-DotnetSlnxConvention -TestDirectory $testDirectory
+
+			(Test-Path -LiteralPath $solutionPath) | Should Be $false
+			(Test-Path -LiteralPath $slnxPath) | Should Be $true
+			(Test-Path -LiteralPath $dotSettingsPath) | Should Be $false
+			(Test-Path -LiteralPath $slnxDotSettingsPath) | Should Be $true
+			((Get-Content -LiteralPath $slnxDotSettingsPath -Raw).TrimEnd("`r", "`n")) | Should Be 'dotsettings'
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'leaves DotSettings files in place when the corresponding slnx file does not exist' {
+		$testDirectory = New-TestDirectory
+
+		try {
+			$dotSettingsPath = Join-Path $testDirectory 'Orphan.sln.DotSettings'
+			Set-Content -LiteralPath $dotSettingsPath -Value 'orphan' -Encoding utf8NoBOM
+
+			Invoke-DotnetSlnxConvention -TestDirectory $testDirectory
+
+			(Test-Path -LiteralPath $dotSettingsPath) | Should Be $true
+			((Get-Content -LiteralPath $dotSettingsPath -Raw).TrimEnd("`r", "`n")) | Should Be 'orphan'
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'throws when the destination DotSettings file already exists' {
+		$testDirectory = New-TestDirectory
+
+		try {
+			$slnxPath = Join-Path $testDirectory 'Conflict.slnx'
+			$dotSettingsPath = Join-Path $testDirectory 'Conflict.sln.DotSettings'
+			$slnxDotSettingsPath = Join-Path $testDirectory 'Conflict.slnx.DotSettings'
+
+			Set-Content -LiteralPath $slnxPath -Value '<Solution />' -Encoding utf8NoBOM
+			Set-Content -LiteralPath $dotSettingsPath -Value 'source' -Encoding utf8NoBOM
+			Set-Content -LiteralPath $slnxDotSettingsPath -Value 'destination' -Encoding utf8NoBOM
+
+			$message = $null
+
+			try {
+				Invoke-DotnetSlnxConvention -TestDirectory $testDirectory
+			}
+			catch {
+				$message = $_.Exception.Message
+			}
+
+			$message | Should Match "Cannot rename '.+Conflict\.sln\.DotSettings' because '.+Conflict\.slnx\.DotSettings' already exists\."
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+}
