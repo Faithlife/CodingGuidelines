@@ -54,9 +54,10 @@ conventions:
 ## Writing `convention.ps1`
 
 - The script runs with `pwsh` from the root of the target Git repository, not from the convention directory.
-- The script receives one argument: the path to a JSON file.
-- The JSON payload contains a single `settings` property.
-- Read settings from that payload file; do not expect additional arguments or special environment state.
+- The script receives one argument: the path to a JSON input file.
+- Use `$args[0]` to access the path to the JSON input file, since future versions may pass additional arguments.
+- The JSON input file contains a single `settings` property.
+- Read the JSON input file only if needed.
 - Make the script idempotent. A second successful run should produce no further changes.
 - Exit with code zero when the repository is already compliant or after successfully making it compliant; use a non-zero exit code only when the convention genuinely cannot complete.
 - Prefer deterministic file writes and stable ordering so reruns do not churn diffs.
@@ -66,20 +67,17 @@ conventions:
 Minimal pattern:
 
 ```powershell
-param(
-  [Parameter(Mandatory = $true)]
-  [string] $PayloadPath
-)
-
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
-$payload = Get-Content -Raw $PayloadPath | ConvertFrom-Json
-$settings = $payload.settings
+$conventionInput = Get-Content -Raw $args[0] | ConvertFrom-Json
+$settings = $conventionInput.settings
 
 # Inspect the target repository and apply only the required changes.
 ```
+
+Don't bother reading the input file if your convention doesn't have settings, but keep in mind that settings may be added later and the convention should continue to work.
 
 ## Behavioral Constraints
 

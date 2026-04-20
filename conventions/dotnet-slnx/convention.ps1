@@ -1,6 +1,11 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
+# Copilot uses UTF-8 (no BOM)
+[System.Text.Encoding] $utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 $solutionFiles = @(Get-ChildItem -Path . -Filter '*.sln' -File -Recurse | Sort-Object -Property FullName)
 

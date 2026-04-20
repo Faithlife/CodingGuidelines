@@ -1,8 +1,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
-function Test-ConformingGlobalJson {
+function TestConformingGlobalJson {
 	param(
 		[string] $GlobalJsonPath,
 		[int] $MajorVersion
@@ -69,7 +68,7 @@ if ($majorVersion -le 0) {
 
 $globalJsonPath = Join-Path -Path (Get-Location) -ChildPath 'global.json'
 
-if (Test-ConformingGlobalJson -GlobalJsonPath $globalJsonPath -MajorVersion $majorVersion) {
+if (TestConformingGlobalJson -GlobalJsonPath $globalJsonPath -MajorVersion $majorVersion) {
 	return
 }
 
@@ -113,6 +112,6 @@ finally {
 	Remove-Item -LiteralPath $copilotConfigDirectory -Recurse -Force
 }
 
-if (-not (Test-ConformingGlobalJson -GlobalJsonPath $globalJsonPath -MajorVersion $majorVersion)) {
+if (-not (TestConformingGlobalJson -GlobalJsonPath $globalJsonPath -MajorVersion $majorVersion)) {
 	throw 'Copilot failed to update global.json to the required .NET SDK configuration.'
 }

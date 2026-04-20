@@ -1,19 +1,19 @@
 lockfile_version: '1'
-generated_at: '2026-04-18T04:14:36.007446+00:00'
+generated_at: '2026-04-20T17:13:14.857960+00:00'
 apm_version: 0.8.11
 dependencies:
 - repo_url: Faithlife/RepoConventions
   host: github.com
-  resolved_commit: 7add0cd781fe9a6eead954be7cb5783de9c68956
+  resolved_commit: 070c24ffcb708e7a7402afc881071073ee824470
   virtual_path: skills/create-repo-conventions
   is_virtual: true
   package_type: claude_skill
   deployed_files:
   - .github/skills/create-repo-conventions
-  content_hash: sha256:7e9623f4f6071d0e5cac7db66c22aa55be41e5cf5e5284c9348ef21b234c11f2
+  content_hash: sha256:7e63ebfa7e65bea405c04479eb44bad305640ea613717254c62ce43532a18a6b
 - repo_url: Faithlife/RepoConventions
   host: github.com
-  resolved_commit: 7add0cd781fe9a6eead954be7cb5783de9c68956
+  resolved_commit: 070c24ffcb708e7a7402afc881071073ee824470
   virtual_path: skills/use-repo-conventions
   is_virtual: true
   package_type: claude_skill

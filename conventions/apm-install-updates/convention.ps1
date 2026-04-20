@@ -1,6 +1,5 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 Get-Command -Name apm -ErrorAction Stop | Out-Null
 

@@ -3,7 +3,7 @@ $ErrorActionPreference = 'Stop'
 
 $conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
 
-function New-TestDirectory {
+function NewTestDirectory {
 	$path = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString('N'))
 	[System.IO.Directory]::CreateDirectory($path) | Out-Null
 	return $path
@@ -11,7 +11,7 @@ function New-TestDirectory {
 
 Describe 'apm-install-updates convention' {
 	It 'ignores the input path and runs apm install --update' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = NewTestDirectory
 		$toolDirectory = Join-Path $testDirectory 'tools'
 		$argumentsPath = Join-Path $testDirectory 'apm-arguments.txt'
 		$apmCommandPath = Join-Path $toolDirectory 'apm.cmd'

@@ -3,13 +3,13 @@ $ErrorActionPreference = 'Stop'
 
 $conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
 
-function New-TestDirectory {
+function NewTestDirectory {
 	$path = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString('N'))
 	[System.IO.Directory]::CreateDirectory($path) | Out-Null
 	return $path
 }
 
-function Invoke-DotnetSdkConvention {
+function InvokeDotnetSdkConvention {
 	param(
 		[Parameter(Mandatory = $true)]
 		[string] $InputJson,
@@ -17,7 +17,7 @@ function Invoke-DotnetSdkConvention {
 		[string] $SdkVersion = '10.0.100'
 	)
 
-	$testDirectory = New-TestDirectory
+	$testDirectory = NewTestDirectory
 
 	try {
 		$inputPath = Join-Path $testDirectory 'input.json'
@@ -51,30 +51,30 @@ Describe 'dotnet-sdk convention' {
 	It 'accepts an integer major version when global.json already conforms' {
 		$inputJson = '{"settings":{"version":10}}'
 
-		{ Invoke-DotnetSdkConvention -InputJson $inputJson -SdkVersion '10.0.100' } | Should Not Throw
+		{ InvokeDotnetSdkConvention -InputJson $inputJson -SdkVersion '10.0.100' } | Should Not Throw
 	}
 
 	It 'accepts a string major version when global.json already conforms' {
 		$inputJson = '{"settings":{"version":"10"}}'
 
-		{ Invoke-DotnetSdkConvention -InputJson $inputJson -SdkVersion '11.0.100' } | Should Not Throw
+		{ InvokeDotnetSdkConvention -InputJson $inputJson -SdkVersion '11.0.100' } | Should Not Throw
 	}
 
 	It 'rejects a missing version setting' {
 		$inputJson = '{"settings":{}}'
 
-		{ Invoke-DotnetSdkConvention -InputJson $inputJson } | Should Throw "The 'version' setting is required."
+		{ InvokeDotnetSdkConvention -InputJson $inputJson } | Should Throw "The 'version' setting is required."
 	}
 
 	It 'rejects a non-integer version string' {
 		$inputJson = '{"settings":{"version":"10.0"}}'
 
-		{ Invoke-DotnetSdkConvention -InputJson $inputJson } | Should Throw "The 'version' setting must be an integer or a string that parses to an integer."
+		{ InvokeDotnetSdkConvention -InputJson $inputJson } | Should Throw "The 'version' setting must be an integer or a string that parses to an integer."
 	}
 
 	It 'rejects a non-positive integer version' {
 		$inputJson = '{"settings":{"version":0}}'
 
-		{ Invoke-DotnetSdkConvention -InputJson $inputJson } | Should Throw "The 'version' setting must be a positive integer."
+		{ InvokeDotnetSdkConvention -InputJson $inputJson } | Should Throw "The 'version' setting must be a positive integer."
 	}
 }

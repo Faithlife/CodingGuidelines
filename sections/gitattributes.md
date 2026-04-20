@@ -6,7 +6,7 @@ Using a `.gitattributes` file effectively overrides the global `core.autocrlf` g
 
 This should be the first line of the `.gitattributes` file:
 
-```
+```text
 * text=auto eol=lf
 ```
 
@@ -35,3 +35,5 @@ To convert a repository, follow these steps:
   * `git rm --cached -r . && git reset --hard`
 * Tell `git blame` to ignore the commit IDs in the file:
   * `git config blame.ignoreRevsFile .git-blame-ignore-revs`
+
+Repository convention: [gitattributes-lf](../../conventions/gitattributes-lf/)

@@ -3,13 +3,13 @@ $ErrorActionPreference = 'Stop'
 
 $conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
 
-function New-TestDirectory {
+function NewTestDirectory {
 	$path = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString('N'))
 	[System.IO.Directory]::CreateDirectory($path) | Out-Null
 	return $path
 }
 
-function Invoke-DotnetSlnxConvention {
+function InvokeDotnetSlnxConvention {
 	param(
 		[Parameter(Mandatory = $true)]
 		[string] $TestDirectory
@@ -24,7 +24,7 @@ function Invoke-DotnetSlnxConvention {
 	}
 }
 
-function Set-SolutionFileContent {
+function SetSolutionFileContent {
 	param(
 		[Parameter(Mandatory = $true)]
 		[string] $Path
@@ -47,7 +47,7 @@ EndGlobal
 
 Describe 'dotnet-slnx convention' {
 	It 'migrates solution files and renames matching DotSettings files' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = NewTestDirectory
 
 		try {
 			$solutionPath = Join-Path $testDirectory 'Test.sln'
@@ -55,10 +55,10 @@ Describe 'dotnet-slnx convention' {
 			$dotSettingsPath = Join-Path $testDirectory 'Test.sln.DotSettings'
 			$slnxDotSettingsPath = Join-Path $testDirectory 'Test.slnx.DotSettings'
 
-			Set-SolutionFileContent -Path $solutionPath
+			SetSolutionFileContent -Path $solutionPath
 			Set-Content -LiteralPath $dotSettingsPath -Value 'dotsettings' -Encoding utf8NoBOM
 
-			$output = Invoke-DotnetSlnxConvention -TestDirectory $testDirectory
+			$output = InvokeDotnetSlnxConvention -TestDirectory $testDirectory
 
 			(Test-Path -LiteralPath $solutionPath) | Should Be $false
 			(Test-Path -LiteralPath $slnxPath) | Should Be $true
@@ -76,13 +76,13 @@ Describe 'dotnet-slnx convention' {
 	}
 
 	It 'leaves DotSettings files in place when the corresponding slnx file does not exist' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = NewTestDirectory
 
 		try {
 			$dotSettingsPath = Join-Path $testDirectory 'Orphan.sln.DotSettings'
 			Set-Content -LiteralPath $dotSettingsPath -Value 'orphan' -Encoding utf8NoBOM
 
-			Invoke-DotnetSlnxConvention -TestDirectory $testDirectory
+			InvokeDotnetSlnxConvention -TestDirectory $testDirectory
 
 			(Test-Path -LiteralPath $dotSettingsPath) | Should Be $true
 			((Get-Content -LiteralPath $dotSettingsPath -Raw).TrimEnd("`r", "`n")) | Should Be 'orphan'
@@ -93,7 +93,7 @@ Describe 'dotnet-slnx convention' {
 	}
 
 	It 'throws when the destination DotSettings file already exists' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = NewTestDirectory
 
 		try {
 			$slnxPath = Join-Path $testDirectory 'Conflict.slnx'
@@ -107,7 +107,7 @@ Describe 'dotnet-slnx convention' {
 			$message = $null
 
 			try {
-				Invoke-DotnetSlnxConvention -TestDirectory $testDirectory
+				InvokeDotnetSlnxConvention -TestDirectory $testDirectory
 			}
 			catch {
 				$message = $_.Exception.Message
