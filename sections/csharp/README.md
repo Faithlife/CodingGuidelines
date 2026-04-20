@@ -1,17 +1,10 @@
 
 # C# Coding Guidelines
 
-## Use .editorconfig
-
-See [.editorconfig for C#](editorconfig.md).
-
-## Use .gitattributes
-
-See [.gitattributes for C#](gitattributes.md).
-
-## Use NoWarn sparingly
-
-See [NoWarn usage](nowarn.md).
+* [.editorconfig for C#](./editorconfig.md)
+* [.gitattributes for C#](./gitattributes.md)
+* [global.json](./globaljson.md)
+* [NoWarn usage](./nowarn.md)
 
 ## Only Override ToString for Debugging Purposes
 
