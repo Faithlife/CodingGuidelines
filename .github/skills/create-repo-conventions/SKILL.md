@@ -23,7 +23,7 @@ Produce published conventions with a stable path, documented settings, and idemp
 - If both files exist, repo-conventions applies `convention.yml` first and then executes `convention.ps1`.
 - Composite conventions are for composing other conventions.
 - Executable conventions are for inspecting repository state and rewriting files.
-- Convention references may carry `settings`, but nested composite settings propagation is not currently implemented.
+- Convention references may carry `settings`, including propagated child settings resolved from parent settings in composite conventions.
 
 ## Authoring Workflow
 
@@ -40,6 +40,7 @@ Produce published conventions with a stable path, documented settings, and idemp
 - Keep entries in the intended application order.
 - Use explicit local relative paths for conventions published from the same repository.
 - Keep settings shallow and JSON-serializable.
+- When propagating parent settings into child settings, use the supported `${{ settings.foo.bar }}` syntax and keep the behavior within the documented composite-settings propagation rules.
 
 Example:
 
@@ -63,6 +64,7 @@ conventions:
 - Prefer deterministic file writes and stable ordering so reruns do not churn diffs.
 - Avoid interactive prompts, editor launches, or hidden machine-local dependencies.
 - Emit focused output that explains what the convention changed or why it failed.
+- Convention scripts are encouraged to create their own informative commits when the convention naturally consists of multiple meaningful steps or when the resulting history matters for follow-up tasks such as blame-ignore files.
 
 Minimal pattern:
 
@@ -81,7 +83,7 @@ Don't bother reading the input file if your convention doesn't have settings, bu
 
 ## Behavioral Constraints
 
-- On success, repo-conventions will auto-commit tracked or untracked changes left behind by the executable convention.
+- On success, if the script does not create commits itself, repo-conventions will auto-commit tracked or untracked changes left behind by the executable convention.
 - On failure, repo-conventions will hard-reset the target repository back to the pre-convention HEAD.
 - Do not create formatting-only churn unless formatting is the actual purpose of the convention.
 
