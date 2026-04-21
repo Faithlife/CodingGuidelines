@@ -1,0 +1,5 @@
+conventions:
+- path: ../line-based-config
+  settings:
+    path: .gitattributes
+    entries: ${{ settings.entries }}
