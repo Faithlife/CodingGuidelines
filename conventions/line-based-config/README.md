@@ -1,13 +1,13 @@
 # line-based-config
 
-This [convention](https://github.com/Faithlife/RepoConventions) appends configured lines to a text file without duplicating lines that are already present.
+This [convention](https://github.com/Faithlife/RepoConventions) appends lines to a text file without duplicating lines that are already present.
 
 Settings:
 
-- `path`: Target file path, relative to the root of the target repository. A leading slash is optional.
-- `entries`: Array of lines to append. Each entry must be a single line and must not contain newline characters.
+- `path`: Target file path, relative to the root of the target repository.
+- `entries`: Array of lines to append when missing.
 
-If the target file does not exist, the convention creates it. If every configured entry is already present as an exact line match, the convention leaves the file unchanged.
+If the target file does not exist, the convention creates it. If every configured entry is already present, the convention leaves the file unchanged.
 
 ```yaml
 conventions:

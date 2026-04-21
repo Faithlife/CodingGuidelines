@@ -1,10 +1,10 @@
 # prettierignore
 
-This [convention](https://github.com/Faithlife/RepoConventions) appends configured lines to the repository's `.prettierignore` by applying [`line-based-config`](../line-based-config/).
+This [convention](https://github.com/Faithlife/RepoConventions) appends lines to the repository's `.prettierignore` when they are missing.
 
 Settings:
 
-- `entries`: Array of lines to append to `.prettierignore`. Each entry must be a single line and must not contain newline characters.
+- `entries`: Array of lines to append to `.prettierignore` when missing.
 
 ```yaml
 conventions:
