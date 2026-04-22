@@ -1,11 +1,10 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-# Copilot uses UTF-8 (no BOM)
-[System.Text.Encoding] $utf8 = [System.Text.UTF8Encoding]::new($false)
-[Console]::InputEncoding = $utf8
-[Console]::OutputEncoding = $utf8
-$OutputEncoding = $utf8
+$helpersPath = Join-Path $PSScriptRoot '..\scripts\Helpers.ps1'
+. $helpersPath
+
+Set-Utf8NoBomConsoleEncoding
 
 $requiredRule = '* text=auto eol=lf'
 $gitattributesPath = Join-Path -Path (Get-Location) -ChildPath '.gitattributes'
@@ -63,19 +62,6 @@ function ResetWorkingTreeAfterAttributeChange {
 	InvokeGit -Arguments @('reset', '--hard') -FailureMessage 'Failed to restore the working tree after renormalization.'
 }
 
-function WriteUtf8NoBomFile {
-	param(
-		[Parameter(Mandatory = $true)]
-		[string] $Path,
-
-		[Parameter(Mandatory = $true)]
-		[string] $Content
-	)
-
-	$utf8NoBom = [System.Text.UTF8Encoding]::new($false)
-	[System.IO.File]::WriteAllText($Path, $Content, $utf8NoBom)
-}
-
 function TestConformingGitattributes {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -113,8 +99,7 @@ When you are done, make sure `.gitattributes` exists and starts with `* text=aut
 "@
 
 	# Use an isolated Copilot config directory so the repair step does not depend on or mutate the user's setup.
-	$copilotConfigDirectory = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString('N'))
-	New-Item -ItemType Directory -Path $copilotConfigDirectory | Out-Null
+	$copilotConfigDirectory = New-TemporaryDirectory
 
 	try {
 		Write-Host ".gitattributes is not compliant; starting Copilot to update '$Path'."
@@ -133,7 +118,7 @@ function SetCompliantGitattributes {
 
 	if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
 		Write-Host "Creating '$Path' with LF normalization enabled."
-		WriteUtf8NoBomFile -Path $Path -Content ($requiredRule + "`n")
+		Write-Utf8NoBomFile -Path $Path -Content ($requiredRule + "`n")
 		return
 	}
 
@@ -184,7 +169,7 @@ if (-not ($ignoreRevsLines -contains $renormalizeCommitId)) {
 	$ignoreRevsLines += $renormalizeCommitId
 }
 
-WriteUtf8NoBomFile -Path $gitBlameIgnoreRevsPath -Content (($ignoreRevsLines -join "`n") + "`n")
+Write-Utf8NoBomFile -Path $gitBlameIgnoreRevsPath -Content (($ignoreRevsLines -join "`n") + "`n")
 InvokeGit -Arguments @('add', '.git-blame-ignore-revs') -FailureMessage "Failed to stage '$gitBlameIgnoreRevsPath'."
 $ignoreRevsCommitId = NewCommitFromStagedChanges -Message 'Ignore CRLF to LF for git blame.'
 

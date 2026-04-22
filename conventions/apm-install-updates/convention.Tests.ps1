@@ -2,16 +2,12 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
-
-function NewTestDirectory {
-	$path = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString('N'))
-	[System.IO.Directory]::CreateDirectory($path) | Out-Null
-	return $path
-}
+$testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
+. $testHelpersPath
 
 Describe 'apm-install-updates convention' {
 	It 'ignores the input path and runs apm install --update' {
-		$testDirectory = NewTestDirectory
+		$testDirectory = New-TestDirectory
 		$toolDirectory = Join-Path $testDirectory 'tools'
 		$argumentsPath = Join-Path $testDirectory 'apm-arguments.txt'
 		$apmCommandPath = Join-Path $toolDirectory 'apm.cmd'

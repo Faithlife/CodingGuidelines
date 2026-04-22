@@ -2,12 +2,8 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
-
-function NewTestDirectory {
-	$path = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString('N'))
-	[System.IO.Directory]::CreateDirectory($path) | Out-Null
-	return $path
-}
+$testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
+. $testHelpersPath
 
 function InvokeDotnetSlnxConvention {
 	param(
@@ -15,13 +11,7 @@ function InvokeDotnetSlnxConvention {
 		[string] $TestDirectory
 	)
 
-	Push-Location $TestDirectory
-	try {
-		return @(& $conventionScriptPath 6>&1)
-	}
-	finally {
-		Pop-Location
-	}
+	return Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $TestDirectory
 }
 
 function SetSolutionFileContent {
@@ -42,12 +32,12 @@ Global
 EndGlobal
 "@
 
-	Set-Content -LiteralPath $Path -Value $solutionContent -Encoding utf8NoBOM
+	Write-Utf8NoBomFile -Path $Path -Content $solutionContent
 }
 
 Describe 'dotnet-slnx convention' {
 	It 'migrates solution files and renames matching DotSettings files' {
-		$testDirectory = NewTestDirectory
+		$testDirectory = New-TestDirectory
 
 		try {
 			$solutionPath = Join-Path $testDirectory 'Test.sln'
@@ -76,11 +66,11 @@ Describe 'dotnet-slnx convention' {
 	}
 
 	It 'leaves DotSettings files in place when the corresponding slnx file does not exist' {
-		$testDirectory = NewTestDirectory
+		$testDirectory = New-TestDirectory
 
 		try {
 			$dotSettingsPath = Join-Path $testDirectory 'Orphan.sln.DotSettings'
-			Set-Content -LiteralPath $dotSettingsPath -Value 'orphan' -Encoding utf8NoBOM
+			Write-Utf8NoBomFile -Path $dotSettingsPath -Content 'orphan'
 
 			InvokeDotnetSlnxConvention -TestDirectory $testDirectory
 
@@ -93,16 +83,16 @@ Describe 'dotnet-slnx convention' {
 	}
 
 	It 'throws when the destination DotSettings file already exists' {
-		$testDirectory = NewTestDirectory
+		$testDirectory = New-TestDirectory
 
 		try {
 			$slnxPath = Join-Path $testDirectory 'Conflict.slnx'
 			$dotSettingsPath = Join-Path $testDirectory 'Conflict.sln.DotSettings'
 			$slnxDotSettingsPath = Join-Path $testDirectory 'Conflict.slnx.DotSettings'
 
-			Set-Content -LiteralPath $slnxPath -Value '<Solution />' -Encoding utf8NoBOM
-			Set-Content -LiteralPath $dotSettingsPath -Value 'source' -Encoding utf8NoBOM
-			Set-Content -LiteralPath $slnxDotSettingsPath -Value 'destination' -Encoding utf8NoBOM
+			Write-Utf8NoBomFile -Path $slnxPath -Content '<Solution />'
+			Write-Utf8NoBomFile -Path $dotSettingsPath -Content 'source'
+			Write-Utf8NoBomFile -Path $slnxDotSettingsPath -Content 'destination'
 
 			$message = $null
 

@@ -2,12 +2,8 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
-
-function NewTestDirectory {
-	$path = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString('N'))
-	[System.IO.Directory]::CreateDirectory($path) | Out-Null
-	return $path
-}
+$testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
+. $testHelpersPath
 
 function InvokeDotnetSdkConvention {
 	param(
@@ -17,11 +13,11 @@ function InvokeDotnetSdkConvention {
 		[string] $SdkVersion = '10.0.100'
 	)
 
-	$testDirectory = NewTestDirectory
+	$testDirectory = New-TestDirectory
+	$inputPath = $null
 
 	try {
-		$inputPath = Join-Path $testDirectory 'input.json'
-		Set-Content -LiteralPath $inputPath -Value $InputJson -Encoding utf8NoBOM
+		$inputPath = New-ConventionInputFile -InputJson $InputJson
 
 		if ($null -ne $SdkVersion) {
 			$globalJsonPath = Join-Path $testDirectory 'global.json'
@@ -31,18 +27,13 @@ function InvokeDotnetSdkConvention {
 					rollForward = 'latestFeature'
 				}
 			} | ConvertTo-Json -Depth 3
-			Set-Content -LiteralPath $globalJsonPath -Value $globalJson -Encoding utf8NoBOM
+			Write-Utf8NoBomFile -Path $globalJsonPath -Content $globalJson
 		}
 
-		Push-Location $testDirectory
-		try {
-			& $conventionScriptPath $inputPath
-		}
-		finally {
-			Pop-Location
-		}
+		Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath | Out-Null
 	}
 	finally {
+		Remove-Item -LiteralPath $inputPath -ErrorAction SilentlyContinue
 		Remove-Item -LiteralPath $testDirectory -Recurse -Force
 	}
 }

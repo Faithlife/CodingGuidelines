@@ -1,6 +1,9 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+$helpersPath = Join-Path $PSScriptRoot '..\scripts\Helpers.ps1'
+. $helpersPath
+
 function TestConformingGlobalJson {
 	param(
 		[string] $GlobalJsonPath,
@@ -36,8 +39,7 @@ if ($args.Count -eq 0) {
 }
 
 $inputPath = $args[0]
-$conventionInput = Get-Content -LiteralPath $inputPath -Raw | ConvertFrom-Json -AsHashtable
-$settings = $conventionInput.settings
+$settings = Read-ConventionSettings -InputPath $inputPath
 
 if ($null -eq $settings -or -not $settings.ContainsKey('version')) {
 	throw "The 'version' setting is required."
@@ -101,8 +103,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 Get-Command -Name copilot -ErrorAction Stop | Out-Null
 
 # use a temporary directory for Copilot config to avoid personal instructions
-$copilotConfigDirectory = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString('N'))
-New-Item -ItemType Directory -Path $copilotConfigDirectory | Out-Null
+$copilotConfigDirectory = New-TemporaryDirectory
 
 try {
 	Write-Host 'global.json does not conform; starting Copilot to update it.'
