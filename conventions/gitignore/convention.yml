@@ -1,5 +1,5 @@
 conventions:
-- path: ../line-based-config
+- path: ../config-lines
   settings:
     path: .gitignore
     entries: ${{ settings.entries }}

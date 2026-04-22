@@ -152,8 +152,8 @@ The block contents should be written exactly as provided, aside from normalizing
 
 ## Suggested Implementation Notes
 
-- Reuse the UTF-8 no BOM write pattern from [conventions/line-based-config/convention.ps1](../conventions/line-based-config/convention.ps1).
-- Reuse the existing line-ending detection approach from [conventions/line-based-config/convention.ps1](../conventions/line-based-config/convention.ps1).
+- Reuse the UTF-8 no BOM write pattern from [conventions/config-lines/convention.ps1](../conventions/config-lines/convention.ps1).
+- Reuse the existing line-ending detection approach from [conventions/config-lines/convention.ps1](../conventions/config-lines/convention.ps1).
 - Use a marker-based parser rather than line-by-line append logic.
 - Treat malformed or duplicated named blocks as errors.
 - Keep output focused, for example `Updated 'general-editorconfig' section in '.editorconfig'.`
