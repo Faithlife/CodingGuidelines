@@ -47,7 +47,7 @@ This should be an executable convention, not a composite one, because it needs t
 Recommended published path:
 
 ```text
-conventions/editorconfig-section
+conventions/editorconfig
 ```
 
 Expected files:
@@ -59,17 +59,13 @@ Expected files:
 ## Settings
 
 - `name`: required non-empty string. This identifies the managed block.
-- `text`: optional string containing the exact block contents.
-- `textFile`: optional string path to a file containing the block contents.
-
-Exactly one of `text` or `textFile` must be supplied.
+- `text`: required string containing the exact block contents.
 
 ### Validation Rules
 
 - `name` must not be blank.
 - `name` must not contain carriage returns or line feeds.
 - `text` may contain any content except the marker lines themselves.
-- `textFile` must resolve to a file relative to the convention definition directory.
 - If the target `.editorconfig` contains multiple blocks with the same `name`, the convention should fail instead of guessing.
 - If the opening marker exists without a matching `# END DO NOT EDIT`, the convention should fail instead of guessing.
 
@@ -81,7 +77,7 @@ Use YAML block scalars for short or medium sections:
 
 ```yaml
 conventions:
-- path: Faithlife/CodingGuidelines/conventions/editorconfig-section
+- path: Faithlife/CodingGuidelines/conventions/editorconfig
   settings:
     name: general-editorconfig
     text: |
@@ -93,41 +89,6 @@ conventions:
       insert_final_newline = true
       trim_trailing_whitespace = true
 ```
-
-### File-Backed Text
-
-For long sections, prefer a sibling file:
-
-```yaml
-conventions:
-- path: Faithlife/CodingGuidelines/conventions/editorconfig-section
-  settings:
-    name: csharp-editorconfig
-    textFile: csharp.editorconfig
-```
-
-Example convention directory:
-
-```text
-my-convention/
-  convention.yml
-  csharp.editorconfig
-```
-
-`textFile` should be resolved relative to the convention definition directory, not the target repository root. That keeps long editorconfig fragments close to the convention that owns them and avoids hard-coding repository-specific paths.
-
-## RepoConventions Support Needed
-
-Current convention settings in this repository only show `${{ settings.foo }}` propagation. There is no visible support for reading file content into a setting or for passing the convention directory to the script.
-
-To support `textFile` cleanly, RepoConventions should do one of these:
-
-1. Resolve `textFile` to raw text before serializing `settings` to the convention input JSON.
-2. Include the current convention directory in the convention input JSON so `convention.ps1` can resolve `textFile` itself.
-
-The first option is cleaner because it keeps the executable convention focused on `.editorconfig` rewriting instead of framework path resolution.
-
-If RepoConventions is not being extended yet, the first version of this convention should ship with `text` only and add `textFile` later.
 
 ## File Update Semantics
 
@@ -167,11 +128,8 @@ The block contents should be written exactly as provided, aside from normalizing
 - Fails on duplicate blocks for the same `name`.
 - Fails on an unterminated managed block.
 - Supports multi-line `text` input.
-- Supports `textFile` input once RepoConventions exposes convention-relative file resolution.
 - Is idempotent on a second run.
 
 ## Recommendation
 
-Start with a published executable convention named `editorconfig-section` using required `name` plus inline `text`.
-
-Add `textFile` only when RepoConventions can resolve convention-relative file content cleanly. That keeps the first implementation small while preserving the YAML shape needed for long editorconfig fragments.
+Publish an executable convention named `editorconfig` using required `name` plus inline `text`.
