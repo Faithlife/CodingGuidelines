@@ -5,7 +5,7 @@ $conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
 $testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
 . $testHelpersPath
 
-Describe 'apm-install-updates convention' {
+Describe 'apm-install convention' {
 	It 'ignores the input path and runs apm install --update' {
 		$testDirectory = New-TestDirectory
 		$toolDirectory = Join-Path $testDirectory 'tools'
