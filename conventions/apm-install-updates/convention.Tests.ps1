@@ -35,4 +35,70 @@ exit /b 0
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
 		}
 	}
+
+	It 'reverts apm.lock.yaml when it is the only changed file' {
+		$testDirectory = New-TestDirectory
+		$toolDirectory = New-TestDirectory
+		$apmCommandPath = Join-Path $toolDirectory 'apm.cmd'
+		$lockFilePath = Join-Path $testDirectory 'apm.lock.yaml'
+		$originalPath = $env:PATH
+		$originalLockContent = "packages:`n  sample: 1.0.0`n"
+
+		try {
+			Write-Utf8NoBomFile -Path $lockFilePath -Content $originalLockContent
+			Initialize-TestRepository -Path $testDirectory
+
+			$apmCommand = @"
+@echo off
+setlocal
+>> "%CD%\apm.lock.yaml" echo updated: true
+exit /b 0
+"@
+			Set-Content -LiteralPath $apmCommandPath -Value $apmCommand -Encoding ascii
+			$env:PATH = "$toolDirectory;$originalPath"
+
+			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory } | Should Not Throw
+			(Get-Content -LiteralPath $lockFilePath -Raw) | Should Be $originalLockContent
+			(Get-GitStatusLines -TestDirectory $testDirectory) | Should BeNullOrEmpty
+		}
+		finally {
+			$env:PATH = $originalPath
+			Remove-Item -LiteralPath $toolDirectory -Recurse -Force
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'keeps apm.lock.yaml when apm also changes another file' {
+		$testDirectory = New-TestDirectory
+		$toolDirectory = New-TestDirectory
+		$apmCommandPath = Join-Path $toolDirectory 'apm.cmd'
+		$lockFilePath = Join-Path $testDirectory 'apm.lock.yaml'
+		$packageFilePath = Join-Path $testDirectory 'package.json'
+		$originalPath = $env:PATH
+
+		try {
+			Write-Utf8NoBomFile -Path $lockFilePath -Content "packages:`n  sample: 1.0.0`n"
+			Write-Utf8NoBomFile -Path $packageFilePath -Content "{}`n"
+			Initialize-TestRepository -Path $testDirectory
+
+			$apmCommand = @"
+@echo off
+setlocal
+>> "%CD%\apm.lock.yaml" echo updated: true
+>> "%CD%\package.json" echo // updated
+exit /b 0
+"@
+			Set-Content -LiteralPath $apmCommandPath -Value $apmCommand -Encoding ascii
+			$env:PATH = "$toolDirectory;$originalPath"
+
+			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory } | Should Not Throw
+			(Get-Content -LiteralPath $lockFilePath -Raw) | Should Match 'updated: true'
+			Get-GitStatusLines -TestDirectory $testDirectory | Should Be @(' M apm.lock.yaml', ' M package.json')
+		}
+		finally {
+			$env:PATH = $originalPath
+			Remove-Item -LiteralPath $toolDirectory -Recurse -Force
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
 }
