@@ -36,6 +36,43 @@ exit /b 0
 		}
 	}
 
+	It 'passes configured packages to apm install --update' {
+		$testDirectory = New-TestDirectory
+		$toolDirectory = Join-Path $testDirectory 'tools'
+		$argumentsPath = Join-Path $testDirectory 'apm-arguments.txt'
+		$apmCommandPath = Join-Path $toolDirectory 'apm.cmd'
+		$inputPath = New-ConventionInputFile -Settings @{
+			packages = @(
+				'richlander/dotnet-inspect/skills/dotnet-inspect'
+				'microsoft/playwright-cli/skills/playwright-cli'
+			)
+		}
+		$originalPath = $env:PATH
+
+		try {
+			New-Item -ItemType Directory -Path $toolDirectory | Out-Null
+			$apmCommand = @"
+@echo off
+setlocal
+> "%APM_ARGUMENTS_PATH%" echo %*
+exit /b 0
+"@
+			Set-Content -LiteralPath $apmCommandPath -Value $apmCommand -Encoding ascii
+
+			$env:APM_ARGUMENTS_PATH = $argumentsPath
+			$env:PATH = "$toolDirectory;$originalPath"
+
+			{ & $conventionScriptPath $inputPath } | Should Not Throw
+			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should Be 'install --update richlander/dotnet-inspect/skills/dotnet-inspect microsoft/playwright-cli/skills/playwright-cli'
+		}
+		finally {
+			$env:PATH = $originalPath
+			Remove-Item Env:APM_ARGUMENTS_PATH -ErrorAction SilentlyContinue
+			Remove-Item -LiteralPath $inputPath -Force
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
 	It 'reverts apm.lock.yaml when it is the only changed file' {
 		$testDirectory = New-TestDirectory
 		$toolDirectory = New-TestDirectory

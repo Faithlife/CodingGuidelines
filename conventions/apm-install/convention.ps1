@@ -1,10 +1,20 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+$apmArguments = @('install', '--update')
+
+if ($args.Count -gt 0 -and (Test-Path -LiteralPath $args[0])) {
+	$conventionInput = Get-Content -LiteralPath $args[0] -Raw | ConvertFrom-Json
+	if ($null -ne $conventionInput.settings -and $null -ne $conventionInput.settings.packages) {
+		[string[]] $packages = @($conventionInput.settings.packages)
+		$apmArguments += $packages
+	}
+}
+
 Get-Command -Name apm -ErrorAction Stop | Out-Null
 
-Write-Host 'Running apm install --update.'
-& apm install --update
+Write-Host ('Running apm ' + ($apmArguments -join ' ') + '.')
+& apm @apmArguments
 
 if ($LASTEXITCODE -ne 0) {
 	throw 'apm install --update failed.'
