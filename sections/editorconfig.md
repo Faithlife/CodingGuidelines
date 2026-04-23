@@ -12,9 +12,6 @@ root = true
 [*]
 charset = utf-8
 end_of_line = lf
-indent_size = 2
-indent_style = space
-insert_final_newline = true
 trim_trailing_whitespace = true
 ```
 
@@ -37,13 +34,4 @@ resharper_identifier_typo_highlighting = none
 resharper_string_literal_typo_highlighting = none
 ```
 
-Don't highlight "typos" (non-English words) in JSON.
-
-## dotnet
-
-```editorconfig
-[dotnet-tools.json]
-insert_final_newline = false
-```
-
-`dotnet tool install` removes the final newline.
+Don't highlight "typos" (non-English words) in JSON when using ReSharper.

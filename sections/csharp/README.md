@@ -2,7 +2,6 @@
 # C# Coding Guidelines
 
 * [.editorconfig for C#](./editorconfig.md)
-* [.gitattributes for C#](./gitattributes.md)
 * [global.json](./globaljson.md)
 * [NoWarn usage](./nowarn.md)
 
