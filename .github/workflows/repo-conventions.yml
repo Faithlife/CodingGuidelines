@@ -1,0 +1,15 @@
+name: Apply Repository Conventions
+
+on:
+  schedule:
+  - cron: '54 9 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  apply:
+    uses: Faithlife/CodingGuidelines/.github/workflows/repo-conventions-call.yml@master
+    secrets: inherit
