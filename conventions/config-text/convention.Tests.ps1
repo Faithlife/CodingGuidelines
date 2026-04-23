@@ -25,6 +25,12 @@ function InvokeConfigTextConvention {
 }
 
 Describe 'config-text convention' {
+	AfterEach {
+		Remove-Item Function:\global:copilot -ErrorAction SilentlyContinue
+		Remove-Variable -Name CopilotCallCount -Scope Global -ErrorAction SilentlyContinue
+		Remove-Variable -Name CopilotInstructions -Scope Global -ErrorAction SilentlyContinue
+	}
+
 	It 'creates a repository-root-relative file and is idempotent' {
 		$testDirectory = New-TestDirectory
 
@@ -40,6 +46,68 @@ Describe 'config-text convention' {
 
 			(Get-Content -LiteralPath $gitignorePath -Raw) | Should Be "bin/`nobj/`n"
 			$secondOutput[-1].ToString() | Should Be "'$gitignorePath' already contains all configured lines."
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'runs Copilot with configured agent instructions when the file changes' {
+		$testDirectory = New-TestDirectory
+
+		try {
+			$targetPath = Join-Path $testDirectory '.editorconfig'
+			$expectedInstructions = @'
+Make sure the code still builds successfully, e.g. by running `./build.ps1 build` or `dotnet build`.
+If the code doesn't build successfully, read the error messages, read the affected files, and fix the issues by editing the code.
+DO NOT suppress warnings by adding `<NoWarn>` properties or `#pragma warning` directives.
+If you make changes, build the code again and keep fixing issues until it builds successfully.
+DO NOT commit any changes to the git repository. Leave your changes unstaged.
+'@
+			$global:CopilotCallCount = 0
+			$global:CopilotInstructions = ''
+
+			function global:copilot {
+				$global:CopilotCallCount++
+				$global:CopilotInstructions = (@($input) -join '')
+			}
+
+			$output = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{
+				path = '.editorconfig'
+				'new-file-text' = 'root = true'
+				agent = @{ instructions = $expectedInstructions }
+			}
+
+			(Test-Path -LiteralPath $targetPath) | Should Be $true
+			$global:CopilotCallCount | Should Be 1
+			$global:CopilotInstructions | Should Be $expectedInstructions
+			(@($output | ForEach-Object { $_.ToString() }) -contains "'$targetPath' changed; starting Copilot with configured agent instructions.") | Should Be $true
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'does not run Copilot when the file is already compliant' {
+		$testDirectory = New-TestDirectory
+
+		try {
+			$targetPath = Join-Path $testDirectory '.editorconfig'
+			Write-Utf8NoBomFile -Path $targetPath -Content 'root = true'
+			$global:CopilotCallCount = 0
+
+			function global:copilot {
+				$global:CopilotCallCount++
+			}
+
+			$output = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{
+				path = '.editorconfig'
+				'new-file-text' = 'root = true'
+				agent = @{ instructions = 'Build the code.' }
+			}
+
+			$global:CopilotCallCount | Should Be 0
+			$output[-1].ToString() | Should Be "'$targetPath' already exists."
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

@@ -48,6 +48,38 @@ function GetConfiguredNewFileText {
 	return $NewFileTextSetting
 }
 
+function GetConfiguredAgentInstructions {
+	param(
+		[Parameter(Mandatory = $true)]
+		[object] $InstructionsSetting
+	)
+
+	if ($InstructionsSetting -isnot [string] -or [string]::IsNullOrWhiteSpace($InstructionsSetting)) {
+		throw "The 'agent.instructions' setting must be a non-empty string."
+	}
+
+	return $InstructionsSetting
+}
+
+function GetConfiguredAgent {
+	param(
+		[Parameter(Mandatory = $true)]
+		[object] $AgentSetting
+	)
+
+	if ($AgentSetting -isnot [System.Collections.IDictionary]) {
+		throw "The 'agent' setting must be an object."
+	}
+
+	if (-not $AgentSetting.Contains('instructions')) {
+		throw "The 'agent.instructions' setting is required."
+	}
+
+	return [pscustomobject]@{
+		Instructions = GetConfiguredAgentInstructions -InstructionsSetting $AgentSetting.instructions
+	}
+}
+
 function GetConfiguredSectionName {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -484,6 +516,7 @@ if (-not $settings.ContainsKey('lines') -and -not $settings.ContainsKey('new-fil
 $targetPath = Get-RepositoryPath -PathSetting $settings.path
 $configuredLines = [System.Collections.Generic.List[string]]::new()
 $configuredNewFileText = if ($settings.ContainsKey('new-file-text')) { GetConfiguredNewFileText -NewFileTextSetting $settings['new-file-text'] } else { $null }
+$configuredAgent = if ($settings.ContainsKey('agent')) { GetConfiguredAgent -AgentSetting $settings.agent } else { $null }
 
 if ($settings.ContainsKey('lines')) {
 	$configuredLines = GetConfiguredLines -LinesSetting $settings.lines
@@ -557,6 +590,11 @@ if (-not [string]::IsNullOrEmpty($targetDirectory)) {
 }
 
 Write-Utf8NoBomFile -Path $targetPath -Content $newContent
+
+if ($null -ne $configuredAgent) {
+	Write-Host "'$targetPath' changed; starting Copilot with configured agent instructions."
+	Invoke-CopilotWithIsolatedConfig -Instructions $configuredAgent.Instructions
+}
 
 if ($null -ne $configuredSection -and ($configuredLines.Count -gt 0 -or $usedNewFileText)) {
 	Write-Host "Updated configured text and the '$($configuredSection.Name)' section in '$targetPath'."
