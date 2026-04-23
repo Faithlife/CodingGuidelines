@@ -26,7 +26,7 @@ permissions:
 
 jobs:
   apply:
-    uses: Faithlife/CodingGuidelines/.github/workflows/repo-conventions.yml@master
+    uses: Faithlife/CodingGuidelines/.github/workflows/repo-conventions-call.yml@master
     secrets: inherit
 "@
 

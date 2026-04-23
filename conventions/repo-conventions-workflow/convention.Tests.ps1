@@ -37,7 +37,7 @@ Describe 'repo-conventions-workflow' {
       Test-Path -LiteralPath $workflowPath | Should Be $true
       $content | Should Match "(?m)^name: Apply Repository Conventions\r?$"
       $content | Should Match "(?m)^  - cron: '([1-9]|[1-5][0-9]) 9 \* \* 1-5'\r?$"
-      $content | Should Match "(?m)^    uses: Faithlife/CodingGuidelines/\.github/workflows/repo-conventions\.yml@master\r?$"
+      $content | Should Match "(?m)^    uses: Faithlife/CodingGuidelines/\.github/workflows/repo-conventions-call\.yml@master\r?$"
       $content | Should Match "(?m)^    secrets: inherit\r?$"
     }
     finally {
