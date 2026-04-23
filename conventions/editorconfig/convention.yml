@@ -1,0 +1,10 @@
+conventions:
+- path: ../config-text
+  settings:
+    path: .editorconfig
+    lines:
+    - root = true
+    section:
+      name: ${{ settings.name }}
+      text: ${{ settings.text }}
+      comment-prefix: '#'
