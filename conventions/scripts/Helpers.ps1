@@ -111,12 +111,6 @@ function Invoke-CopilotWithIsolatedConfig {
 		[string] $Instructions
 	)
 
-	$token = [System.Environment]::GetEnvironmentVariable('COPILOT_GITHUB_TOKEN')
-
-	if ([string]::IsNullOrWhiteSpace($token)) {
-		throw "COPILOT_GITHUB_TOKEN must be set to a non-empty value before running Copilot-based conventions."
-	}
-
 	Get-Command -Name copilot -ErrorAction Stop | Out-Null
 
 	# Use an isolated Copilot config directory so convention runs do not depend on or mutate the user's setup.
