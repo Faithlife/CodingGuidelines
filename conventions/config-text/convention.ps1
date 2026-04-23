@@ -35,6 +35,19 @@ function GetConfiguredLines {
 	return (, $lines)
 }
 
+function GetConfiguredNewFileText {
+	param(
+		[Parameter(Mandatory = $true)]
+		[object] $NewFileTextSetting
+	)
+
+	if ($NewFileTextSetting -isnot [string]) {
+		throw "The 'new-file-text' setting must be a string."
+	}
+
+	return $NewFileTextSetting
+}
+
 function GetConfiguredSectionName {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -90,6 +103,20 @@ function GetConfiguredSectionCommentSuffix {
 	return $CommentSuffixSetting
 }
 
+function GetManagedSectionCommentSuffixText {
+	param(
+		[Parameter(Mandatory = $true)]
+		[AllowEmptyString()]
+		[string] $CommentSuffix
+	)
+
+	if ([string]::IsNullOrEmpty($CommentSuffix)) {
+		return ''
+	}
+
+	return ' ' + $CommentSuffix.TrimStart()
+}
+
 function GetConfiguredSectionText {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -143,7 +170,7 @@ function GetConfiguredSection {
 	}
 
 	$commentPrefix = GetConfiguredSectionCommentPrefix -CommentPrefixSetting $SectionSetting['comment-prefix']
-	$commentSuffix = GetConfiguredSectionCommentSuffix -CommentSuffixSetting $SectionSetting['comment-suffix']
+	$commentSuffix = GetManagedSectionCommentSuffixText -CommentSuffix (GetConfiguredSectionCommentSuffix -CommentSuffixSetting $SectionSetting['comment-suffix'])
 	$name = GetConfiguredSectionName -NameSetting $SectionSetting.name
 	$text = GetConfiguredSectionText -TextSetting $SectionSetting.text -CommentPrefix $commentPrefix -CommentSuffix $commentSuffix
 
@@ -450,12 +477,13 @@ if ($null -eq $settings -or -not $settings.ContainsKey('path')) {
 	throw "The 'path' setting is required."
 }
 
-if (-not $settings.ContainsKey('lines') -and -not $settings.ContainsKey('section')) {
-	throw "The 'lines' setting or 'section' setting is required."
+if (-not $settings.ContainsKey('lines') -and -not $settings.ContainsKey('new-file-text') -and -not $settings.ContainsKey('section')) {
+	throw "The 'lines' setting, 'new-file-text' setting, or 'section' setting is required."
 }
 
 $targetPath = Get-RepositoryPath -PathSetting $settings.path
 $configuredLines = [System.Collections.Generic.List[string]]::new()
+$configuredNewFileText = if ($settings.ContainsKey('new-file-text')) { GetConfiguredNewFileText -NewFileTextSetting $settings['new-file-text'] } else { $null }
 
 if ($settings.ContainsKey('lines')) {
 	$configuredLines = GetConfiguredLines -LinesSetting $settings.lines
@@ -463,7 +491,7 @@ if ($settings.ContainsKey('lines')) {
 
 $configuredSection = if ($settings.ContainsKey('section')) { GetConfiguredSection -SectionSetting $settings.section } else { $null }
 
-if ($configuredLines.Count -eq 0 -and $null -eq $configuredSection) {
+if ($configuredLines.Count -eq 0 -and $null -eq $configuredNewFileText -and $null -eq $configuredSection) {
 	Write-Host "No configured lines to add for '$targetPath'."
 	return
 }
@@ -474,6 +502,7 @@ if (Test-Path -LiteralPath $targetPath -PathType Container) {
 
 $existingContent = ''
 $lineEnding = "`n"
+$usedNewFileText = $false
 
 if (Test-Path -LiteralPath $targetPath -PathType Leaf) {
 	$existingContent = [System.IO.File]::ReadAllText($targetPath)
@@ -481,6 +510,13 @@ if (Test-Path -LiteralPath $targetPath -PathType Leaf) {
 }
 
 $newContent = $existingContent
+
+if ($existingContent.Length -eq 0 -and -not (Test-Path -LiteralPath $targetPath -PathType Leaf) -and $null -ne $configuredNewFileText) {
+	$newContent = $configuredNewFileText
+	$lineEnding = Get-LineEnding -Content $configuredNewFileText
+	$usedNewFileText = $true
+	}
+
 $addedLineCount = 0
 
 if ($configuredLines.Count -gt 0) {
@@ -505,6 +541,11 @@ if ($newContent -ceq $existingContent) {
 		return
 	}
 
+	if ($null -ne $configuredNewFileText) {
+		Write-Host "'$targetPath' already exists."
+		return
+	}
+
 	Write-Host "'$targetPath' already contains all configured lines."
 	return
 }
@@ -517,8 +558,8 @@ if (-not [string]::IsNullOrEmpty($targetDirectory)) {
 
 Write-Utf8NoBomFile -Path $targetPath -Content $newContent
 
-if ($null -ne $configuredSection -and $configuredLines.Count -gt 0) {
-	Write-Host "Updated configured lines and the '$($configuredSection.Name)' section in '$targetPath'."
+if ($null -ne $configuredSection -and ($configuredLines.Count -gt 0 -or $usedNewFileText)) {
+	Write-Host "Updated configured text and the '$($configuredSection.Name)' section in '$targetPath'."
 	return
 }
 
@@ -526,5 +567,10 @@ if ($null -ne $configuredSection) {
 	Write-Host "Updated '$($configuredSection.Name)' section in '$targetPath'."
 	return
 }
+
+if ($usedNewFileText) {
+	Write-Host "Initialized '$targetPath'."
+	return
+	}
 
 Write-Host "Added $addedLineCount lines to '$targetPath'."

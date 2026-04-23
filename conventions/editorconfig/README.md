@@ -7,7 +7,7 @@ Settings:
 - `name`: Non-empty section name used in the managed marker.
 - `text`: Exact `.editorconfig` section text to place inside the managed section.
 
-If `.editorconfig` does not exist, the convention creates it with `root = true`, a blank line, and the managed section. If the named section already exists, the convention replaces only that section. Other `.editorconfig` content is preserved.
+If `.editorconfig` does not exist, the convention seeds it with `root = true`, then adds a blank line and the managed section. If the named section already exists, the convention replaces only that section. Other `.editorconfig` content is preserved.
 
 ```yaml
 conventions:

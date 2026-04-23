@@ -2,8 +2,7 @@ conventions:
 - path: ../config-text
   settings:
     path: .editorconfig
-    lines:
-    - root = true
+    new-file-text: root = true
     section:
       name: ${{ settings.name }}
       text: ${{ settings.text }}

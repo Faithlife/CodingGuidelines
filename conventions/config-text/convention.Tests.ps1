@@ -113,6 +113,26 @@ Describe 'config-text convention' {
 		}
 	}
 
+	It 'initializes a missing file from new-file-text' {
+		$testDirectory = New-TestDirectory
+
+		try {
+			$targetPath = Join-Path $testDirectory '.editorconfig'
+
+			$output = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{ path = '.editorconfig'; 'new-file-text' = 'root = true' }
+
+			(Test-Path -LiteralPath $targetPath) | Should Be $true
+			(Get-Content -LiteralPath $targetPath -Raw) | Should Be 'root = true'
+			$output[-1].ToString() | Should Be "Initialized '$targetPath'."
+
+			$secondOutput = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{ path = '.editorconfig'; 'new-file-text' = 'root = true' }
+			$secondOutput[-1].ToString() | Should Be "'$targetPath' already exists."
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
 	It 'rejects lines that contain newlines' {
 		$testDirectory = New-TestDirectory
 
@@ -170,13 +190,13 @@ Describe 'config-text convention' {
 		}
 	}
 
-	It 'supports combined lines and section behavior' {
+	It 'supports combined new-file-text and section behavior' {
 		$testDirectory = New-TestDirectory
 
 		try {
 			$output = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{
 				path = '/.editorconfig'
-				lines = @('root = true')
+				'new-file-text' = 'root = true'
 				section = @{
 					name = 'general-editorconfig'
 					text = "[*]`ncharset = utf-8"
@@ -186,11 +206,11 @@ Describe 'config-text convention' {
 			$targetPath = Join-Path $testDirectory '.editorconfig'
 
 			(Get-Content -LiteralPath $targetPath -Raw) | Should Be "root = true`n`n# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n"
-			$output[-1].ToString() | Should Be "Updated configured lines and the 'general-editorconfig' section in '$targetPath'."
+			$output[-1].ToString() | Should Be "Updated configured text and the 'general-editorconfig' section in '$targetPath'."
 
 			$secondOutput = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{
 				path = '/.editorconfig'
-				lines = @('root = true')
+				'new-file-text' = 'root = true'
 				section = @{
 					name = 'general-editorconfig'
 					text = "[*]`ncharset = utf-8"
@@ -198,7 +218,7 @@ Describe 'config-text convention' {
 				}
 			}
 
-			$secondOutput[-1].ToString() | Should Be "'$targetPath' already contains all configured lines and the 'general-editorconfig' section."
+			$secondOutput[-1].ToString() | Should Be "'$targetPath' already contains the 'general-editorconfig' section."
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -215,7 +235,7 @@ Describe 'config-text convention' {
 					name = 'snippet'
 					text = '<div>Example</div>'
 					'comment-prefix' = '<!--'
-					'comment-suffix' = ' -->'
+					'comment-suffix' = '-->'
 				}
 			}
 			$targetPath = Join-Path $testDirectory 'docs\example.html'
