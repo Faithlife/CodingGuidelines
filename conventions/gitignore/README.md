@@ -4,13 +4,13 @@ This [convention](https://github.com/Faithlife/RepoConventions) appends lines to
 
 Settings:
 
-- `entries`: Array of lines to append to `.gitignore` when missing.
+- `lines`: Array of lines to append to `.gitignore` when missing.
 
 ```yaml
 conventions:
 - path: Faithlife/CodingGuidelines/conventions/gitignore
   settings:
-    entries:
+    lines:
     - bin/
     - obj/
 ```

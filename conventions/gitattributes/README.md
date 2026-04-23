@@ -4,12 +4,12 @@ This [convention](https://github.com/Faithlife/RepoConventions) appends lines to
 
 Settings:
 
-- `entries`: Array of lines to append to `.gitattributes` when missing.
+- `lines`: Array of lines to append to `.gitattributes` when missing.
 
 ```yaml
 conventions:
 - path: Faithlife/CodingGuidelines/conventions/gitattributes
   settings:
-    entries:
+    lines:
     - *.g.* linguist-generated=true
 ```

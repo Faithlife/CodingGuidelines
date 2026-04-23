@@ -4,13 +4,13 @@ This [convention](https://github.com/Faithlife/RepoConventions) appends lines to
 
 Settings:
 
-- `entries`: Array of lines to append to `.prettierignore` when missing.
+- `lines`: Array of lines to append to `.prettierignore` when missing.
 
 ```yaml
 conventions:
 - path: Faithlife/CodingGuidelines/conventions/prettierignore
   settings:
-    entries:
+    lines:
     - coverage/
     - dist/
 ```
