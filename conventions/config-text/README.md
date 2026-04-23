@@ -13,7 +13,7 @@ Settings:
 - `section.comment-prefix`: Comment prefix to use for the managed markers.
 - `section.comment-suffix`: Optional comment suffix to use for the managed markers. When non-empty, the convention writes it with a leading space automatically.
 - `agent`: Optional Copilot agent settings to run after the convention changes the target file.
-- `agent.instructions`: Non-empty instructions string to pass to Copilot after the file changes.
+- `agent.instructions`: Optional instructions string to pass to Copilot after the file changes. Missing, `null`, empty, or whitespace instructions do not run Copilot.
 
 If the target file does not exist, the convention creates it. If every configured line and managed section already matches, the convention leaves the file unchanged.
 
@@ -30,7 +30,5 @@ conventions:
         charset = utf-8
       comment-prefix: '#'
     agent:
-      instructions: |
-        Make sure the code still builds successfully, e.g. by running `./build.ps1 build` or `dotnet build`.
-        If the code doesn't build successfully, read the error messages, read the affected files, and fix the issues by editing the code.
+      instructions: Build the code if changes were made.
 ```

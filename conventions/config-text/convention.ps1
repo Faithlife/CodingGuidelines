@@ -50,12 +50,20 @@ function GetConfiguredNewFileText {
 
 function GetConfiguredAgentInstructions {
 	param(
-		[Parameter(Mandatory = $true)]
+		[AllowNull()]
 		[object] $InstructionsSetting
 	)
 
-	if ($InstructionsSetting -isnot [string] -or [string]::IsNullOrWhiteSpace($InstructionsSetting)) {
-		throw "The 'agent.instructions' setting must be a non-empty string."
+	if ($null -eq $InstructionsSetting) {
+		return $null
+	}
+
+	if ($InstructionsSetting -isnot [string]) {
+		throw "The 'agent.instructions' setting must be a string."
+	}
+
+	if ([string]::IsNullOrWhiteSpace($InstructionsSetting)) {
+		return $null
 	}
 
 	return $InstructionsSetting
@@ -71,12 +79,10 @@ function GetConfiguredAgent {
 		throw "The 'agent' setting must be an object."
 	}
 
-	if (-not $AgentSetting.Contains('instructions')) {
-		throw "The 'agent.instructions' setting is required."
-	}
+	$instructions = if ($AgentSetting.Contains('instructions')) { GetConfiguredAgentInstructions -InstructionsSetting $AgentSetting.instructions } else { $null }
 
 	return [pscustomobject]@{
-		Instructions = GetConfiguredAgentInstructions -InstructionsSetting $AgentSetting.instructions
+		Instructions = $instructions
 	}
 }
 
@@ -591,7 +597,7 @@ if (-not [string]::IsNullOrEmpty($targetDirectory)) {
 
 Write-Utf8NoBomFile -Path $targetPath -Content $newContent
 
-if ($null -ne $configuredAgent) {
+if ($null -ne $configuredAgent -and -not [string]::IsNullOrWhiteSpace($configuredAgent.Instructions)) {
 	Write-Host "'$targetPath' changed; starting Copilot with configured agent instructions."
 	Invoke-CopilotWithIsolatedConfig -Instructions $configuredAgent.Instructions
 }

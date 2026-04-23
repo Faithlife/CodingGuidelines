@@ -114,6 +114,45 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 		}
 	}
 
+	It 'does not run Copilot when agent instructions are missing, null, empty, or whitespace' {
+		$testDirectory = New-TestDirectory
+
+		try {
+			$global:CopilotCallCount = 0
+
+			function global:copilot {
+				$global:CopilotCallCount++
+			}
+
+			$agentSettingsCases = @(
+				@{},
+				@{ instructions = $null },
+				@{ instructions = '' },
+				@{ instructions = '   ' }
+			)
+
+			foreach ($agentSettings in $agentSettingsCases) {
+				$caseDirectory = Join-Path $testDirectory ([guid]::NewGuid().ToString('N'))
+				[System.IO.Directory]::CreateDirectory($caseDirectory) | Out-Null
+				$targetPath = Join-Path $caseDirectory '.editorconfig'
+
+				$output = InvokeConfigTextConvention -TestDirectory $caseDirectory -Settings @{
+					path = '.editorconfig'
+					'new-file-text' = 'root = true'
+					agent = $agentSettings
+				}
+
+				(Test-Path -LiteralPath $targetPath) | Should Be $true
+				$output[-1].ToString() | Should Be "Initialized '$targetPath'."
+			}
+
+			$global:CopilotCallCount | Should Be 0
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
 	It 'resolves relative paths from the repository root' {
 		$testDirectory = New-TestDirectory
 
