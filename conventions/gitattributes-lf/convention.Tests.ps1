@@ -32,6 +32,8 @@ function InvokeGitattributesLfConventionWithoutInput {
 
 Describe 'gitattributes-lf convention' {
 	BeforeEach {
+		$script:OriginalCopilotGitHubToken = $env:COPILOT_GITHUB_TOKEN
+		$env:COPILOT_GITHUB_TOKEN = 'test-token'
 		$global:CopilotCallCount = 0
 
 		function global:copilot {
@@ -40,6 +42,13 @@ Describe 'gitattributes-lf convention' {
 	}
 
 	AfterEach {
+		if ($null -eq $script:OriginalCopilotGitHubToken) {
+			Remove-Item Env:COPILOT_GITHUB_TOKEN -ErrorAction SilentlyContinue
+		}
+		else {
+			$env:COPILOT_GITHUB_TOKEN = $script:OriginalCopilotGitHubToken
+		}
+
 		Remove-Item Function:\global:copilot -ErrorAction SilentlyContinue
 	}
 
@@ -182,6 +191,22 @@ Describe 'gitattributes-lf convention' {
 		}
 		finally {
 			Remove-Item Function:\global:copilot -ErrorAction SilentlyContinue
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'fails with a helpful error when COPILOT_GITHUB_TOKEN is missing for Copilot repair' {
+		$testDirectory = New-TestDirectory
+
+		try {
+			Initialize-TestRepository -Path $testDirectory
+			$gitattributesPath = Join-Path $testDirectory '.gitattributes'
+			Write-Utf8NoBomFile -Path $gitattributesPath -Content "* -text`n"
+			Remove-Item Env:COPILOT_GITHUB_TOKEN -ErrorAction SilentlyContinue
+
+			{ InvokeGitattributesLfConvention -TestDirectory $testDirectory } | Should Throw 'COPILOT_GITHUB_TOKEN must be set to a non-empty value before running Copilot-based conventions.'
+		}
+		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
 		}
 	}

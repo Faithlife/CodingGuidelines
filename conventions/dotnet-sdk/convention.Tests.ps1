@@ -39,6 +39,22 @@ function InvokeDotnetSdkConvention {
 }
 
 Describe 'dotnet-sdk convention' {
+	BeforeEach {
+		$script:OriginalCopilotGitHubToken = $env:COPILOT_GITHUB_TOKEN
+		$env:COPILOT_GITHUB_TOKEN = 'test-token'
+	}
+
+	AfterEach {
+		if ($null -eq $script:OriginalCopilotGitHubToken) {
+			Remove-Item Env:COPILOT_GITHUB_TOKEN -ErrorAction SilentlyContinue
+		}
+		else {
+			$env:COPILOT_GITHUB_TOKEN = $script:OriginalCopilotGitHubToken
+		}
+
+		Remove-Item Function:\global:copilot -ErrorAction SilentlyContinue
+	}
+
 	It 'accepts an integer major version when global.json already conforms' {
 		$inputJson = '{"settings":{"version":10}}'
 
@@ -67,5 +83,16 @@ Describe 'dotnet-sdk convention' {
 		$inputJson = '{"settings":{"version":0}}'
 
 		{ InvokeDotnetSdkConvention -InputJson $inputJson } | Should Throw "The 'version' setting must be a positive integer."
+	}
+
+	It 'fails with a helpful error when COPILOT_GITHUB_TOKEN is missing and Copilot is needed' {
+		$inputJson = '{"settings":{"version":10}}'
+		Remove-Item Env:COPILOT_GITHUB_TOKEN -ErrorAction SilentlyContinue
+
+		function global:copilot {
+			throw 'Copilot should not be invoked when the token is missing.'
+		}
+
+		{ InvokeDotnetSdkConvention -InputJson $inputJson -SdkVersion '9.0.100' } | Should Throw 'COPILOT_GITHUB_TOKEN must be set to a non-empty value before running Copilot-based conventions.'
 	}
 }

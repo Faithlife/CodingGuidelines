@@ -100,3 +100,32 @@ function Set-Utf8NoBomConsoleEncoding {
 	[Console]::OutputEncoding = $utf8
 	$OutputEncoding = $utf8
 }
+
+<#
+.SYNOPSIS
+Runs Copilot with shared convention settings and an isolated config directory.
+#>
+function Invoke-CopilotWithIsolatedConfig {
+	param(
+		[Parameter(Mandatory = $true)]
+		[string] $Instructions
+	)
+
+	$token = [System.Environment]::GetEnvironmentVariable('COPILOT_GITHUB_TOKEN')
+
+	if ([string]::IsNullOrWhiteSpace($token)) {
+		throw "COPILOT_GITHUB_TOKEN must be set to a non-empty value before running Copilot-based conventions."
+	}
+
+	Get-Command -Name copilot -ErrorAction Stop | Out-Null
+
+	# Use an isolated Copilot config directory so convention runs do not depend on or mutate the user's setup.
+	$copilotConfigDirectory = New-TemporaryDirectory
+
+	try {
+		$Instructions | & copilot --config-dir $copilotConfigDirectory --no-ask-user --allow-all-tools --allow-all-paths --model auto
+	}
+	finally {
+		Remove-Item -LiteralPath $copilotConfigDirectory -Recurse -Force
+	}
+}

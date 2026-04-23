@@ -82,8 +82,6 @@ function InvokeCopilotForGitattributesRepair {
 		[string] $Path
 	)
 
-	Get-Command -Name copilot -ErrorAction Stop | Out-Null
-
 	$copilotInstructions = @"
 Update `.gitattributes` in the current repository so it satisfies all of these requirements:
 
@@ -98,16 +96,8 @@ Update `.gitattributes` in the current repository so it satisfies all of these r
 When you are done, make sure `.gitattributes` exists and starts with `* text=auto eol=lf`.
 "@
 
-	# Use an isolated Copilot config directory so the repair step does not depend on or mutate the user's setup.
-	$copilotConfigDirectory = New-TemporaryDirectory
-
-	try {
-		Write-Host ".gitattributes is not compliant; starting Copilot to update '$Path'."
-		$copilotInstructions | & copilot --config-dir $copilotConfigDirectory --no-ask-user --allow-all-tools --allow-all-paths --model auto
-	}
-	finally {
-		Remove-Item -LiteralPath $copilotConfigDirectory -Recurse -Force
-	}
+	Write-Host ".gitattributes is not compliant; starting Copilot to update '$Path'."
+	Invoke-CopilotWithIsolatedConfig -Instructions $copilotInstructions
 }
 
 function SetCompliantGitattributes {

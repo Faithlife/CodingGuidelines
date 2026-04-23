@@ -100,18 +100,8 @@ If you make changes, build the code again and keep fixing issues until it builds
 DO NOT commit any changes to the git repository. Leave your changes unstaged.
 "@
 
-Get-Command -Name copilot -ErrorAction Stop | Out-Null
-
-# use a temporary directory for Copilot config to avoid personal instructions
-$copilotConfigDirectory = New-TemporaryDirectory
-
-try {
-	Write-Host 'global.json does not conform; starting Copilot to update it.'
-	$copilotInstructions | & copilot --config-dir $copilotConfigDirectory --no-ask-user --allow-all-tools --allow-all-paths --model auto
-}
-finally {
-	Remove-Item -LiteralPath $copilotConfigDirectory -Recurse -Force
-}
+Write-Host 'global.json does not conform; starting Copilot to update it.'
+Invoke-CopilotWithIsolatedConfig -Instructions $copilotInstructions
 
 if (-not (TestConformingGlobalJson -GlobalJsonPath $globalJsonPath -MajorVersion $majorVersion)) {
 	throw 'Copilot failed to update global.json to the required .NET SDK configuration.'
