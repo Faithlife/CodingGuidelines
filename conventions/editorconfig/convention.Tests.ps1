@@ -1,31 +1,82 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$conventionYamlPath = Join-Path $PSScriptRoot 'convention.yml'
-$conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
+$testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
+. $testHelpersPath
 
 Describe 'editorconfig convention' {
-	It 'composes config-text with the expected root line and managed section settings' {
-		(Test-Path -LiteralPath $conventionYamlPath -PathType Leaf) | Should Be $true
+	It 'creates .editorconfig with the configured managed section' {
+		$testDirectory = New-TestDirectory
 
-		$actualContent = ((Get-Content -LiteralPath $conventionYamlPath -Raw) -replace "`r`n", "`n").TrimEnd("`n")
-		$expectedContent = (@(
-			'conventions:',
-			'- path: ../config-text',
-			'  settings:',
-			'    path: .editorconfig',
-			'    new-file-text: root = true',
-			'    section:',
-			'      name: ${{ settings.name }}',
-			'      text: ${{ settings.text }}',
-			'      comment-prefix: ''#''',
-			'    agent: ${{ settings.agent }}'
-		) -join "`n")
+		try {
+			Copy-TestConventionAssets -TestDirectory $testDirectory
+			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
+			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
+conventions:
+- path: ../conventions/editorconfig
+  settings:
+    name: files
+    text: |
+      [*.txt]
+      indent_style = space
+      trim_trailing_whitespace = false
+"@
+			Initialize-TestRepository -Path $testDirectory
 
-		$actualContent | Should Be $expectedContent
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should Not Throw
+
+			$editorConfigPath = Join-Path $testDirectory '.editorconfig'
+			$content = Get-Content -LiteralPath $editorConfigPath -Raw
+
+			(Test-Path -LiteralPath $editorConfigPath) | Should Be $true
+			$content | Should Match "(?m)^root = true\r?$"
+			$content | Should Match "(?m)^# DO NOT EDIT: files convention\r?$"
+			$content | Should Match "(?m)^\[\*\.txt\]\r?$"
+			$content | Should Match "(?m)^indent_style = space\r?$"
+			$content | Should Match "(?m)^trim_trailing_whitespace = false\r?$"
+			$content | Should Match "(?m)^# END DO NOT EDIT\r?$"
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
 	}
 
-	It 'does not include a convention script' {
-		(Test-Path -LiteralPath $conventionScriptPath) | Should Be $false
+	It 'forwards agent instructions when it changes .editorconfig' {
+		$testDirectory = New-TestDirectory
+
+		try {
+			Copy-TestConventionAssets -TestDirectory $testDirectory
+			$testCopilot = New-TestCopilotCommand -TestDirectory $testDirectory
+			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
+			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
+conventions:
+- path: ../conventions/editorconfig
+  settings:
+    name: files
+    text: |
+      [*.md]
+      trim_trailing_whitespace = false
+    agent:
+      instructions: |
+        Validate editorconfig changes.
+        Leave fixes unstaged.
+"@
+			Initialize-TestRepository -Path $testDirectory
+			$originalPath = $env:PATH
+
+			try {
+				$env:PATH = "$($testCopilot.CommandDirectory);$originalPath"
+				{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should Not Throw
+			}
+			finally {
+				$env:PATH = $originalPath
+			}
+
+			(Test-Path -LiteralPath $testCopilot.InputPath) | Should Be $true
+			(((Get-Content -LiteralPath $testCopilot.InputPath -Raw) -replace "`r`n", "`n").TrimEnd("`n")) | Should Be "Validate editorconfig changes.`nLeave fixes unstaged."
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
 	}
 }

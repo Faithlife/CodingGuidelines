@@ -1,27 +1,67 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$conventionYamlPath = Join-Path $PSScriptRoot 'convention.yml'
-$conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
+$testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
+. $testHelpersPath
 
 Describe 'editorconfig-csharp convention' {
-	It 'composes editorconfig with the C# section text from the shared file' {
-		(Test-Path -LiteralPath $conventionYamlPath -PathType Leaf) | Should Be $true
+	It 'creates .editorconfig with the shared C# section' {
+		$testDirectory = New-TestDirectory
 
-		$actualContent = ((Get-Content -LiteralPath $conventionYamlPath -Raw) -replace "`r`n", "`n").TrimEnd("`n")
-		$expectedContent = (@(
-			'conventions:',
-			'- path: ../editorconfig',
-			'  settings:',
-			'    name: csharp-editorconfig',
-			'    text: ${{ readText("/sections/csharp/files/.editorconfig") }}',
-			'    agent: ${{ settings.agent }}'
-		) -join "`n")
+		try {
+			Copy-TestConventionAssets -TestDirectory $testDirectory
+			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
+			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
+conventions:
+- path: ../conventions/editorconfig-csharp
+"@
+			Initialize-TestRepository -Path $testDirectory
 
-		$actualContent | Should Be $expectedContent
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should Not Throw
+
+			$editorConfigPath = Join-Path $testDirectory '.editorconfig'
+			$content = Get-Content -LiteralPath $editorConfigPath -Raw
+
+			(Test-Path -LiteralPath $editorConfigPath) | Should Be $true
+			$content | Should Match "(?m)^root = true\r?$"
+			$content | Should Match "(?m)^# DO NOT EDIT: csharp convention\r?$"
+			$content | Should Match "(?m)^\[\*\.\{cs,cshtml,razor\}\]\r?$"
+			$content | Should Match "(?m)^indent_size = tab\r?$"
+			$content | Should Match "(?m)^dotnet_analyzer_diagnostic\.severity = warning\r?$"
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
 	}
 
-	It 'does not include a convention script' {
-		(Test-Path -LiteralPath $conventionScriptPath) | Should Be $false
+	It 'runs Copilot with the packaged instructions when it changes .editorconfig' {
+		$testDirectory = New-TestDirectory
+
+		try {
+			Copy-TestConventionAssets -TestDirectory $testDirectory
+			$testCopilot = New-TestCopilotCommand -TestDirectory $testDirectory
+			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
+			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
+conventions:
+- path: ../conventions/editorconfig-csharp
+"@
+			Initialize-TestRepository -Path $testDirectory
+			$originalPath = $env:PATH
+			$expectedInstructions = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-csharp/agent-instructions.md') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
+
+			try {
+				$env:PATH = "$($testCopilot.CommandDirectory);$originalPath"
+				{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should Not Throw
+			}
+			finally {
+				$env:PATH = $originalPath
+			}
+
+			(Test-Path -LiteralPath $testCopilot.InputPath) | Should Be $true
+			(((Get-Content -LiteralPath $testCopilot.InputPath -Raw) -replace "`r`n", "`n").TrimEnd("`n")) | Should Be $expectedInstructions
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
 	}
 }

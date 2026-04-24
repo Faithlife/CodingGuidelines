@@ -151,3 +151,63 @@ function Get-GitStatusLines {
 		Pop-Location
 	}
 }
+
+<#
+.SYNOPSIS
+Copies published convention assets into a test repository.
+#>
+function Copy-TestConventionAssets {
+	param(
+		[Parameter(Mandatory = $true)]
+		[string] $TestDirectory
+	)
+
+	$sourceRepositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
+
+	Copy-Item -LiteralPath (Join-Path $sourceRepositoryRoot 'conventions') -Destination (Join-Path $TestDirectory 'conventions') -Recurse
+	Copy-Item -LiteralPath (Join-Path $sourceRepositoryRoot 'sections') -Destination (Join-Path $TestDirectory 'sections') -Recurse
+}
+
+<#
+.SYNOPSIS
+Runs repo-conventions apply from a test repository.
+#>
+function Invoke-RepoConventionsApply {
+	param(
+		[Parameter(Mandatory = $true)]
+		[string] $TestDirectory
+	)
+
+	Push-Location $TestDirectory
+	try {
+		return @(& repo-conventions apply 6>&1)
+	}
+	finally {
+		Pop-Location
+	}
+}
+
+<#
+.SYNOPSIS
+Creates a fake copilot command for behavior tests.
+#>
+function New-TestCopilotCommand {
+	param(
+		[Parameter(Mandatory = $true)]
+		[string] $TestDirectory
+	)
+
+	$commandDirectory = Join-Path $TestDirectory '.test-tools'
+	[System.IO.Directory]::CreateDirectory($commandDirectory) | Out-Null
+
+	$inputPath = Join-Path $commandDirectory 'copilot-input.txt'
+	$commandPath = Join-Path $commandDirectory 'copilot.cmd'
+	$escapedInputPath = $inputPath.Replace('"', '""')
+
+	Write-Utf8NoBomFile -Path $commandPath -Content "@echo off`r`nmore > `"$escapedInputPath`"`r`nexit /b 0`r`n"
+
+	return [pscustomobject]@{
+		CommandDirectory = $commandDirectory
+		InputPath = $inputPath
+	}
+}
