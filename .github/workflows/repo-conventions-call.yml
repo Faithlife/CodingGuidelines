@@ -46,6 +46,10 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v6
 
+      - name: Install APM
+        uses: microsoft/apm-action@v1
+        continue-on-error: true # until cli-only is supported
+
       - name: Install Copilot
         run: npm install -g @github/copilot
 
