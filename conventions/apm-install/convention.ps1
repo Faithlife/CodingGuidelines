@@ -1,14 +1,24 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$apmArguments = @('install', '--update')
+$packages = @()
 
 if ($args.Count -gt 0 -and (Test-Path -LiteralPath $args[0])) {
 	$conventionInput = Get-Content -LiteralPath $args[0] -Raw | ConvertFrom-Json
 	if ($null -ne $conventionInput.settings -and $null -ne $conventionInput.settings.packages) {
 		[string[]] $packages = @($conventionInput.settings.packages)
-		$apmArguments += $packages
 	}
+}
+
+if ($packages.Count -eq 0 -and -not (Test-Path -LiteralPath 'apm.yml')) {
+	Write-Host 'Skipping apm install because apm.yml is absent and no packages were configured.'
+	return
+}
+
+$apmArguments = @('install', '--update')
+
+if ($packages.Count -gt 0) {
+	$apmArguments += $packages
 }
 
 Get-Command -Name apm -ErrorAction Stop | Out-Null

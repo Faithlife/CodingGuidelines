@@ -6,6 +6,38 @@ $testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
 . $testHelpersPath
 
 Describe 'apm-install convention' {
+	It 'exits successfully without invoking apm when there is no apm.yml and no configured packages' {
+		$testDirectory = New-TestDirectory
+		$toolDirectory = New-TestDirectory
+		$apmCommandPath = Join-Path $toolDirectory 'apm.cmd'
+		$apmInvocationPath = Join-Path $toolDirectory 'apm-invoked.txt'
+		$inputPath = New-ConventionInputFile -Settings @{}
+		$originalPath = $env:PATH
+
+		try {
+			Initialize-TestRepository -Path $testDirectory
+			$apmCommand = @"
+@echo off
+> "%APM_INVOCATION_PATH%" echo invoked
+exit /b 0
+"@
+			Set-Content -LiteralPath $apmCommandPath -Value $apmCommand -Encoding ascii
+			$env:APM_INVOCATION_PATH = $apmInvocationPath
+			$env:PATH = "$toolDirectory;$originalPath"
+
+			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should Not Throw
+			Test-Path -LiteralPath $apmInvocationPath | Should Be $false
+			(Get-GitStatusLines -TestDirectory $testDirectory) | Should BeNullOrEmpty
+		}
+		finally {
+			$env:PATH = $originalPath
+			Remove-Item Env:APM_INVOCATION_PATH -ErrorAction SilentlyContinue
+			Remove-Item -LiteralPath $inputPath -Force
+			Remove-Item -LiteralPath $toolDirectory -Recurse -Force
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
 	It 'ignores the input path and runs apm install --update' {
 		$testDirectory = New-TestDirectory
 		$toolDirectory = Join-Path $testDirectory 'tools'
@@ -15,6 +47,7 @@ Describe 'apm-install convention' {
 
 		try {
 			New-Item -ItemType Directory -Path $toolDirectory | Out-Null
+			Write-Utf8NoBomFile -Path (Join-Path $testDirectory 'apm.yml') -Content "packages: []`n"
 			$apmCommand = @"
 @echo off
 setlocal
@@ -83,6 +116,7 @@ exit /b 0
 
 		try {
 			Write-Utf8NoBomFile -Path $lockFilePath -Content $originalLockContent
+			Write-Utf8NoBomFile -Path (Join-Path $testDirectory 'apm.yml') -Content "packages: []`n"
 			Initialize-TestRepository -Path $testDirectory
 
 			$apmCommand = @"
@@ -116,6 +150,7 @@ exit /b 0
 		try {
 			Write-Utf8NoBomFile -Path $lockFilePath -Content "packages:`n  sample: 1.0.0`n"
 			Write-Utf8NoBomFile -Path $packageFilePath -Content "{}`n"
+			Write-Utf8NoBomFile -Path (Join-Path $testDirectory 'apm.yml') -Content "packages: []`n"
 			Initialize-TestRepository -Path $testDirectory
 
 			$apmCommand = @"
