@@ -1,6 +1,7 @@
 conventions:
 - path: ../editorconfig
   settings:
-    name: csharp-editorconfig
+    name: csharp
     text: ${{ readText("/sections/csharp/files/.editorconfig") }}
-    agent: ${{ settings.agent }}
+    agent:
+      instructions: ${{ readText("agent-instructions.md") }}

@@ -1,10 +1,9 @@
 conventions:
 - path: ../editorconfig
   settings:
-    name: general-editorconfig
+    name: root
     text: |
       [*]
       charset = utf-8
       end_of_line = lf
       trim_trailing_whitespace = true
-    agent: ${{ settings.agent }}
