@@ -10,14 +10,22 @@ Describe 'editorconfig-csharp convention' {
 
 		try {
 			Copy-TestConventionAssets -TestDirectory $testDirectory
+			$testCopilot = New-TestCopilotCommand -TestDirectory $testDirectory
 			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
 			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
 conventions:
 - path: ../conventions/editorconfig-csharp
 "@
 			Initialize-TestRepository -Path $testDirectory
+			$originalPath = $env:PATH
 
-			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should Not Throw
+			try {
+				$env:PATH = "$($testCopilot.CommandDirectory);$originalPath"
+				{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should Not Throw
+			}
+			finally {
+				$env:PATH = $originalPath
+			}
 
 			$editorConfigPath = Join-Path $testDirectory '.editorconfig'
 			$content = Get-Content -LiteralPath $editorConfigPath -Raw
