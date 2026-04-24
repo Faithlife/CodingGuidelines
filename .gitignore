@@ -1,4 +1,3 @@
 .vs/
-
-# APM dependencies
 apm_modules/
+testresults.xml
