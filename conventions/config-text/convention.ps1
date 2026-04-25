@@ -86,6 +86,44 @@ function GetConfiguredAgent {
 	}
 }
 
+function GetConfiguredCommitMessage {
+	param(
+		[AllowNull()]
+		[object] $MessageSetting
+	)
+
+	if ($null -eq $MessageSetting) {
+		return $null
+	}
+
+	if ($MessageSetting -isnot [string]) {
+		throw "The 'commit.message' setting must be a string."
+	}
+
+	if ([string]::IsNullOrWhiteSpace($MessageSetting)) {
+		return $null
+	}
+
+	return $MessageSetting
+}
+
+function GetConfiguredCommit {
+	param(
+		[Parameter(Mandatory = $true)]
+		[object] $CommitSetting
+	)
+
+	if ($CommitSetting -isnot [System.Collections.IDictionary]) {
+		throw "The 'commit' setting must be an object."
+	}
+
+	$message = if ($CommitSetting.Contains('message')) { GetConfiguredCommitMessage -MessageSetting $CommitSetting.message } else { $null }
+
+	return [pscustomobject]@{
+		Message = $message
+	}
+}
+
 function GetConfiguredSectionName {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -504,6 +542,52 @@ function SetManagedSectionText {
 	}
 }
 
+function InvokeGit {
+	param(
+		[Parameter(Mandatory = $true)]
+		[string[]] $Arguments,
+
+		[switch] $CaptureOutput,
+
+		[string] $FailureMessage = 'Git command failed.'
+	)
+
+	if ($CaptureOutput) {
+		[string[]] $output = @(& git @Arguments)
+	}
+	else {
+		& git @Arguments | Out-Null
+	}
+
+	if ($LASTEXITCODE -ne 0) {
+		throw $FailureMessage
+	}
+
+	if ($CaptureOutput) {
+		return $output
+	}
+}
+
+function TestGitHasWorkingTreeChanges {
+	[string[]] $statusLines = @(InvokeGit -Arguments @('status', '--short', '--untracked-files=all') -CaptureOutput -FailureMessage 'Failed to inspect git status.')
+	return $statusLines.Count -gt 0
+}
+
+function NewCommitFromWorkingTreeChanges {
+	param(
+		[Parameter(Mandatory = $true)]
+		[string] $Message
+	)
+
+	if (-not (TestGitHasWorkingTreeChanges)) {
+		return $false
+	}
+
+	InvokeGit -Arguments @('add', '-A') -FailureMessage 'Failed to stage convention changes.'
+	InvokeGit -Arguments @('commit', '-m', $Message) -FailureMessage "Failed to create commit '$Message'."
+	return $true
+}
+
 if ($args.Count -eq 0) {
 	throw 'The input path argument is required.'
 }
@@ -523,6 +607,7 @@ $targetPath = Get-RepositoryPath -PathSetting $settings.path
 $configuredLines = [System.Collections.Generic.List[string]]::new()
 $configuredNewFileText = if ($settings.ContainsKey('new-file-text')) { GetConfiguredNewFileText -NewFileTextSetting $settings['new-file-text'] } else { $null }
 $configuredAgent = if ($settings.ContainsKey('agent')) { GetConfiguredAgent -AgentSetting $settings.agent } else { $null }
+$configuredCommit = if ($settings.ContainsKey('commit')) { GetConfiguredCommit -CommitSetting $settings.commit } else { $null }
 
 if ($settings.ContainsKey('lines')) {
 	$configuredLines = GetConfiguredLines -LinesSetting $settings.lines
@@ -600,6 +685,12 @@ Write-Utf8NoBomFile -Path $targetPath -Content $newContent
 if ($null -ne $configuredAgent -and -not [string]::IsNullOrWhiteSpace($configuredAgent.Instructions)) {
 	Write-Host "'$targetPath' changed; starting Copilot with configured agent instructions."
 	Invoke-CopilotWithIsolatedConfig -Instructions $configuredAgent.Instructions
+}
+
+if ($null -ne $configuredCommit -and -not [string]::IsNullOrWhiteSpace($configuredCommit.Message)) {
+	if (NewCommitFromWorkingTreeChanges -Message $configuredCommit.Message) {
+		Write-Host "Committed convention changes with message '$($configuredCommit.Message)'."
+	}
 }
 
 if ($null -ne $configuredSection -and ($configuredLines.Count -gt 0 -or $usedNewFileText)) {

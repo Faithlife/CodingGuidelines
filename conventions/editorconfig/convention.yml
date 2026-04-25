@@ -8,3 +8,4 @@ conventions:
         text: ${{ settings.text }}
         comment-prefix: '#'
       agent: ${{ settings.agent }}
+      commit: ${{ settings.commit }}

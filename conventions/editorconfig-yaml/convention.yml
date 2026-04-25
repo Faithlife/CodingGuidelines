@@ -3,3 +3,4 @@ conventions:
     settings:
       name: yaml
       text: ${{ readText(".editorconfig") }}
+      commit: ${{ settings.commit }}

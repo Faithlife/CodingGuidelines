@@ -5,6 +5,7 @@ This [convention](https://github.com/Faithlife/RepoConventions) appends lines to
 Settings:
 
 - `lines`: Array of lines to append to `.prettierignore` when missing.
+- `commit`: Optional `config-text` commit settings to pass through, for example when callers want `.prettierignore` changes committed before the convention exits.
 
 ```yaml
 conventions:
@@ -13,4 +14,6 @@ conventions:
       lines:
         - coverage/
         - dist/
+      commit:
+        message: Update .prettierignore.
 ```

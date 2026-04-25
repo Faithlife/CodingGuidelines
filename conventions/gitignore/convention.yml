@@ -3,3 +3,4 @@ conventions:
     settings:
       path: .gitignore
       lines: ${{ settings.lines }}
+      commit: ${{ settings.commit }}

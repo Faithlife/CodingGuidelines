@@ -3,3 +3,4 @@ conventions:
     settings:
       name: md
       text: ${{ readText(".editorconfig") }}
+      commit: ${{ settings.commit }}

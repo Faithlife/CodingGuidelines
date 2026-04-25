@@ -14,8 +14,10 @@ Settings:
 - `section.comment-suffix`: Optional comment suffix to use for the managed markers. When non-empty, the convention writes it with a leading space automatically.
 - `agent`: Optional Copilot agent settings to run after the convention changes the target file.
 - `agent.instructions`: Optional instructions string to pass to Copilot after the file changes. Missing, `null`, empty, or whitespace instructions do not run Copilot.
+- `commit`: Optional git commit settings to run after the convention changes the target file.
+- `commit.message`: Optional commit message to use after the convention and any configured agent finish making changes. Missing, `null`, empty, or whitespace messages do not create a commit.
 
-If the target file does not exist, the convention creates it. If every configured line and managed section already matches, the convention leaves the file unchanged.
+If the target file does not exist, the convention creates it. If every configured line and managed section already matches, the convention leaves the file unchanged. When `commit.message` is configured and the convention or its configured agent changes the repository, the script stages those changes and creates a commit before it exits.
 
 ```yaml
 conventions:
@@ -29,6 +31,8 @@ conventions:
           [*]
           charset = utf-8
         comment-prefix: '#'
+      commit:
+        message: Update .editorconfig.
       agent:
         instructions: Build the code if changes were made.
 ```

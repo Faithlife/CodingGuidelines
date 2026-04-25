@@ -79,4 +79,35 @@ conventions:
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
 		}
 	}
+
+	It 'forwards commit settings when it changes .editorconfig' {
+		$testDirectory = New-TestDirectory
+
+		try {
+			Copy-TestConventionAssets -TestDirectory $testDirectory
+			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
+			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
+conventions:
+- path: ../conventions/editorconfig
+  settings:
+    name: files
+    text: |
+      [*.md]
+      trim_trailing_whitespace = false
+    commit:
+      message: Add editorconfig.
+"@
+			Initialize-TestRepository -Path $testDirectory
+			$initialHead = Get-CommitId -TestDirectory $testDirectory
+
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should Not Throw
+
+			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should Be $initialHead
+			(@(Get-CommitSubjects -TestDirectory $testDirectory -Count 1))[0] | Should Be 'Add editorconfig.'
+			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should Be 0
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
 }

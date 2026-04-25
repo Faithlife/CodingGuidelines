@@ -3,3 +3,4 @@ conventions:
     settings:
       path: .prettierignore
       lines: ${{ settings.lines }}
+      commit: ${{ settings.commit }}

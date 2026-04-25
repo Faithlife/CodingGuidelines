@@ -7,8 +7,9 @@ Settings:
 - `name`: Non-empty section name used in the managed marker.
 - `text`: Exact `.editorconfig` section text to place inside the managed section.
 - `agent`: Optional `config-text` agent settings to pass through, for example when callers want build-validation instructions after `.editorconfig` changes.
+- `commit`: Optional `config-text` commit settings to pass through, for example when callers want `.editorconfig` changes committed before the convention exits.
 
-If `.editorconfig` does not exist, the convention seeds it with `root = true`, then adds a blank line and the managed section. If the caller passes `agent` settings, `editorconfig` forwards them to `config-text` so Copilot can run after `.editorconfig` changes. If the named section already exists, the convention replaces only that section. Other `.editorconfig` content is preserved.
+If `.editorconfig` does not exist, the convention seeds it with `root = true`, then adds a blank line and the managed section. If the caller passes `agent` or `commit` settings, `editorconfig` forwards them to `config-text` so Copilot can run after `.editorconfig` changes and the resulting changes can be committed before the convention exits. If the named section already exists, the convention replaces only that section. Other `.editorconfig` content is preserved.
 
 ```yaml
 conventions:
@@ -23,4 +24,6 @@ conventions:
         indent_style = space
         insert_final_newline = true
         trim_trailing_whitespace = true
+      commit:
+        message: Update .editorconfig.
 ```

@@ -3,3 +3,4 @@ conventions:
     settings:
       path: .gitattributes
       lines: ${{ settings.lines }}
+      commit: ${{ settings.commit }}

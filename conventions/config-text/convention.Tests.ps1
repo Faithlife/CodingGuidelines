@@ -114,6 +114,76 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 		}
 	}
 
+	It 'commits changed files with the configured commit message after running Copilot' {
+		$testDirectory = New-TestDirectory
+
+		try {
+			$targetPath = Join-Path $testDirectory '.editorconfig'
+			$notesPath = Join-Path $testDirectory 'notes.md'
+			$global:CopilotCallCount = 0
+
+			Initialize-TestRepository -Path $testDirectory
+			$initialHead = Get-CommitId -TestDirectory $testDirectory
+
+			function global:copilot {
+				$global:CopilotCallCount++
+				Write-Utf8NoBomFile -Path $notesPath -Content "Created by Copilot.`n"
+			}
+
+			$output = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{
+				path = '.editorconfig'
+				'new-file-text' = 'root = true'
+				agent = @{ instructions = 'Create notes.' }
+				commit = @{ message = 'Add editorconfig.' }
+			}
+
+			(Test-Path -LiteralPath $targetPath) | Should Be $true
+			(Test-Path -LiteralPath $notesPath) | Should Be $true
+			$global:CopilotCallCount | Should Be 1
+			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should Be $initialHead
+			(@(Get-CommitSubjects -TestDirectory $testDirectory -Count 1))[0] | Should Be 'Add editorconfig.'
+			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should Be 0
+			(@($output | ForEach-Object { $_.ToString() }) -contains "Committed convention changes with message 'Add editorconfig.'.") | Should Be $true
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'does not create a commit when the file is already compliant' {
+		$testDirectory = New-TestDirectory
+
+		try {
+			$targetPath = Join-Path $testDirectory '.editorconfig'
+			Initialize-TestRepository -Path $testDirectory
+			Write-Utf8NoBomFile -Path $targetPath -Content 'root = true'
+
+			Push-Location $testDirectory
+			try {
+				& git add -A
+				& git commit -m 'Add editorconfig.' | Out-Null
+			}
+			finally {
+				Pop-Location
+			}
+
+			$headBeforeRun = Get-CommitId -TestDirectory $testDirectory
+
+			$output = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{
+				path = '.editorconfig'
+				'new-file-text' = 'root = true'
+				commit = @{ message = 'Normalize editorconfig.' }
+			}
+
+			(Get-CommitId -TestDirectory $testDirectory) | Should Be $headBeforeRun
+			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should Be 0
+			$output[-1].ToString() | Should Be "'$targetPath' already exists."
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
 	It 'does not run Copilot when agent instructions are missing, null, empty, or whitespace' {
 		$testDirectory = New-TestDirectory
 
