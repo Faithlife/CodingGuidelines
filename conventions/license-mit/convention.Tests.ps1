@@ -2,7 +2,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
-$templateLicensePath = Join-Path $PSScriptRoot 'LICENSE'
+$templateLicensePath = Join-Path $PSScriptRoot 'files\LICENSE'
 $testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
 . $testHelpersPath
 

@@ -2,7 +2,7 @@
 
 This [convention](https://github.com/Faithlife/RepoConventions) saves the published `build.yaml` workflow to `.github/workflows/build.yaml`.
 
-It copies the workflow from this convention directory and overwrites the target file when it differs.
+It copies the workflow from [files/build.yaml](files/build.yaml) and overwrites the target file when it differs.
 
 ```yaml
 conventions:

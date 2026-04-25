@@ -30,7 +30,7 @@ conventions:
 			$editorConfigPath = Join-Path $testDirectory '.editorconfig'
 			$content = Get-Content -LiteralPath $editorConfigPath -Raw
 			$normalizedContent = ($content -replace "`r`n", "`n")
-			$expectedSection = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-csharp/.editorconfig') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
+			$expectedSection = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-csharp/files/.editorconfig') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
 
 			(Test-Path -LiteralPath $editorConfigPath) | Should Be $true
 			$content | Should Match "(?m)^root = true\r?$"

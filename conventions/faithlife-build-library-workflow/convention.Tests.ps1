@@ -2,7 +2,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
-$expectedWorkflowPath = Join-Path $PSScriptRoot 'build.yaml'
+$expectedWorkflowPath = Join-Path $PSScriptRoot 'files\build.yaml'
 $testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
 . $testHelpersPath
 

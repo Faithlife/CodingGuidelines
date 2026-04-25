@@ -2,8 +2,8 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
-$expectedBuildCsPath = Join-Path $PSScriptRoot 'Build.cs'
-$expectedBuildCsprojPath = Join-Path $PSScriptRoot 'Build.csproj'
+$expectedBuildCsPath = Join-Path $PSScriptRoot 'files\Build.cs'
+$expectedBuildCsprojPath = Join-Path $PSScriptRoot 'files\Build.csproj'
 $testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
 . $testHelpersPath
 
@@ -68,8 +68,8 @@ Describe 'faithlife-build-library-project convention' {
 
 			$output = InvokeFaithlifeBuildLibraryProjectConvention -TestDirectory $testDirectory
 			$solutionPaths = @(
-				Get-ChildItem -LiteralPath $testDirectory -File -Filter '*.sln'
-				Get-ChildItem -LiteralPath $testDirectory -File -Filter '*.slnx'
+				Get-ChildItem -LiteralPath $testDirectory -File |
+					Where-Object { $_.Extension -in '.sln', '.slnx' }
 			)
 			$buildCsPath = Join-Path $testDirectory 'tools/Build/Build.cs'
 			$buildCsprojPath = Join-Path $testDirectory 'tools/Build/Build.csproj'

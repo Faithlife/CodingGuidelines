@@ -25,8 +25,9 @@ function CopyMissingConventionFile {
 
 function GetRootSolutionPaths {
 	return @(
-		Get-ChildItem -LiteralPath (Get-Location) -File -Filter '*.sln' | Sort-Object -Property Name
-		Get-ChildItem -LiteralPath (Get-Location) -File -Filter '*.slnx' | Sort-Object -Property Name
+		Get-ChildItem -LiteralPath (Get-Location) -File |
+			Where-Object { $_.Extension -in '.sln', '.slnx' } |
+			Sort-Object -Property Name
 	)
 }
 
@@ -53,8 +54,8 @@ function EnsureRootSolutionExists {
 	return $true
 }
 
-$conventionBuildCsPath = Join-Path $PSScriptRoot 'Build.cs'
-$conventionBuildCsprojPath = Join-Path $PSScriptRoot 'Build.csproj'
+$conventionBuildCsPath = Join-Path $PSScriptRoot 'files\Build.cs'
+$conventionBuildCsprojPath = Join-Path $PSScriptRoot 'files\Build.csproj'
 $targetDirectoryPath = Join-Path (Get-Location) 'tools/Build'
 $targetBuildCsPath = Join-Path $targetDirectoryPath 'Build.cs'
 $targetBuildCsprojPath = Join-Path $targetDirectoryPath 'Build.csproj'

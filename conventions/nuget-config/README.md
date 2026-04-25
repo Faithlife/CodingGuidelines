@@ -1,6 +1,6 @@
 # nuget-config
 
-This [convention](https://github.com/Faithlife/RepoConventions) creates a missing root `nuget.config` from the published file in this convention directory.
+This [convention](https://github.com/Faithlife/RepoConventions) creates a missing root `nuget.config` from [files/nuget.config](files/nuget.config).
 
 The published `nuget.config` matches the RepoConventions version except that it omits the `protocolVersion` attribute.
 

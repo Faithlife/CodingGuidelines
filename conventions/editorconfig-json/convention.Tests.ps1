@@ -21,7 +21,7 @@ conventions:
 
 			$content = Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw
 			$normalizedContent = ($content -replace "`r`n", "`n")
-			$expectedSection = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-json/.editorconfig') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
+			$expectedSection = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-json/files/.editorconfig') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
 
 			$content | Should Match "(?m)^# DO NOT EDIT: json convention\r?$"
 			$content | Should Match "(?m)^\[\*\.json\]\r?$"
@@ -60,7 +60,7 @@ indent_size = 4
 
 			$content = Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw
 			$normalizedContent = ($content -replace "`r`n", "`n")
-			$expectedSection = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-json/.editorconfig') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
+			$expectedSection = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-json/files/.editorconfig') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
 
 			$normalizedContent.Contains($expectedSection) | Should Be $true
 			$content | Should Match "(?m)^\[\*\.ps1\]\r?$"

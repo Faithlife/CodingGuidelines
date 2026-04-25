@@ -2,7 +2,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
-$expectedNuGetConfigPath = Join-Path $PSScriptRoot 'nuget.config'
+$expectedNuGetConfigPath = Join-Path $PSScriptRoot 'files\nuget.config'
 $testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
 . $testHelpersPath
 

@@ -5,7 +5,7 @@ $helpersPath = Join-Path $PSScriptRoot '..\..\..\conventions\scripts\Helpers.ps1
 . $helpersPath
 
 $sourcePath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..\sections\csharp\editorconfig.md'))
-$destinationPath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..\conventions\editorconfig-csharp\.editorconfig'))
+$destinationPath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..\conventions\editorconfig-csharp\files\.editorconfig'))
 $generatedFromComment = '# generated from https://github.com/Faithlife/CodingGuidelines/blob/master/sections/csharp/editorconfig.md'
 
 $markdown = Get-Content -LiteralPath $sourcePath -Raw
@@ -37,4 +37,4 @@ if ((Test-Path -LiteralPath $destinationPath -PathType Leaf) -and (Get-Content -
 $destinationDirectory = Split-Path -Parent $destinationPath
 [System.IO.Directory]::CreateDirectory($destinationDirectory) | Out-Null
 Write-Utf8NoBomFile -Path $destinationPath -Content $newContent
-Write-Host "Updated conventions/editorconfig-csharp/.editorconfig."
+Write-Host "Updated conventions/editorconfig-csharp/files/.editorconfig."

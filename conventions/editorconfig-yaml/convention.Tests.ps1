@@ -21,7 +21,7 @@ conventions:
 
 			$content = Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw
 			$normalizedContent = ($content -replace "`r`n", "`n")
-			$expectedSection = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-yaml/.editorconfig') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
+			$expectedSection = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-yaml/files/.editorconfig') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
 
 			$content | Should Match "(?m)^# DO NOT EDIT: yaml convention\r?$"
 			$content | Should Match "(?m)^\[\*\.\{yml,yaml\}\]\r?$"
@@ -60,7 +60,7 @@ trim_trailing_whitespace = false
 
 			$content = Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw
 			$normalizedContent = ($content -replace "`r`n", "`n")
-			$expectedSection = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-yaml/.editorconfig') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
+			$expectedSection = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-yaml/files/.editorconfig') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
 
 			$normalizedContent.Contains($expectedSection) | Should Be $true
 			$content | Should Match "(?m)^\[\*\.md\]\r?$"

@@ -1,6 +1,6 @@
 # update-editorconfig-csharp
 
-This local executable convention regenerates [conventions/editorconfig-csharp/.editorconfig](../../../conventions/editorconfig-csharp/.editorconfig) from the `editorconfig` code fences in [sections/csharp/editorconfig.md](../../../sections/csharp/editorconfig.md).
+This local executable convention regenerates [conventions/editorconfig-csharp/files/.editorconfig](../../../conventions/editorconfig-csharp/files/.editorconfig) from the `editorconfig` code fences in [sections/csharp/editorconfig.md](../../../sections/csharp/editorconfig.md).
 
 It mirrors the repository's previous `UpdateEditorConfig.ps1` behavior so the published `editorconfig-csharp` convention can consume a generated file that lives next to the convention instead of under `sections/csharp/files`.
 

@@ -6,7 +6,7 @@ $helpersPath = Join-Path $PSScriptRoot '..\scripts\Helpers.ps1'
 
 Set-Utf8NoBomConsoleEncoding
 
-$sourceWorkflowPath = Join-Path $PSScriptRoot 'build.yaml'
+$sourceWorkflowPath = Join-Path $PSScriptRoot 'files\build.yaml'
 $targetWorkflowPath = Join-Path (Get-Location) '.github/workflows/build.yaml'
 $copyResult = Copy-FileIfDifferent -SourcePath $sourceWorkflowPath -DestinationPath $targetWorkflowPath
 

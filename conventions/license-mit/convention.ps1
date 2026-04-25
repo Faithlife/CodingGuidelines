@@ -6,7 +6,7 @@ $helpersPath = Join-Path $PSScriptRoot '..\scripts\Helpers.ps1'
 
 Set-Utf8NoBomConsoleEncoding
 
-$templateLicensePath = Join-Path $PSScriptRoot 'LICENSE'
+$templateLicensePath = Join-Path $PSScriptRoot 'files\LICENSE'
 $targetLicensePath = Join-Path (Get-Location) 'LICENSE'
 $currentUtcYear = [DateTime]::UtcNow.Year.ToString([System.Globalization.CultureInfo]::InvariantCulture)
 $templateContent = Get-Content -LiteralPath $templateLicensePath -Raw

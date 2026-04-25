@@ -48,7 +48,7 @@ function GetGitIndexMode {
 	return ($indexLines[0] -split '\s+', 2)[0]
 }
 
-$sourceBuildScriptPath = Join-Path $PSScriptRoot 'build.ps1'
+$sourceBuildScriptPath = Join-Path $PSScriptRoot 'files\build.ps1'
 $targetBuildScriptPath = Join-Path (Get-Location) 'build.ps1'
 $copyResult = Copy-FileIfDifferent -SourcePath $sourceBuildScriptPath -DestinationPath $targetBuildScriptPath
 $modeBefore = GetGitIndexMode -RepositoryRelativePath 'build.ps1'

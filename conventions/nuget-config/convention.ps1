@@ -6,7 +6,7 @@ $helpersPath = Join-Path $PSScriptRoot '..\scripts\Helpers.ps1'
 
 Set-Utf8NoBomConsoleEncoding
 
-$sourceNuGetConfigPath = Join-Path $PSScriptRoot 'nuget.config'
+$sourceNuGetConfigPath = Join-Path $PSScriptRoot 'files\nuget.config'
 $targetNuGetConfigPath = Join-Path (Get-Location) 'nuget.config'
 
 if (-not (Test-Path -LiteralPath $targetNuGetConfigPath -PathType Leaf)) {

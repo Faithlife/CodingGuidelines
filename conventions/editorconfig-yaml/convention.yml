@@ -2,7 +2,7 @@ conventions:
   - path: ../editorconfig
     settings:
       name: yaml
-      text: ${{ readText(".editorconfig") }}
+      text: ${{ readText("files/.editorconfig") }}
       agent:
         instructions: ${{ readText("agent-instructions.md") }}
       commit:
