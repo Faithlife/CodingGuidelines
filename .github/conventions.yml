@@ -1,4 +1,9 @@
 conventions:
   - path: ../conventions/repo-conventions-workflow
   - path: ../conventions/gitattributes-lf
+  - path: ../conventions/editorconfig-json
+  - path: ../conventions/editorconfig-md
+  - path: ../conventions/editorconfig-ps1
+  - path: ../conventions/editorconfig-yaml
+  - path: ../conventions/editorconfig-csharp
   - path: ./conventions/update-editorconfig-csharp
