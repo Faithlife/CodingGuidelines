@@ -62,15 +62,8 @@ conventions:
         Leave fixes unstaged.
 "@
 			Initialize-TestRepository -Path $testDirectory
-			$originalPath = $env:PATH
 
-			try {
-				$env:PATH = "$($testCopilot.CommandDirectory);$originalPath"
-				{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should Not Throw
-			}
-			finally {
-				$env:PATH = $originalPath
-			}
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory -CopilotCommandDirectory $testCopilot.CommandDirectory } | Should Not Throw
 
 			(Test-Path -LiteralPath $testCopilot.InputPath) | Should Be $true
 			(((Get-Content -LiteralPath $testCopilot.InputPath -Raw) -replace "`r`n", "`n").TrimEnd("`n")) | Should Be "Validate editorconfig changes.`nLeave fixes unstaged."

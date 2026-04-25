@@ -17,15 +17,8 @@ conventions:
 - path: ../conventions/editorconfig-csharp
 "@
 			Initialize-TestRepository -Path $testDirectory
-			$originalPath = $env:PATH
 
-			try {
-				$env:PATH = "$($testCopilot.CommandDirectory);$originalPath"
-				{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should Not Throw
-			}
-			finally {
-				$env:PATH = $originalPath
-			}
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory -CopilotCommandDirectory $testCopilot.CommandDirectory } | Should Not Throw
 
 			$editorConfigPath = Join-Path $testDirectory '.editorconfig'
 			$content = Get-Content -LiteralPath $editorConfigPath -Raw
@@ -56,16 +49,9 @@ conventions:
 - path: ../conventions/editorconfig-csharp
 "@
 			Initialize-TestRepository -Path $testDirectory
-			$originalPath = $env:PATH
 			$expectedInstructions = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-csharp/agent-instructions.md') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
 
-			try {
-				$env:PATH = "$($testCopilot.CommandDirectory);$originalPath"
-				{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should Not Throw
-			}
-			finally {
-				$env:PATH = $originalPath
-			}
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory -CopilotCommandDirectory $testCopilot.CommandDirectory } | Should Not Throw
 
 			(Test-Path -LiteralPath $testCopilot.InputPath) | Should Be $true
 			(((Get-Content -LiteralPath $testCopilot.InputPath -Raw) -replace "`r`n", "`n").TrimEnd("`n")) | Should Be $expectedInstructions
@@ -88,15 +74,8 @@ conventions:
 "@
 			Initialize-TestRepository -Path $testDirectory
 			$initialHead = Get-CommitId -TestDirectory $testDirectory
-			$originalPath = $env:PATH
 
-			try {
-				$env:PATH = "$($testCopilot.CommandDirectory);$originalPath"
-				{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should Not Throw
-			}
-			finally {
-				$env:PATH = $originalPath
-			}
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory -CopilotCommandDirectory $testCopilot.CommandDirectory } | Should Not Throw
 
 			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should Be $initialHead
 			(@(Get-CommitSubjects -TestDirectory $testDirectory -Count 1))[0] | Should Be 'Update C# editorconfig settings.'

@@ -175,8 +175,20 @@ Runs repo-conventions apply from a test repository.
 function Invoke-RepoConventionsApply {
 	param(
 		[Parameter(Mandatory = $true)]
-		[string] $TestDirectory
+		[string] $TestDirectory,
+
+		[string] $CopilotCommandDirectory
 	)
+
+	$temporaryCopilot = $null
+
+	if (-not $PSBoundParameters.ContainsKey('CopilotCommandDirectory')) {
+		$temporaryCopilot = New-TemporaryTestCopilotCommand
+		$CopilotCommandDirectory = $temporaryCopilot.CommandDirectory
+	}
+
+	$originalPath = $env:PATH
+	$env:PATH = "$CopilotCommandDirectory;$originalPath"
 
 	Push-Location $TestDirectory
 	try {
@@ -184,6 +196,11 @@ function Invoke-RepoConventionsApply {
 	}
 	finally {
 		Pop-Location
+		$env:PATH = $originalPath
+
+		if ($null -ne $temporaryCopilot) {
+			Remove-Item -LiteralPath $temporaryCopilot.CommandDirectory -Recurse -Force -ErrorAction SilentlyContinue
+		}
 	}
 }
 
@@ -200,6 +217,24 @@ function New-TestCopilotCommand {
 	$commandDirectory = Join-Path $TestDirectory '.test-tools'
 	[System.IO.Directory]::CreateDirectory($commandDirectory) | Out-Null
 
+	$inputPath = Join-Path $commandDirectory 'copilot-input.txt'
+	$commandPath = Join-Path $commandDirectory 'copilot.cmd'
+	$escapedInputPath = $inputPath.Replace('"', '""')
+
+	Write-Utf8NoBomFile -Path $commandPath -Content "@echo off`r`nmore > `"$escapedInputPath`"`r`nexit /b 0`r`n"
+
+	return [pscustomobject]@{
+		CommandDirectory = $commandDirectory
+		InputPath = $inputPath
+	}
+}
+
+<#
+.SYNOPSIS
+Creates a fake copilot command in a temporary directory outside the test repository.
+#>
+function New-TemporaryTestCopilotCommand {
+	$commandDirectory = New-TemporaryDirectory
 	$inputPath = Join-Path $commandDirectory 'copilot-input.txt'
 	$commandPath = Join-Path $commandDirectory 'copilot.cmd'
 	$escapedInputPath = $inputPath.Replace('"', '""')

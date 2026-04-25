@@ -85,16 +85,9 @@ conventions:
 - path: ../conventions/editorconfig-root
 "@
 			Initialize-TestRepository -Path $testDirectory
-			$originalPath = $env:PATH
 			$expectedInstructions = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-root/agent-instructions.md') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
 
-			try {
-				$env:PATH = "$($testCopilot.CommandDirectory);$originalPath"
-				{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should Not Throw
-			}
-			finally {
-				$env:PATH = $originalPath
-			}
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory -CopilotCommandDirectory $testCopilot.CommandDirectory } | Should Not Throw
 
 			(Test-Path -LiteralPath $testCopilot.InputPath) | Should Be $true
 			(((Get-Content -LiteralPath $testCopilot.InputPath -Raw) -replace "`r`n", "`n").TrimEnd("`n")) | Should Be $expectedInstructions
