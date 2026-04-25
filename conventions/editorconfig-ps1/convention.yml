@@ -3,4 +3,5 @@ conventions:
     settings:
       name: ps1
       text: ${{ readText(".editorconfig") }}
-      commit: ${{ settings.commit }}
+      commit:
+        message: "Update PowerShell editorconfig settings."

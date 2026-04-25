@@ -74,4 +74,36 @@ conventions:
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
 		}
 	}
+
+	It 'commits .editorconfig changes with the packaged commit message' {
+		$testDirectory = New-TestDirectory
+
+		try {
+			Copy-TestConventionAssets -TestDirectory $testDirectory
+			$testCopilot = New-TestCopilotCommand -TestDirectory $testDirectory
+			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
+			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
+conventions:
+- path: ../conventions/editorconfig-csharp
+"@
+			Initialize-TestRepository -Path $testDirectory
+			$initialHead = Get-CommitId -TestDirectory $testDirectory
+			$originalPath = $env:PATH
+
+			try {
+				$env:PATH = "$($testCopilot.CommandDirectory);$originalPath"
+				{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should Not Throw
+			}
+			finally {
+				$env:PATH = $originalPath
+			}
+
+			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should Be $initialHead
+			(@(Get-CommitSubjects -TestDirectory $testDirectory -Count 1))[0] | Should Be 'Update C# editorconfig settings.'
+			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should Be 0
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
 }

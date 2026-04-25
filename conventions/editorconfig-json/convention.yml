@@ -3,4 +3,5 @@ conventions:
     settings:
       name: json
       text: ${{ readText(".editorconfig") }}
-      commit: ${{ settings.commit }}
+      commit:
+        message: "Update JSON editorconfig settings."

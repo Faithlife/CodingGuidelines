@@ -2,12 +2,9 @@
 
 This [convention](https://github.com/Faithlife/RepoConventions) ensures the repository-root `.editorconfig` contains the standard `[*]` section described in [sections/editorconfig.md](../../sections/editorconfig.md).
 
-Settings:
+This convention does not support any settings.
 
-- `agent`: Optional `editorconfig` agent settings to pass through, for example when callers want Copilot follow-up instructions after `.editorconfig` changes.
-- `commit`: Optional `editorconfig` commit settings to pass through, for example when callers want `.editorconfig` changes committed before the convention exits.
-
-The convention composes [editorconfig](../editorconfig/README.md) with the fixed `general-editorconfig` managed section and the documented default text for all files.
+The convention composes [editorconfig](../editorconfig/README.md) with the fixed `general-editorconfig` managed section and the documented default text for all files. When it changes `.editorconfig`, it commits the result with the message `Update root editorconfig settings.`.
 
 ```yaml
 conventions:
