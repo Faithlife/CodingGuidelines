@@ -8,4 +8,4 @@ Settings:
 
 - None.
 
-The script keeps the first four generated lines in document order, sorts the remaining non-empty lines for a stable output, and only rewrites the destination file when its content changes.
+The script prepends a generated-from source comment, keeps the first four generated lines in document order, sorts the remaining non-empty lines for a stable output, and only rewrites the destination file when its content changes.

@@ -2,7 +2,4 @@ conventions:
   - path: ../editorconfig
     settings:
       name: ps1
-      text: |
-        [*.ps1]
-        indent_size = tab
-        indent_style = tab
+      text: ${{ readText(".editorconfig") }}

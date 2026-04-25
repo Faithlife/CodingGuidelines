@@ -20,11 +20,12 @@ conventions:
 			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should Not Throw
 
 			$content = Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw
+			$normalizedContent = ($content -replace "`r`n", "`n")
+			$expectedSection = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-md/.editorconfig') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
 
 			$content | Should Match "(?m)^# DO NOT EDIT: md convention\r?$"
 			$content | Should Match "(?m)^\[\*\.md\]\r?$"
-			$content | Should Match "(?m)^indent_style = space\r?$"
-			$content | Should Match "(?m)^indent_size = 2\r?$"
+			$normalizedContent.Contains($expectedSection) | Should Be $true
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -58,9 +59,10 @@ indent_size = 4
 			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should Not Throw
 
 			$content = Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw
+			$normalizedContent = ($content -replace "`r`n", "`n")
+			$expectedSection = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-md/.editorconfig') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
 
-			$content | Should Match "(?m)^indent_style = space\r?$"
-			$content | Should Match "(?m)^indent_size = 2\r?$"
+			$normalizedContent.Contains($expectedSection) | Should Be $true
 			$content | Should Match "(?m)^\[\*\.json\]\r?$"
 			$content | Should Match "(?m)^indent_size = 4\r?$"
 		}

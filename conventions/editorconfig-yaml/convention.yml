@@ -2,7 +2,4 @@ conventions:
   - path: ../editorconfig
     settings:
       name: yaml
-      text: |
-        [*.{yml,yaml}]
-        indent_size = 2
-        indent_style = space
+      text: ${{ readText(".editorconfig") }}

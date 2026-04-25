@@ -6,6 +6,7 @@ $helpersPath = Join-Path $PSScriptRoot '..\..\..\conventions\scripts\Helpers.ps1
 
 $sourcePath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..\sections\csharp\editorconfig.md'))
 $destinationPath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..\conventions\editorconfig-csharp\.editorconfig'))
+$generatedFromComment = '# generated from https://github.com/Faithlife/CodingGuidelines/blob/master/sections/csharp/editorconfig.md'
 
 $markdown = Get-Content -LiteralPath $sourcePath -Raw
 $matches = [System.Text.RegularExpressions.Regex]::Matches($markdown, '```editorconfig\s*(.*?)```', [System.Text.RegularExpressions.RegexOptions]::Singleline)
@@ -27,7 +28,7 @@ $sortedLines = if ($lines.Length -gt 4) {
 	@()
 }
 
-$newContent = (($lines[0..3] + $sortedLines) -join "`n") + "`n"
+$newContent = ((@($generatedFromComment, '') + $lines[0..3] + $sortedLines) -join "`n") + "`n"
 
 if ((Test-Path -LiteralPath $destinationPath -PathType Leaf) -and (Get-Content -LiteralPath $destinationPath -Raw) -eq $newContent) {
 	return

@@ -1,3 +1,5 @@
+# generated from https://github.com/Faithlife/CodingGuidelines/blob/master/sections/csharp/editorconfig.md
+
 [*.{cs,cshtml,razor}]
 indent_size = tab
 indent_style = tab
