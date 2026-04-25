@@ -6,5 +6,5 @@ It copies the workflow from this convention directory and overwrites the target 
 
 ```yaml
 conventions:
-	- path: Faithlife/CodingGuidelines/conventions/faithlife-build-library-workflow
+  - path: Faithlife/CodingGuidelines/conventions/faithlife-build-library-workflow
 ```

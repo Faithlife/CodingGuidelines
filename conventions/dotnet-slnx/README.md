@@ -6,5 +6,5 @@ It also renames `.sln.DotSettings` files to `.slnx.DotSettings` when the corresp
 
 ```yaml
 conventions:
-	- path: Faithlife/CodingGuidelines/conventions/dotnet-slnx
+  - path: Faithlife/CodingGuidelines/conventions/dotnet-slnx
 ```

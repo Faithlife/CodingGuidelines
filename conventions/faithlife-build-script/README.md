@@ -6,5 +6,5 @@ It copies the script from this convention directory and marks `build.ps1` as exe
 
 ```yaml
 conventions:
-	- path: Faithlife/CodingGuidelines/conventions/faithlife-build-script
+  - path: Faithlife/CodingGuidelines/conventions/faithlife-build-script
 ```
