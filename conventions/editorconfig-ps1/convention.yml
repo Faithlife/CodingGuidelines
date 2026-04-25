@@ -4,5 +4,5 @@ conventions:
       name: ps1
       text: |
         [*.ps1]
-        indent_style = space
-        indent_size = 2
+        indent_size = tab
+        indent_style = tab
