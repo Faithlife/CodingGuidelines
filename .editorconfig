@@ -5,6 +5,14 @@ charset = utf-8
 end_of_line = lf
 trim_trailing_whitespace = true
 
+[*.{yml,yaml}]
+indent_size = 2
+indent_style = space
+
+[*.md]
+indent_size = 2
+indent_style = space
+
 [*.ps1]
 indent_size = tab
 indent_style = tab
