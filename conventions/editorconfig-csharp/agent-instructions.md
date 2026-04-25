@@ -16,4 +16,5 @@
 
 ## Leave Changes Unstaged
 
-- DO NOT commit any changes to the git repository. Leave your changes unstaged, but don't leave any unintentional changes.
+- DO NOT commit any changes to the git repository. Leave your changes unstaged.
+- DO NOT leave any unintentional changes that might be committed later, such as build output files.
