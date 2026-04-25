@@ -5,6 +5,7 @@
 ## Remove Obsolete Rules
 
 - The new rules are in the `DO NOT EDIT` section for `root`.
+- If the `DO NOT EDIT` section for `root` is not at the top of the `.editorconfig` (but below `root = true`), move it there.
 - If the rules inside the `DO NOT EDIT` section for `root` have made any rules or sections outside any `DO NOT EDIT` section obsolete, remove the obsolete rules. Do not remove obsolete rules inside `DO NOT EDIT` sections.
 
 ## Leave Changes Unstaged
