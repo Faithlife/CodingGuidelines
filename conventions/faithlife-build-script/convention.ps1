@@ -33,35 +33,6 @@ function InvokeGitCommand {
 	}
 }
 
-function TestFileContentMatches {
-	param(
-		[Parameter(Mandatory = $true)]
-		[string] $ExpectedPath,
-
-		[Parameter(Mandatory = $true)]
-		[string] $ActualPath
-	)
-
-	if (-not (Test-Path -LiteralPath $ActualPath -PathType Leaf)) {
-		return $false
-	}
-
-	[byte[]] $expectedBytes = [System.IO.File]::ReadAllBytes($ExpectedPath)
-	[byte[]] $actualBytes = [System.IO.File]::ReadAllBytes($ActualPath)
-
-	if ($expectedBytes.Length -ne $actualBytes.Length) {
-		return $false
-	}
-
-	for ($index = 0; $index -lt $expectedBytes.Length; $index++) {
-		if ($expectedBytes[$index] -ne $actualBytes[$index]) {
-			return $false
-		}
-	}
-
-	return $true
-}
-
 function GetGitIndexMode {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -79,19 +50,14 @@ function GetGitIndexMode {
 
 $sourceBuildScriptPath = Join-Path $PSScriptRoot 'build.ps1'
 $targetBuildScriptPath = Join-Path (Get-Location) 'build.ps1'
-$hadTargetBuildScript = Test-Path -LiteralPath $targetBuildScriptPath -PathType Leaf
-$contentMatched = TestFileContentMatches -ExpectedPath $sourceBuildScriptPath -ActualPath $targetBuildScriptPath
+$copyResult = Copy-FileIfDifferent -SourcePath $sourceBuildScriptPath -DestinationPath $targetBuildScriptPath
 $modeBefore = GetGitIndexMode -RepositoryRelativePath 'build.ps1'
 
-if (-not $contentMatched) {
-	Copy-Item -LiteralPath $sourceBuildScriptPath -Destination $targetBuildScriptPath -Force
-
-	if ($hadTargetBuildScript) {
-		Write-Host "Updated '$targetBuildScriptPath' from the published Faithlife build script."
-	}
-	else {
-		Write-Host "Created '$targetBuildScriptPath' from the published Faithlife build script."
-	}
+if ($copyResult.Updated) {
+	Write-Host "Updated '$targetBuildScriptPath' from the published Faithlife build script."
+}
+elseif ($copyResult.Created) {
+	Write-Host "Created '$targetBuildScriptPath' from the published Faithlife build script."
 }
 
 InvokeGitCommand -Arguments @('add', '--', 'build.ps1') -FailureMessage "Failed to stage 'build.ps1'."
@@ -103,9 +69,10 @@ if ($modeAfter -ne '100755') {
 	throw "Expected 'build.ps1' to have Git mode 100755, but found '$modeAfter'."
 }
 
-if ($contentMatched -and $modeBefore -eq '100755') {
+if (-not $copyResult.Changed -and $modeBefore -eq '100755') {
 	Write-Host "'build.ps1' already matches the published Faithlife build script and is executable in Git."
 }
 elseif ($modeBefore -ne '100755') {
 	Write-Host "Marked 'build.ps1' as executable in Git."
 }
+

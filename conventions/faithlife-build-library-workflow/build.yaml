@@ -1,0 +1,50 @@
+name: Build
+
+on:
+  push:
+    branches: [master]
+    tags-ignore: ['**']
+  pull_request:
+  workflow_dispatch:
+
+env:
+  DOTNET_NOLOGO: 1
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+defaults:
+  run:
+    shell: pwsh
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+    - name: Install .NET
+      uses: actions/setup-dotnet@v4
+    - name: Restore
+      run: .\build.ps1 restore
+    - name: Build
+      run: .\build.ps1 build --skip restore
+    - name: Test
+      run: .\build.ps1 test --skip build
+    - name: Log in to NuGet
+      if: runner.os == 'Windows' && github.repository_owner == 'Faithlife' && github.ref == 'refs/heads/master'
+      uses: NuGet/login@v1
+      id: nuget-login
+      with:
+        user: bgrainger
+    - name: Publish
+      if: runner.os == 'Windows' && github.repository_owner == 'Faithlife' && github.ref == 'refs/heads/master'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
+      run: .\build.ps1 publish --skip test

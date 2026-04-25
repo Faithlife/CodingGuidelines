@@ -17,6 +17,78 @@ function Write-Utf8NoBomFile {
 
 <#
 .SYNOPSIS
+Compares two files byte-for-byte.
+#>
+function Test-FileContentMatches {
+	param(
+		[Parameter(Mandatory = $true)]
+		[string] $ExpectedPath,
+
+		[Parameter(Mandatory = $true)]
+		[string] $ActualPath
+	)
+
+	if (-not (Test-Path -LiteralPath $ActualPath -PathType Leaf)) {
+		return $false
+	}
+
+	[byte[]] $expectedBytes = [System.IO.File]::ReadAllBytes($ExpectedPath)
+	[byte[]] $actualBytes = [System.IO.File]::ReadAllBytes($ActualPath)
+
+	if ($expectedBytes.Length -ne $actualBytes.Length) {
+		return $false
+	}
+
+	for ($index = 0; $index -lt $expectedBytes.Length; $index++) {
+		if ($expectedBytes[$index] -ne $actualBytes[$index]) {
+			return $false
+		}
+	}
+
+	return $true
+}
+
+<#
+.SYNOPSIS
+Copies a published convention file only when the destination is missing or different.
+#>
+function Copy-FileIfDifferent {
+	param(
+		[Parameter(Mandatory = $true)]
+		[string] $SourcePath,
+
+		[Parameter(Mandatory = $true)]
+		[string] $DestinationPath
+	)
+
+	$hadDestination = Test-Path -LiteralPath $DestinationPath -PathType Leaf
+	$contentMatched = Test-FileContentMatches -ExpectedPath $SourcePath -ActualPath $DestinationPath
+
+	if ($contentMatched) {
+		return [pscustomobject]@{
+			Changed = $false
+			Created = $false
+			Updated = $false
+		}
+	}
+
+	$destinationDirectory = Split-Path -Parent $DestinationPath
+
+	if (-not [string]::IsNullOrWhiteSpace($destinationDirectory)) {
+		New-Item -ItemType Directory -Path $destinationDirectory -Force | Out-Null
+	}
+
+	Copy-Item -LiteralPath $SourcePath -Destination $DestinationPath -Force
+
+	return [pscustomobject]@{
+		Changed = $true
+		Created = -not $hadDestination
+		Updated = $hadDestination
+	}
+}
+
+<#
+.SYNOPSIS
 Detects the newline sequence already used in text content.
 #>
 function Get-LineEnding {
