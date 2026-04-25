@@ -60,27 +60,45 @@ function GetAllGitStatusLines {
 }
 
 Describe 'faithlife-build-library-project convention' {
-	It 'creates both files when they are missing' {
+	It 'creates both files, creates a root solution, and adds the project when they are missing' {
 		$testDirectory = New-TestDirectory
 
 		try {
 			Initialize-TestRepository -Path $testDirectory
 
 			$output = InvokeFaithlifeBuildLibraryProjectConvention -TestDirectory $testDirectory
+			$solutionPaths = @(
+				Get-ChildItem -LiteralPath $testDirectory -File -Filter '*.sln'
+				Get-ChildItem -LiteralPath $testDirectory -File -Filter '*.slnx'
+			)
 			$buildCsPath = Join-Path $testDirectory 'tools/Build/Build.cs'
 			$buildCsprojPath = Join-Path $testDirectory 'tools/Build/Build.csproj'
 			$status = @(GetAllGitStatusLines -TestDirectory $testDirectory)
 
 			(Test-Path -LiteralPath $buildCsPath) | Should Be $true
 			(Test-Path -LiteralPath $buildCsprojPath) | Should Be $true
+			$solutionPaths.Count | Should Be 1
 			(Get-Content -LiteralPath $buildCsPath -Raw) | Should Be (Get-Content -LiteralPath $expectedBuildCsPath -Raw)
 			(Get-Content -LiteralPath $buildCsprojPath -Raw) | Should Be (Get-Content -LiteralPath $expectedBuildCsprojPath -Raw)
-			$status.Count | Should Be 2
-			$status[0] | Should Match '^\?\? tools/Build/Build\.cs$'
-			$status[1] | Should Match '^\?\? tools/Build/Build\.csproj$'
-			$output.Count | Should Be 2
+			$status.Count | Should Be 3
+			$status[0] | Should Match '^\?\? .+\.slnx?$'
+			$status[1] | Should Match '^\?\? tools/Build/Build\.cs$'
+			$status[2] | Should Match '^\?\? tools/Build/Build\.csproj$'
+			$output.Count | Should Be 4
 			$output[0].ToString() | Should Match "Created '.+tools\\Build\\Build\.cs'\."
 			$output[1].ToString() | Should Match "Created '.+tools\\Build\\Build\.csproj'\."
+			$output[2].ToString() | Should Be 'Creating a root solution with dotnet new sln.'
+			$output[3].ToString() | Should Be "Adding './tools/Build' to the root solution."
+
+			Push-Location $testDirectory
+			try {
+				$listedProjects = @(& dotnet sln list)
+			}
+			finally {
+				Pop-Location
+			}
+
+			($listedProjects -join "`n") | Should Match 'tools[/\\]Build[/\\]Build\.csproj'
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -121,7 +139,7 @@ Describe 'faithlife-build-library-project convention' {
 		}
 	}
 
-	It 'adds tools/Build to a root solution when it copies Build.csproj' {
+	It 'adds tools/Build to an existing root solution when it copies Build.csproj' {
 		$testDirectory = New-TestDirectory
 
 		try {

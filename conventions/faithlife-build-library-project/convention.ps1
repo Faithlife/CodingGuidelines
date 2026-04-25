@@ -23,13 +23,34 @@ function CopyMissingConventionFile {
 	return $true
 }
 
-function TestRootSolutionExists {
-	$rootSolutions = @(
-		Get-ChildItem -LiteralPath (Get-Location) -File -Filter '*.sln'
-		Get-ChildItem -LiteralPath (Get-Location) -File -Filter '*.slnx'
+function GetRootSolutionPaths {
+	return @(
+		Get-ChildItem -LiteralPath (Get-Location) -File -Filter '*.sln' | Sort-Object -Property Name
+		Get-ChildItem -LiteralPath (Get-Location) -File -Filter '*.slnx' | Sort-Object -Property Name
 	)
+}
 
-	return $rootSolutions.Count -gt 0
+function EnsureRootSolutionExists {
+	$rootSolutions = @(GetRootSolutionPaths)
+
+	if ($rootSolutions.Count -gt 0) {
+		return $false
+	}
+
+	Write-Host 'Creating a root solution with dotnet new sln.'
+	& dotnet new sln | Out-Null
+
+	if ($LASTEXITCODE -ne 0) {
+		throw 'Failed to create a root solution with dotnet new sln.'
+	}
+
+	$rootSolutions = @(GetRootSolutionPaths)
+
+	if ($rootSolutions.Count -eq 0) {
+		throw 'dotnet new sln did not create a root solution file.'
+	}
+
+	return $true
 }
 
 $conventionBuildCsPath = Join-Path $PSScriptRoot 'Build.cs'
@@ -41,7 +62,13 @@ $targetBuildCsprojPath = Join-Path $targetDirectoryPath 'Build.csproj'
 $copiedBuildCs = CopyMissingConventionFile -SourcePath $conventionBuildCsPath -DestinationPath $targetBuildCsPath
 $copiedBuildCsproj = CopyMissingConventionFile -SourcePath $conventionBuildCsprojPath -DestinationPath $targetBuildCsprojPath
 
-if ($copiedBuildCsproj -and (TestRootSolutionExists)) {
+if ($copiedBuildCsproj) {
+	$createdRootSolution = EnsureRootSolutionExists
+
+	if ($createdRootSolution) {
+		# EnsureRootSolutionExists already emitted the creation message.
+	}
+
 	Write-Host "Adding './tools/Build' to the root solution."
 	& dotnet sln add ./tools/Build --in-root | Out-Null
 
