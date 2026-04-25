@@ -28,7 +28,7 @@ $sortedLines = if ($lines.Length -gt 4) {
 	@()
 }
 
-$newContent = ((@($generatedFromComment, '') + $lines[0..3] + $sortedLines) -join "`n") + "`n"
+$newContent = ((@($generatedFromComment) + $lines[0..3] + $sortedLines) -join "`n") + "`n"
 
 if ((Test-Path -LiteralPath $destinationPath -PathType Leaf) -and (Get-Content -LiteralPath $destinationPath -Raw) -eq $newContent) {
 	return
