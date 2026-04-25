@@ -1,4 +1,4 @@
 conventions:
-  - path: /.github/conventions/update-editorconfig-csharp
-  - path: /conventions/repo-conventions-workflow
-  - path: /conventions/gitattributes-lf
+  - path: ../conventions/repo-conventions-workflow
+  - path: ../conventions/gitattributes-lf
+  - path: ./conventions/update-editorconfig-csharp
