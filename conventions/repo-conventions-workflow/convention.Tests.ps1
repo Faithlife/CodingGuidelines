@@ -1,3 +1,6 @@
+#requires -PSEdition Core
+#requires -Version 7.0
+Set-StrictMode -Version Latest
 # Run these tests with Invoke-Pester
 $scriptPath = Join-Path $PSScriptRoot 'convention.ps1'
 
