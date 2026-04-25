@@ -10,5 +10,5 @@ The convention composes [editorconfig](../editorconfig/README.md) with the fixed
 
 ```yaml
 conventions:
-- path: Faithlife/CodingGuidelines/conventions/editorconfig-csharp
+	- path: Faithlife/CodingGuidelines/conventions/editorconfig-csharp
 ```

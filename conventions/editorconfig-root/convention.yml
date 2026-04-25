@@ -1,9 +1,9 @@
 conventions:
-- path: ../editorconfig
-  settings:
-    name: root
-    text: |
-      [*]
-      charset = utf-8
-      end_of_line = lf
-      trim_trailing_whitespace = true
+  - path: ../editorconfig
+    settings:
+      name: root
+      text: |
+        [*]
+        charset = utf-8
+        end_of_line = lf
+        trim_trailing_whitespace = true

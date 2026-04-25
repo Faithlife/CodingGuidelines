@@ -1,5 +1,5 @@
 conventions:
-- path: ../config-text
-  settings:
-    path: .prettierignore
-    lines: ${{ settings.lines }}
+  - path: ../config-text
+    settings:
+      path: .prettierignore
+      lines: ${{ settings.lines }}

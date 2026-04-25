@@ -8,9 +8,9 @@ Settings:
 
 ```yaml
 conventions:
-- path: Faithlife/CodingGuidelines/conventions/gitignore
-  settings:
-    lines:
-    - bin/
-    - obj/
+  - path: Faithlife/CodingGuidelines/conventions/gitignore
+    settings:
+      lines:
+        - bin/
+        - obj/
 ```

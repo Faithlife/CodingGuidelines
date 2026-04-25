@@ -12,15 +12,15 @@ If `.editorconfig` does not exist, the convention seeds it with `root = true`, t
 
 ```yaml
 conventions:
-- path: Faithlife/CodingGuidelines/conventions/editorconfig
-  settings:
-    name: general-editorconfig
-    text: |
-      [*]
-      charset = utf-8
-      end_of_line = lf
-      indent_size = 2
-      indent_style = space
-      insert_final_newline = true
-      trim_trailing_whitespace = true
+  - path: Faithlife/CodingGuidelines/conventions/editorconfig
+    settings:
+      name: general-editorconfig
+      text: |
+        [*]
+        charset = utf-8
+        end_of_line = lf
+        indent_size = 2
+        indent_style = space
+        insert_final_newline = true
+        trim_trailing_whitespace = true
 ```

@@ -6,5 +6,5 @@ It is equivalent to applying [`dotnet-sdk`](../dotnet-sdk/) with `version: 10`.
 
 ```yaml
 conventions:
-- path: Faithlife/CodingGuidelines/conventions/dotnet-sdk10
+	- path: Faithlife/CodingGuidelines/conventions/dotnet-sdk10
 ```

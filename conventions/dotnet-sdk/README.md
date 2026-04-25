@@ -8,7 +8,7 @@ This [convention](https://github.com/Faithlife/RepoConventions) ensures that the
 
 ```yaml
 conventions:
-- path: Faithlife/CodingGuidelines/conventions/dotnet-sdk
-  settings:
-    version: 10
+  - path: Faithlife/CodingGuidelines/conventions/dotnet-sdk
+    settings:
+      version: 10
 ```

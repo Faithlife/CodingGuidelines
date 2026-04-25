@@ -6,5 +6,5 @@ If it does not, it updates `.gitattributes` and [converts CRLF to LF](../../sect
 
 ```yaml
 conventions:
-- path: Faithlife/CodingGuidelines/conventions/gitattributes-lf
+	- path: Faithlife/CodingGuidelines/conventions/gitattributes-lf
 ```

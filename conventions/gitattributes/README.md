@@ -8,8 +8,8 @@ Settings:
 
 ```yaml
 conventions:
-- path: Faithlife/CodingGuidelines/conventions/gitattributes
-  settings:
-    lines:
-    - *.g.* linguist-generated=true
+  - path: Faithlife/CodingGuidelines/conventions/gitattributes
+    settings:
+      lines:
+        - *.g.* linguist-generated=true
 ```

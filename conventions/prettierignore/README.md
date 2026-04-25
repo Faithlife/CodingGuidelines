@@ -8,9 +8,9 @@ Settings:
 
 ```yaml
 conventions:
-- path: Faithlife/CodingGuidelines/conventions/prettierignore
-  settings:
-    lines:
-    - coverage/
-    - dist/
+  - path: Faithlife/CodingGuidelines/conventions/prettierignore
+    settings:
+      lines:
+        - coverage/
+        - dist/
 ```

@@ -1,10 +1,10 @@
 conventions:
-- path: ../config-text
-  settings:
-    path: .editorconfig
-    new-file-text: root = true
-    section:
-      name: ${{ settings.name }}
-      text: ${{ settings.text }}
-      comment-prefix: '#'
-    agent: ${{ settings.agent }}
+  - path: ../config-text
+    settings:
+      path: .editorconfig
+      new-file-text: root = true
+      section:
+        name: ${{ settings.name }}
+        text: ${{ settings.text }}
+        comment-prefix: '#'
+      agent: ${{ settings.agent }}

@@ -8,5 +8,5 @@ If the repository already has a root `nuget.config` and it does not match exactl
 
 ```yaml
 conventions:
-- path: Faithlife/CodingGuidelines/conventions/nuget-config
+	- path: Faithlife/CodingGuidelines/conventions/nuget-config
 ```

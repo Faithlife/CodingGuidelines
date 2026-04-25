@@ -19,16 +19,16 @@ If the target file does not exist, the convention creates it. If every configure
 
 ```yaml
 conventions:
-- path: Faithlife/CodingGuidelines/conventions/config-text
-  settings:
-    path: .editorconfig
-    new-file-text: root = true
-    section:
-      name: general-editorconfig
-      text: |
-        [*]
-        charset = utf-8
-      comment-prefix: '#'
-    agent:
-      instructions: Build the code if changes were made.
+  - path: Faithlife/CodingGuidelines/conventions/config-text
+    settings:
+      path: .editorconfig
+      new-file-text: root = true
+      section:
+        name: general-editorconfig
+        text: |
+          [*]
+          charset = utf-8
+        comment-prefix: '#'
+      agent:
+        instructions: Build the code if changes were made.
 ```

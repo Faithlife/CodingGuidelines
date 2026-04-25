@@ -8,5 +8,5 @@ If the repository already has a `LICENSE` file, the convention replaces it when 
 
 ```yaml
 conventions:
-- path: Faithlife/CodingGuidelines/conventions/license-mit
+	- path: Faithlife/CodingGuidelines/conventions/license-mit
 ```

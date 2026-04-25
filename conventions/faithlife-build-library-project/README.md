@@ -6,5 +6,5 @@ If the convention copies `Build.csproj`, it ensures the repository root has a so
 
 ```yaml
 conventions:
-- path: Faithlife/CodingGuidelines/conventions/faithlife-build-library-project
+	- path: Faithlife/CodingGuidelines/conventions/faithlife-build-library-project
 ```
