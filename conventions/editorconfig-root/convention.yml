@@ -7,5 +7,7 @@ conventions:
         charset = utf-8
         end_of_line = lf
         trim_trailing_whitespace = true
+      agent:
+        instructions: ${{ readText("agent-instructions.md") }}
       commit:
         message: "Update root editorconfig settings."

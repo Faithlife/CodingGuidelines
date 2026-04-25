@@ -70,4 +70,35 @@ indent_size = 4
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
 		}
 	}
+
+	It 'runs Copilot with the packaged instructions when it changes .editorconfig' {
+		$testDirectory = New-TestDirectory
+
+		try {
+			Copy-TestConventionAssets -TestDirectory $testDirectory
+			$testCopilot = New-TestCopilotCommand -TestDirectory $testDirectory
+			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
+			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
+conventions:
+- path: ../conventions/editorconfig-json
+"@
+			Initialize-TestRepository -Path $testDirectory
+			$originalPath = $env:PATH
+			$expectedInstructions = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-json/agent-instructions.md') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
+
+			try {
+				$env:PATH = "$($testCopilot.CommandDirectory);$originalPath"
+				{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should Not Throw
+			}
+			finally {
+				$env:PATH = $originalPath
+			}
+
+			(Test-Path -LiteralPath $testCopilot.InputPath) | Should Be $true
+			(((Get-Content -LiteralPath $testCopilot.InputPath -Raw) -replace "`r`n", "`n").TrimEnd("`n")) | Should Be $expectedInstructions
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
 }

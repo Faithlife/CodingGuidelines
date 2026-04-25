@@ -3,5 +3,7 @@ conventions:
     settings:
       name: json
       text: ${{ readText(".editorconfig") }}
+      agent:
+        instructions: ${{ readText("agent-instructions.md") }}
       commit:
         message: "Update JSON editorconfig settings."

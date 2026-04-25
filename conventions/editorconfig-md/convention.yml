@@ -3,5 +3,7 @@ conventions:
     settings:
       name: md
       text: ${{ readText(".editorconfig") }}
+      agent:
+        instructions: ${{ readText("agent-instructions.md") }}
       commit:
         message: "Update Markdown editorconfig settings."

@@ -3,5 +3,7 @@ conventions:
     settings:
       name: ps1
       text: ${{ readText(".editorconfig") }}
+      agent:
+        instructions: ${{ readText("agent-instructions.md") }}
       commit:
         message: "Update PowerShell editorconfig settings."
