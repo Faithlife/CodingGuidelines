@@ -1,9 +1,11 @@
 root = true
 
+# DO NOT EDIT: root convention
 [*]
 charset = utf-8
 end_of_line = lf
 trim_trailing_whitespace = true
+# END DO NOT EDIT
 
 [*.{yml,yaml}]
 indent_size = 2
