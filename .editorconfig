@@ -11,10 +11,6 @@ trim_trailing_whitespace = true
 indent_size = 2
 indent_style = space
 
-[*.md]
-indent_size = 2
-indent_style = space
-
 [*.ps1]
 indent_size = tab
 indent_style = tab
@@ -28,6 +24,12 @@ csharp_indent_block_contents = true
 
 # DO NOT EDIT: json convention
 [*.json]
+indent_size = 2
+indent_style = space
+# END DO NOT EDIT
+
+# DO NOT EDIT: md convention
+[*.md]
 indent_size = 2
 indent_style = space
 # END DO NOT EDIT
