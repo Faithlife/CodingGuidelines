@@ -48,14 +48,14 @@ exit /b 0
 
 	It 'ignores the input path and runs apm install --update' {
 		$testDirectory = New-TestDirectory
-		$toolDirectory = Join-Path $testDirectory 'tools'
-		$argumentsPath = Join-Path $testDirectory 'apm-arguments.txt'
+		$toolDirectory = New-TestDirectory
+		$argumentsPath = Join-Path $toolDirectory 'apm-arguments.txt'
 		$apmCommandPath = Join-Path $toolDirectory 'apm.cmd'
 		$originalPath = $env:PATH
 
 		try {
-			New-Item -ItemType Directory -Path $toolDirectory | Out-Null
 			Write-Utf8NoBomFile -Path (Join-Path $testDirectory 'apm.yml') -Content "packages: []`n"
+			Initialize-TestRepository -Path $testDirectory
 			$apmCommand = @"
 @echo off
 setlocal
@@ -67,12 +67,13 @@ exit /b 0
 			$env:APM_ARGUMENTS_PATH = $argumentsPath
 			$env:PATH = "$toolDirectory;$originalPath"
 
-			{ & $conventionScriptPath (Join-Path $testDirectory 'missing-input.json') } | Should -Not -Throw
+			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath (Join-Path $testDirectory 'missing-input.json') } | Should -Not -Throw
 			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install --update'
 		}
 		finally {
 			$env:PATH = $originalPath
 			Remove-Item Env:APM_ARGUMENTS_PATH -ErrorAction SilentlyContinue
+			Remove-Item -LiteralPath $toolDirectory -Recurse -Force
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
 		}
 	}
