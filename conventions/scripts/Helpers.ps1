@@ -1,3 +1,5 @@
+#requires -PSEdition Core
+#requires -Version 7.0
 <#
 .SYNOPSIS
 Writes text as UTF-8 without a byte order mark.

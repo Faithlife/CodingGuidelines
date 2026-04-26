@@ -1,3 +1,5 @@
+#requires -PSEdition Core
+#requires -Version 7.0
 $helpersPath = Join-Path $PSScriptRoot 'Helpers.ps1'
 . $helpersPath
 
