@@ -7,4 +7,5 @@ conventions:
   - path: ../conventions/editorconfig-ps1
   - path: ../conventions/editorconfig-yaml
   - path: ../conventions/editorconfig-csharp
+  - path: ../conventions/license-mit
   - path: ./conventions/update-editorconfig-csharp
