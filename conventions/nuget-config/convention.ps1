@@ -10,8 +10,9 @@ Set-Utf8NoBomConsoleEncoding
 
 $sourceNuGetConfigPath = Join-Path $PSScriptRoot 'files\nuget.config'
 $targetNuGetConfigPath = Join-Path (Get-Location) 'nuget.config'
+$existingNuGetConfigItem = Get-Item -LiteralPath $targetNuGetConfigPath -ErrorAction SilentlyContinue
 
-if (-not (Test-Path -LiteralPath $targetNuGetConfigPath -PathType Leaf)) {
+if ($null -eq $existingNuGetConfigItem) {
 	$copyResult = Copy-FileIfDifferent -SourcePath $sourceNuGetConfigPath -DestinationPath $targetNuGetConfigPath
 
 	if (-not $copyResult.Created) {
@@ -20,6 +21,17 @@ if (-not (Test-Path -LiteralPath $targetNuGetConfigPath -PathType Leaf)) {
 
 	Write-Host "Created '$targetNuGetConfigPath' from the published NuGet config."
 	return
+}
+
+if ($existingNuGetConfigItem.Name -cne 'nuget.config') {
+	$existingNuGetConfigPath = Join-Path (Get-Location) $existingNuGetConfigItem.Name
+	& git mv -f -- $existingNuGetConfigItem.Name 'nuget.config'
+
+	if ($LASTEXITCODE -ne 0) {
+		throw "Failed to rename '$existingNuGetConfigPath' to '$targetNuGetConfigPath'."
+	}
+
+	$existingNuGetConfigItem = Get-Item -LiteralPath $targetNuGetConfigPath
 }
 
 if (Test-FileContentMatches -ExpectedPath $sourceNuGetConfigPath -ActualPath $targetNuGetConfigPath) {

@@ -51,6 +51,38 @@ Describe 'nuget-config convention' {
 		}
 	}
 
+	It 'renames an existing non-lowercase NuGet config to nuget.config' {
+		$testDirectory = New-TestDirectory
+
+		try {
+			Initialize-TestRepository -Path $testDirectory
+			$originalNuGetConfigPath = Join-Path $testDirectory 'NuGet.Config'
+			$expectedContent = Get-Content -LiteralPath $expectedNuGetConfigPath -Raw
+			Write-Utf8NoBomFile -Path $originalNuGetConfigPath -Content $expectedContent
+
+			Push-Location $testDirectory
+			try {
+				& git add -A
+				& git commit -m 'Add NuGet.Config' | Out-Null
+			}
+			finally {
+				Pop-Location
+			}
+
+			$output = InvokeNuGetConfigConvention -TestDirectory $testDirectory
+			$nuGetConfigPath = Join-Path $testDirectory 'nuget.config'
+			$nuGetConfigNames = @(Get-ChildItem -LiteralPath $testDirectory -File | Where-Object { $_.Name -ieq 'nuget.config' } | Select-Object -ExpandProperty Name)
+
+			$nuGetConfigNames.Count | Should -Be 1
+			$nuGetConfigNames[0] | Should -Be 'nuget.config'
+			(Get-Content -LiteralPath $nuGetConfigPath -Raw) | Should -Be $expectedContent
+			(@($output | ForEach-Object { $_.ToString() }) -contains "'$nuGetConfigPath' already matches the published NuGet config.") | Should -Be $true
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
 	It 'warns and leaves an existing different nuget.config unchanged' {
 		$testDirectory = New-TestDirectory
 
