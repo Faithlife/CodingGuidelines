@@ -6,4 +6,4 @@ conventions:
       agent:
         instructions: ${{ readText("agent-instructions.md") }}
       commit:
-        message: "Update PowerShell editorconfig settings."
+        message: "Update PowerShell editorconfig settings"

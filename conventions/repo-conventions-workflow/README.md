@@ -9,6 +9,6 @@ To bootstrap a new repository:
 ```pwsh
 dnx repo-conventions add Faithlife/CodingGuidelines/conventions/repo-conventions-workflow
 git add -A
-git commit -m "Add repo-conventions-workflow convention."
+git commit -m "Add repo-conventions-workflow convention"
 dnx repo-conventions apply
 ```

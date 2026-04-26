@@ -66,7 +66,7 @@ Describe 'license-mit convention' {
 			Push-Location $testDirectory
 			try {
 				& git add -A
-				& git commit -m 'Add old license.' | Out-Null
+				& git commit -m 'Add old license' | Out-Null
 			}
 			finally {
 				Pop-Location
@@ -96,7 +96,7 @@ Describe 'license-mit convention' {
 			Push-Location $testDirectory
 			try {
 				& git add -A
-				& git commit -m 'Add MIT license.' | Out-Null
+				& git commit -m 'Add MIT license' | Out-Null
 				$headAfterFirstRun = & git rev-parse HEAD
 			}
 			finally {

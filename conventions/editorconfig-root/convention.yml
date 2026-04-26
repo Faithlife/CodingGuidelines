@@ -10,4 +10,4 @@ conventions:
       agent:
         instructions: ${{ readText("agent-instructions.md") }}
       commit:
-        message: "Update root editorconfig settings."
+        message: "Update root editorconfig settings"

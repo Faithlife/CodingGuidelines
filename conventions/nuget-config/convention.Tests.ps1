@@ -70,7 +70,7 @@ Describe 'nuget-config convention' {
 			Push-Location $testDirectory
 			try {
 				& git add -A
-				& git commit -m 'Add existing nuget config.' | Out-Null
+				& git commit -m 'Add existing nuget config' | Out-Null
 			}
 			finally {
 				Pop-Location
@@ -99,7 +99,7 @@ Describe 'nuget-config convention' {
 			Push-Location $testDirectory
 			try {
 				& git add -A
-				& git commit -m 'Add nuget config.' | Out-Null
+				& git commit -m 'Add nuget config' | Out-Null
 				$headAfterFirstRun = & git rev-parse HEAD
 			}
 			finally {

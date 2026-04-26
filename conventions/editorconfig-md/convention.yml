@@ -6,4 +6,4 @@ conventions:
       agent:
         instructions: ${{ readText("agent-instructions.md") }}
       commit:
-        message: "Update Markdown editorconfig settings."
+        message: "Update Markdown editorconfig settings"

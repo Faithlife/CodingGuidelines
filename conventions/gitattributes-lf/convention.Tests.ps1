@@ -63,7 +63,7 @@ Describe 'gitattributes-lf convention' {
 			$global:CopilotCallCount | Should -Be 0
 			$output[0].ToString() | Should -Match "Creating '.+\\.gitattributes' with LF normalization enabled\."
 			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should -Be $initialHead
-			$commitSubjects[0] | Should -Be 'Use LF.'
+			$commitSubjects[0] | Should -Be 'Use LF'
 			$status.Count | Should -Be 0
 		}
 		finally {
@@ -86,7 +86,7 @@ Describe 'gitattributes-lf convention' {
 			Push-Location $testDirectory
 			try {
 				& git add -A
-				& git commit -m 'Add gitattributes.' | Out-Null
+				& git commit -m 'Add gitattributes' | Out-Null
 
 				function global:copilot {
 					$global:CopilotCallCount++
@@ -104,10 +104,10 @@ Describe 'gitattributes-lf convention' {
 			(Get-Content -LiteralPath $gitattributesPath -Raw) | Should -Match "\.png binary"
 			(@($output | ForEach-Object { $_.ToString() }) -contains ".gitattributes is not compliant; starting Copilot to update '$gitattributesPath'.") | Should -Be $true
 			$commitSubjects = @(Get-CommitSubjects -TestDirectory $testDirectory -Count 4)
-			$commitSubjects[0] | Should -Be 'Ignore CRLF to LF for git blame.'
-			$commitSubjects[1] | Should -Be 'Convert CRLF to LF.'
-			$commitSubjects[2] | Should -Be 'Use LF.'
-			$commitSubjects[3] | Should -Be 'Add gitattributes.'
+			$commitSubjects[0] | Should -Be 'Ignore CRLF to LF for git blame'
+			$commitSubjects[1] | Should -Be 'Convert CRLF to LF'
+			$commitSubjects[2] | Should -Be 'Use LF'
+			$commitSubjects[3] | Should -Be 'Add gitattributes'
 			$ignoreRevsFilePath = Join-Path $testDirectory '.git-blame-ignore-revs'
 			(Test-Path -LiteralPath $ignoreRevsFilePath) | Should -Be $true
 			$renormalizeCommitId = Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1'
@@ -132,7 +132,7 @@ Describe 'gitattributes-lf convention' {
 			Push-Location $testDirectory
 			try {
 				& git add -A
-				& git commit -m 'Add compliant gitattributes.' | Out-Null
+				& git commit -m 'Add compliant gitattributes' | Out-Null
 			}
 			finally {
 				Pop-Location
@@ -163,7 +163,7 @@ Describe 'gitattributes-lf convention' {
 			Push-Location $testDirectory
 			try {
 				& git add -A
-				& git commit -m 'Add noncompliant gitattributes.' | Out-Null
+				& git commit -m 'Add noncompliant gitattributes' | Out-Null
 
 				function global:copilot {
 					$global:CopilotCallCount++

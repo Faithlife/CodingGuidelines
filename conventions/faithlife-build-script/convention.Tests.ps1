@@ -81,7 +81,7 @@ Describe 'faithlife-build-script convention' {
 			Push-Location $testDirectory
 			try {
 				& git add -- build.ps1
-				& git commit -m 'Add placeholder build script.' | Out-Null
+				& git commit -m 'Add placeholder build script' | Out-Null
 			}
 			finally {
 				Pop-Location
@@ -111,7 +111,7 @@ Describe 'faithlife-build-script convention' {
 
 			Push-Location $testDirectory
 			try {
-				& git commit -m 'Add build script.' | Out-Null
+				& git commit -m 'Add build script' | Out-Null
 				$headAfterFirstRun = & git rev-parse HEAD
 			}
 			finally {

@@ -6,4 +6,4 @@ conventions:
       agent:
         instructions: ${{ readText("agent-instructions.md") }}
       commit:
-        message: "Update YAML editorconfig settings."
+        message: "Update YAML editorconfig settings"

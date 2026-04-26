@@ -132,7 +132,7 @@ SetCompliantGitattributes -Path $gitattributesPath
 
 # Commit the attribute change first so the later renormalization commit contains only file content rewrites.
 InvokeGit -Arguments @('add', '.gitattributes') -FailureMessage "Failed to stage '$gitattributesPath'."
-$useLfCommitId = NewCommitFromStagedChanges -Message 'Use LF.'
+$useLfCommitId = NewCommitFromStagedChanges -Message 'Use LF'
 
 if ($null -eq $useLfCommitId) {
 	return
@@ -144,7 +144,7 @@ ResetWorkingTreeAfterAttributeChange
 Write-Host 'Staging line-ending renormalization for tracked files.'
 InvokeGit -Arguments @('add', '--renormalize', '.') -FailureMessage 'Failed to stage line-ending renormalization.'
 
-$renormalizeCommitId = NewCommitFromStagedChanges -Message 'Convert CRLF to LF.'
+$renormalizeCommitId = NewCommitFromStagedChanges -Message 'Convert CRLF to LF'
 
 if ($null -eq $renormalizeCommitId) {
 	return
@@ -163,7 +163,7 @@ if (-not ($ignoreRevsLines -contains $renormalizeCommitId)) {
 
 Write-Utf8NoBomFile -Path $gitBlameIgnoreRevsPath -Content (($ignoreRevsLines -join "`n") + "`n")
 InvokeGit -Arguments @('add', '.git-blame-ignore-revs') -FailureMessage "Failed to stage '$gitBlameIgnoreRevsPath'."
-$ignoreRevsCommitId = NewCommitFromStagedChanges -Message 'Ignore CRLF to LF for git blame.'
+$ignoreRevsCommitId = NewCommitFromStagedChanges -Message 'Ignore CRLF to LF for git blame'
 
 if ($null -eq $ignoreRevsCommitId) {
 	throw 'Expected a git blame ignore commit after renormalizing line endings.'

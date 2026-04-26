@@ -124,7 +124,7 @@ EndGlobal
 			Push-Location $testDirectory
 			try {
 				& git add -A
-				& git commit -m 'Add build files.' | Out-Null
+				& git commit -m 'Add build files' | Out-Null
 			}
 			finally {
 				Pop-Location
@@ -157,7 +157,7 @@ EndGlobal
 			Push-Location $testDirectory
 			try {
 				& git add -A
-				& git commit -m 'Add solution and Build.cs.' | Out-Null
+				& git commit -m 'Add solution and Build.cs' | Out-Null
 			}
 			finally {
 				Pop-Location
@@ -202,7 +202,7 @@ EndGlobal
 			Push-Location $testDirectory
 			try {
 				& git add -A
-				& git commit -m 'Add build library project.' | Out-Null
+				& git commit -m 'Add build library project' | Out-Null
 				$headAfterFirstRun = & git rev-parse HEAD
 			}
 			finally {

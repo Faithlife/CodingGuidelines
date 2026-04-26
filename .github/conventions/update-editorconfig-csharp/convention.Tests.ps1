@@ -110,7 +110,7 @@ Describe 'update-editorconfig-csharp convention' {
 			Push-Location $testDirectory
 			try {
 				& git add -A
-				& git commit -m 'Add generated editorconfig.' | Out-Null
+				& git commit -m 'Add generated editorconfig' | Out-Null
 			}
 			finally {
 				Pop-Location

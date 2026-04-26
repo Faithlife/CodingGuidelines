@@ -89,7 +89,7 @@ function Initialize-TestRepository {
 
 		Write-Utf8NoBomFile -Path (Join-Path $Path 'README.md') -Content "# Test`n"
 		& git add -A
-		& git commit -m 'Initial.' | Out-Null
+		& git commit -m 'Initial' | Out-Null
 	}
 	finally {
 		Pop-Location

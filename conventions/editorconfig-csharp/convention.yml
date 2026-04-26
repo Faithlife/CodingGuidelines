@@ -6,4 +6,4 @@ conventions:
       agent:
         instructions: ${{ readText("agent-instructions.md") }}
       commit:
-        message: "Update C# editorconfig settings."
+        message: "Update C# editorconfig settings"

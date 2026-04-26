@@ -74,7 +74,7 @@ Describe 'faithlife-build-library-workflow convention' {
 			Push-Location $testDirectory
 			try {
 				& git add -A
-				& git commit -m 'Add placeholder workflow.' | Out-Null
+				& git commit -m 'Add placeholder workflow' | Out-Null
 			}
 			finally {
 				Pop-Location
@@ -104,7 +104,7 @@ Describe 'faithlife-build-library-workflow convention' {
 			Push-Location $testDirectory
 			try {
 				& git add -A
-				& git commit -m 'Add build workflow.' | Out-Null
+				& git commit -m 'Add build workflow' | Out-Null
 				$headAfterFirstRun = & git rev-parse HEAD
 			}
 			finally {

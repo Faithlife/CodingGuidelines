@@ -170,16 +170,16 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 				path = '.editorconfig'
 				'new-file-text' = 'root = true'
 				agent = @{ instructions = 'Create notes.' }
-				commit = @{ message = 'Add editorconfig.' }
+				commit = @{ message = 'Add editorconfig' }
 			}
 
 			(Test-Path -LiteralPath $targetPath) | Should -Be $true
 			(Test-Path -LiteralPath $notesPath) | Should -Be $true
 			$global:CopilotCallCount | Should -Be 1
 			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should -Be $initialHead
-			(@(Get-CommitSubjects -TestDirectory $testDirectory -Count 1))[0] | Should -Be 'Add editorconfig.'
+			(@(Get-CommitSubjects -TestDirectory $testDirectory -Count 1))[0] | Should -Be 'Add editorconfig'
 			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0
-			(@($output | ForEach-Object { $_.ToString() }) -contains "Committed convention changes with message 'Add editorconfig.'.") | Should -Be $true
+			(@($output | ForEach-Object { $_.ToString() }) -contains "Committed convention changes with message 'Add editorconfig'.") | Should -Be $true
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -197,7 +197,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 			Push-Location $testDirectory
 			try {
 				& git add -A
-				& git commit -m 'Add editorconfig.' | Out-Null
+				& git commit -m 'Add editorconfig' | Out-Null
 			}
 			finally {
 				Pop-Location
