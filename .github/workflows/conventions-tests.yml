@@ -36,5 +36,11 @@ jobs:
           Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
           Install-Module -Name Pester -MinimumVersion 5.0.0 -Scope CurrentUser -Force -SkipPublisherCheck
 
+      - name: Install .NET
+        uses: actions/setup-dotnet@v5
+
+      - name: Install repo-conventions
+        run: dotnet tool install --global repo-conventions
+
       - name: Run convention tests
         run: ./conventions/RunAllTests.ps1
