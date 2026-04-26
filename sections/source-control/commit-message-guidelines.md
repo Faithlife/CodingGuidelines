@@ -2,8 +2,8 @@
 
 Structure your git commit message as follows:
 
-```
-Short summary of changes. PROJ-1234
+```text
+Short summary of changes PROJ-1234
 
 A longer description that goes into more detail about
 the nature of this commit. Describe not just the *what*
@@ -28,15 +28,15 @@ Consider starting your commit message with an imperative verb (“Fix bug”, no
 
 ## Bad Examples
 
-```
+```text
 Minor changes.
 ```
 
-```
+```text
 Im in ur c0dez, fixin yr bugz
 ```
 
-```
+```text
 Added INewInterface. Bug ID: 1234. Fixed crash in log in screen, Bug ID: 1236. Refactored AppManager
 class. Code cleanup. Enabled logging in Debug builds (Bug ID: 2048).
 ```
@@ -45,11 +45,11 @@ class. Code cleanup. Enabled logging in Debug builds (Bug ID: 2048).
 
 *If this commit does really resolve two Jira cases with one fix, then resolve one case as a duplicate of the other, and specify the Bug ID of the primary case in the commit message.*
 
-```
+```text
 Code review for Feature X.
 ```
 
-```
+```text
 PR feedback
 ```
 
@@ -57,12 +57,12 @@ PR feedback
 
 ## Good Examples
 
-```
-Implement the Widget Frobbing panel. PROJ-1234
+```text
+Implement the Widget Frobbing panel PROJ-1234
 ```
 
-```
-Fix race condition with multi-threaded allocation.
+```text
+Fix race condition with multi-threaded allocation
 
 On Windows XP SP3, the kernel doesn't guarantee that SomeMethod()
 will only be executed by one thread at a time (see MSKB123456).
