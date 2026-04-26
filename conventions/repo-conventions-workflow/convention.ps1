@@ -6,8 +6,8 @@ $ErrorActionPreference = 'Stop'
 
 $workflowPath = Join-Path $PWD '.github/workflows/repo-conventions.yml'
 if (Test-Path -LiteralPath $workflowPath) {
-  Write-Host 'Workflow already exists.'
-  exit 0
+	Write-Host 'Workflow already exists.'
+	exit 0
 }
 
 $workflowDirectory = Split-Path -Parent $workflowPath
