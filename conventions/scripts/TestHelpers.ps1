@@ -1,5 +1,10 @@
 #requires -PSEdition Core
 #requires -Version 7.0
+
+if ((Get-Module -ListAvailable Pester | Sort-Object Version -Descending | Select-Object -First 1).Version -lt [version]'5.0.0') {
+    throw "Pester 5 is required to run these tests. Currently using $((Get-Module Pester).Version)."
+}
+
 $helpersPath = Join-Path $PSScriptRoot 'Helpers.ps1'
 . $helpersPath
 

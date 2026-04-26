@@ -3,11 +3,17 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$helpersPath = Join-Path $PSScriptRoot 'Helpers.ps1'
+if ((Get-Module -ListAvailable Pester | Sort-Object Version -Descending | Select-Object -First 1).Version -lt [version]'5.0.0') {
+    throw "Pester 5 is required to run these tests. Currently using $((Get-Module Pester).Version)."
+}
+
+$helpersPath = Join-Path $PSScriptRoot 'scripts' 'Helpers.ps1'
 . $helpersPath
 
+Set-Utf8NoBomConsoleEncoding
+
 function GetConventionsRoot {
-	return [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+	return [System.IO.Path]::GetFullPath($PSScriptRoot)
 }
 
 function GetTestScriptPaths {
@@ -32,9 +38,6 @@ function GetRelativeDisplayPath {
 
 	return [System.IO.Path]::GetRelativePath($RootPath, $ChildPath)
 }
-
-Set-Utf8NoBomConsoleEncoding
-Import-Module Pester -MinimumVersion 5.0.0
 
 $repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
 $conventionsRoot = GetConventionsRoot
