@@ -11,26 +11,89 @@ $destinationPath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..
 $generatedFromComment = '# generated from https://github.com/Faithlife/CodingGuidelines/blob/master/sections/csharp/editorconfig.md'
 
 $markdown = Get-Content -LiteralPath $sourcePath -Raw
-$matches = [System.Text.RegularExpressions.Regex]::Matches($markdown, '```editorconfig\s*(.*?)```', [System.Text.RegularExpressions.RegexOptions]::Singleline)
+$codeFenceCollection = [System.Text.RegularExpressions.Regex]::Matches($markdown, '```editorconfig\s*(.*?)```', [System.Text.RegularExpressions.RegexOptions]::Singleline)
 
-if ($matches.Count -eq 0) {
+function GetLineSortRank {
+	param([string] $line)
+
+	switch -Regex ($line) {
+		'^indent_size\s*=' { return 0 }
+		'^indent_style\s*=' { return 1 }
+		'^tab_width\s*=' { return 2 }
+		default { return 3 }
+	}
+}
+
+if ($codeFenceCollection.Count -eq 0) {
 	throw "No editorconfig code fences were found in '$sourcePath'."
 }
 
-[string[]] $lines = [System.Text.RegularExpressions.Regex]::Split((-join ($matches | ForEach-Object { $_.Groups[1].Value })), '\r?\n')
+[string[]] $lines = [System.Text.RegularExpressions.Regex]::Split((-join ($codeFenceCollection | ForEach-Object { $_.Groups[1].Value })), '\r?\n')
 
-if ($lines.Length -lt 4) {
-	throw "Expected at least four generated lines in '$sourcePath', but found $($lines.Length)."
+$contentLines = @($lines | Where-Object { $_ -ne '' })
+$preambleLines = [System.Collections.Generic.List[string]]::new()
+$sections = [System.Collections.Generic.List[object]]::new()
+$currentSectionHeader = $null
+$currentSectionLines = [System.Collections.Generic.List[string]]::new()
+
+foreach ($line in $contentLines) {
+	if ($line -match '^\[.+\]$') {
+		if ($null -ne $currentSectionHeader) {
+			$sections.Add([pscustomobject]@{
+				Header = $currentSectionHeader
+				Lines = @($currentSectionLines)
+			})
+		}
+
+		$currentSectionHeader = $line
+		$currentSectionLines = [System.Collections.Generic.List[string]]::new()
+		continue
+	}
+
+	if ($null -eq $currentSectionHeader) {
+		$preambleLines.Add($line)
+		continue
+	}
+
+	$currentSectionLines.Add($line)
 }
 
-$sortedLines = if ($lines.Length -gt 4) {
-	$lines[4..($lines.Length - 1)] | Where-Object { $_ -ne '' } | Sort-Object
-}
-	else {
-	@()
+if ($null -ne $currentSectionHeader) {
+	$sections.Add([pscustomobject]@{
+		Header = $currentSectionHeader
+		Lines = @($currentSectionLines)
+	})
 }
 
-$newContent = ((@($generatedFromComment) + $lines[0..3] + $sortedLines) -join "`n") + "`n"
+if ($sections.Count -eq 0) {
+	throw "No editorconfig sections were found in '$sourcePath'."
+}
+
+$newLines = [System.Collections.Generic.List[string]]::new()
+$newLines.Add($generatedFromComment)
+
+foreach ($preambleLine in $preambleLines) {
+	$newLines.Add($preambleLine)
+}
+
+if ($preambleLines.Count -gt 0) {
+	$newLines.Add('')
+}
+
+for ($sectionIndex = 0; $sectionIndex -lt $sections.Count; $sectionIndex++) {
+	if ($sectionIndex -gt 0) {
+		$newLines.Add('')
+	}
+
+	$section = $sections[$sectionIndex]
+	$newLines.Add($section.Header)
+
+	foreach ($sectionLine in ($section.Lines | Sort-Object @{ Expression = { GetLineSortRank $_ } }, @{ Expression = { $_ } })) {
+		$newLines.Add($sectionLine)
+	}
+}
+
+$newContent = ($newLines -join "`n") + "`n"
 
 if ((Test-Path -LiteralPath $destinationPath -PathType Leaf) -and (Get-Content -LiteralPath $destinationPath -Raw) -eq $newContent) {
 	return

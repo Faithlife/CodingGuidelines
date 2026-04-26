@@ -1,4 +1,8 @@
 # generated from https://github.com/Faithlife/CodingGuidelines/blob/master/sections/csharp/editorconfig.md
+[*.{csproj,props,slnx,targets}]
+indent_size = 2
+indent_style = space
+
 [*.{cs,cshtml,razor}]
 indent_size = tab
 indent_style = tab
