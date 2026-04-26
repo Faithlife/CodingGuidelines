@@ -13,6 +13,22 @@ $targetNuGetConfigPath = Join-Path (Get-Location) 'nuget.config'
 $existingNuGetConfigItem = Get-Item -LiteralPath $targetNuGetConfigPath -ErrorAction SilentlyContinue
 
 if ($null -eq $existingNuGetConfigItem) {
+	$nonLowercaseNuGetConfigItems = @(
+		Get-ChildItem -LiteralPath (Get-Location) -File |
+			Where-Object { $_.Name -ieq 'nuget.config' -and $_.Name -cne 'nuget.config' }
+	)
+
+	if ($nonLowercaseNuGetConfigItems.Count -gt 1) {
+		$matchingNuGetConfigNames = ($nonLowercaseNuGetConfigItems | Select-Object -ExpandProperty Name) -join "', '"
+		throw "Found multiple non-lowercase NuGet config files: '$matchingNuGetConfigNames'."
+	}
+
+	if ($nonLowercaseNuGetConfigItems.Count -eq 1) {
+		$existingNuGetConfigItem = $nonLowercaseNuGetConfigItems[0]
+	}
+}
+
+if ($null -eq $existingNuGetConfigItem) {
 	$copyResult = Copy-FileIfDifferent -SourcePath $sourceNuGetConfigPath -DestinationPath $targetNuGetConfigPath
 
 	if (-not $copyResult.Created) {
