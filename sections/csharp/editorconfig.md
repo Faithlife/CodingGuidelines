@@ -2,7 +2,13 @@
 
 This document describes the standard `.editorconfig` settings for C# files. The `editorconfig` code fences in this file are extracted into [conventions/editorconfig-csharp/.editorconfig](../../conventions/editorconfig-csharp/.editorconfig) by [the local updater convention](../../.github/conventions/update-editorconfig-csharp/README.md).
 
-The standard settings for `charset`, `end_of_line`, `insert_final_newline`, and `trim_trailing_whitespace` should be inherited from [the `[*]` section](../editorconfig.md).
+```editorconfig
+[*.{csproj,props,slnx,targets}]
+indent_size = 2
+indent_style = space
+```
+
+The .NET tooling uses two-space indentation for these file types.
 
 ```editorconfig
 [*.{cs,cshtml,razor}]
