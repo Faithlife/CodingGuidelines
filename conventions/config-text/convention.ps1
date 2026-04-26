@@ -715,6 +715,22 @@ Write-Utf8NoBomFile -Path $targetPath -Content $newContent
 if ($null -ne $configuredAgent -and -not [string]::IsNullOrWhiteSpace($configuredAgent.Instructions)) {
 	Write-Host "'$targetPath' changed; starting Copilot with configured agent instructions."
 	Invoke-CopilotWithIsolatedConfig -Instructions $configuredAgent.Instructions
+
+	if ($null -ne $configuredSection) {
+		$copilotContent = ''
+		$copilotLineEnding = $lineEnding
+
+		if (Test-Path -LiteralPath $targetPath -PathType Leaf) {
+			$copilotContent = [System.IO.File]::ReadAllText($targetPath)
+			$copilotLineEnding = Get-LineEnding -Content $copilotContent
+		}
+
+		$reconciledSectionResult = SetManagedSectionText -Content $copilotContent -Section $configuredSection -LineEnding $copilotLineEnding -TargetPath $targetPath
+
+		if ($reconciledSectionResult.Updated) {
+			Write-Utf8NoBomFile -Path $targetPath -Content $reconciledSectionResult.Content
+		}
+	}
 }
 
 if ($null -ne $configuredCommit -and -not [string]::IsNullOrWhiteSpace($configuredCommit.Message)) {

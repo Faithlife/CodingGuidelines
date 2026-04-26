@@ -118,6 +118,38 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 		}
 	}
 
+	It 'restores the configured managed section after Copilot edits it' {
+		$testDirectory = New-TestDirectory
+
+		try {
+			$targetPath = Join-Path $testDirectory '.editorconfig'
+			$global:CopilotCallCount = 0
+
+			function global:copilot {
+				$global:CopilotCallCount++
+				Write-Utf8NoBomFile -Path $targetPath -Content "root = true`n`n# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = latin1`n# END DO NOT EDIT`n"
+			}
+
+			$output = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{
+				path = '.editorconfig'
+				'new-file-text' = 'root = true'
+				agent = @{ instructions = 'Review the file.' }
+				section = @{
+					name = 'general-editorconfig'
+					text = "[*]`ncharset = utf-8"
+					'comment-prefix' = '#'
+				}
+			}
+
+			$global:CopilotCallCount | Should -Be 1
+			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "root = true`n`n# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n"
+			(@($output | ForEach-Object { $_.ToString() }) -contains "'$targetPath' changed; starting Copilot with configured agent instructions.") | Should -Be $true
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
 	It 'commits changed files with the configured commit message after running Copilot' {
 		$testDirectory = New-TestDirectory
 
