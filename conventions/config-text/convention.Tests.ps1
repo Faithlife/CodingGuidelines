@@ -371,6 +371,57 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 		}
 	}
 
+	It 'does not rewrite a correct managed section or surrounding spacing' {
+		$testDirectory = New-TestDirectory
+
+		try {
+			$targetPath = Join-Path $testDirectory '.editorconfig'
+			$expectedContent = "root = true`n`n# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n`n[*.cs]`nindent_style = space`n"
+			$expectedWriteTime = [datetime]::SpecifyKind([datetime]::Parse('2001-02-03T04:05:06Z'), [System.DateTimeKind]::Utc)
+			Write-Utf8NoBomFile -Path $targetPath -Content $expectedContent
+			[System.IO.File]::SetLastWriteTimeUtc($targetPath, $expectedWriteTime)
+
+			$output = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{
+				path = '/.editorconfig'
+				section = @{
+					name = 'general-editorconfig'
+					text = "[*]`ncharset = utf-8"
+					'comment-prefix' = '#'
+				}
+			}
+
+			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be $expectedContent
+			([System.IO.File]::GetLastWriteTimeUtc($targetPath)) | Should -Be $expectedWriteTime
+			$output[-1].ToString() | Should -Be "'$targetPath' already contains the 'general-editorconfig' section."
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'preserves content outside the managed section when replacing it' {
+		$testDirectory = New-TestDirectory
+
+		try {
+			$targetPath = Join-Path $testDirectory '.editorconfig'
+			Write-Utf8NoBomFile -Path $targetPath -Content "root = true`n`n# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = latin1`n# END DO NOT EDIT`n`n[*.cs]`nindent_style = space`n"
+
+			InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{
+				path = '/.editorconfig'
+				section = @{
+					name = 'general-editorconfig'
+					text = "[*]`ncharset = utf-8"
+					'comment-prefix' = '#'
+				}
+			}
+
+			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "root = true`n`n# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n`n[*.cs]`nindent_style = space`n"
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
 	It 'supports combined new-file-text and section behavior' {
 		$testDirectory = New-TestDirectory
 

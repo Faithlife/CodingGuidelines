@@ -376,6 +376,28 @@ function ConvertToTargetLineEndings {
 	return ($Text -replace "`r`n", "`n" -replace "`r", "`n").Replace("`n", $LineEnding)
 }
 
+function GetTrailingLineEndingText {
+	param(
+		[Parameter(Mandatory = $true)]
+		[AllowEmptyString()]
+		[string] $Text
+	)
+
+	if ($Text.EndsWith("`r`n", [System.StringComparison]::Ordinal)) {
+		return "`r`n"
+	}
+
+	if ($Text.EndsWith("`n", [System.StringComparison]::Ordinal)) {
+		return "`n"
+	}
+
+	if ($Text.EndsWith("`r", [System.StringComparison]::Ordinal)) {
+		return "`r"
+	}
+
+	return ''
+}
+
 function NewManagedSectionText {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -519,11 +541,17 @@ function SetManagedSectionText {
 
 	if ($namedBlocks.Count -eq 1) {
 		$block = $namedBlocks[0]
-		$newContent = $Content.Substring(0, $block.StartIndex) + $managedSection + $Content.Substring($block.EndIndex)
+		$currentBlockText = $Content.Substring($block.StartIndex, $block.EndIndex - $block.StartIndex)
+		$replacementBlockText = $managedSection + (GetTrailingLineEndingText -Text $currentBlockText)
 
-		if (-not $newContent.EndsWith($LineEnding, [System.StringComparison]::Ordinal)) {
-			$newContent += $LineEnding
+		if ($replacementBlockText -ceq $currentBlockText) {
+			return [pscustomobject]@{
+				Content = $Content
+				Updated = $false
+			}
 		}
+
+		$newContent = $Content.Substring(0, $block.StartIndex) + $replacementBlockText + $Content.Substring($block.EndIndex)
 
 		return [pscustomobject]@{
 			Content = $newContent
