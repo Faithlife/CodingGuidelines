@@ -3,10 +3,12 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
-. $testHelpersPath
-
 Describe 'editorconfig-root convention' {
+	BeforeAll {
+		$script:testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
+		. $script:testHelpersPath
+	}
+
 	It 'creates .editorconfig with the default root section' {
 		$testDirectory = New-TestDirectory
 
@@ -19,18 +21,18 @@ conventions:
 "@
 			Initialize-TestRepository -Path $testDirectory
 
-			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should Not Throw
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
 
 			$editorConfigPath = Join-Path $testDirectory '.editorconfig'
 			$content = Get-Content -LiteralPath $editorConfigPath -Raw
 
-			(Test-Path -LiteralPath $editorConfigPath) | Should Be $true
-			$content | Should Match "(?m)^root = true\r?$"
-			$content | Should Match "(?m)^# DO NOT EDIT: root convention\r?$"
-			$content | Should Match "(?m)^\[\*\]\r?$"
-			$content | Should Match "(?m)^charset = utf-8\r?$"
-			$content | Should Match "(?m)^end_of_line = lf\r?$"
-			$content | Should Match "(?m)^trim_trailing_whitespace = true\r?$"
+			(Test-Path -LiteralPath $editorConfigPath) | Should -Be $true
+			$content | Should -Match "(?m)^root = true\r?$"
+			$content | Should -Match "(?m)^# DO NOT EDIT: root convention\r?$"
+			$content | Should -Match "(?m)^\[\*\]\r?$"
+			$content | Should -Match "(?m)^charset = utf-8\r?$"
+			$content | Should -Match "(?m)^end_of_line = lf\r?$"
+			$content | Should -Match "(?m)^trim_trailing_whitespace = true\r?$"
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -60,15 +62,15 @@ trim_trailing_whitespace = false
 "@
 			Initialize-TestRepository -Path $testDirectory
 
-			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should Not Throw
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
 
 			$content = Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw
 
-			$content | Should Match "(?m)^charset = utf-8\r?$"
-			$content | Should Match "(?m)^end_of_line = lf\r?$"
-			$content | Should Match "(?m)^trim_trailing_whitespace = true\r?$"
-			$content | Should Match "(?m)^\[\*\.md\]\r?$"
-			$content | Should Match "(?m)^trim_trailing_whitespace = false\r?$"
+			$content | Should -Match "(?m)^charset = utf-8\r?$"
+			$content | Should -Match "(?m)^end_of_line = lf\r?$"
+			$content | Should -Match "(?m)^trim_trailing_whitespace = true\r?$"
+			$content | Should -Match "(?m)^\[\*\.md\]\r?$"
+			$content | Should -Match "(?m)^trim_trailing_whitespace = false\r?$"
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -89,10 +91,10 @@ conventions:
 			Initialize-TestRepository -Path $testDirectory
 			$expectedInstructions = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-root/agent-instructions.md') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
 
-			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory -CopilotCommandDirectory $testCopilot.CommandDirectory } | Should Not Throw
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory -CopilotCommandDirectory $testCopilot.CommandDirectory } | Should -Not -Throw
 
-			(Test-Path -LiteralPath $testCopilot.InputPath) | Should Be $true
-			(((Get-Content -LiteralPath $testCopilot.InputPath -Raw) -replace "`r`n", "`n").TrimEnd("`n")) | Should Be $expectedInstructions
+			(Test-Path -LiteralPath $testCopilot.InputPath) | Should -Be $true
+			(((Get-Content -LiteralPath $testCopilot.InputPath -Raw) -replace "`r`n", "`n").TrimEnd("`n")) | Should -Be $expectedInstructions
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

@@ -3,11 +3,13 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
-$testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
-. $testHelpersPath
-
 Describe 'apm-install convention' {
+	BeforeAll {
+		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
+		$script:testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
+		. $script:testHelpersPath
+	}
+
 	It 'exits successfully without invoking apm when there is no apm.yml and no configured packages' {
 		$testDirectory = New-TestDirectory
 		$toolDirectory = New-TestDirectory
@@ -27,9 +29,9 @@ exit /b 0
 			$env:APM_INVOCATION_PATH = $apmInvocationPath
 			$env:PATH = "$toolDirectory;$originalPath"
 
-			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should Not Throw
-			Test-Path -LiteralPath $apmInvocationPath | Should Be $false
-			(Get-GitStatusLines -TestDirectory $testDirectory) | Should BeNullOrEmpty
+			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
+			Test-Path -LiteralPath $apmInvocationPath | Should -Be $false
+			(Get-GitStatusLines -TestDirectory $testDirectory) | Should -BeNullOrEmpty
 		}
 		finally {
 			$env:PATH = $originalPath
@@ -61,8 +63,8 @@ exit /b 0
 			$env:APM_ARGUMENTS_PATH = $argumentsPath
 			$env:PATH = "$toolDirectory;$originalPath"
 
-			{ & $conventionScriptPath (Join-Path $testDirectory 'missing-input.json') } | Should Not Throw
-			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should Be 'install --update'
+			{ & $conventionScriptPath (Join-Path $testDirectory 'missing-input.json') } | Should -Not -Throw
+			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install --update'
 		}
 		finally {
 			$env:PATH = $originalPath
@@ -97,8 +99,8 @@ exit /b 0
 			$env:APM_ARGUMENTS_PATH = $argumentsPath
 			$env:PATH = "$toolDirectory;$originalPath"
 
-			{ & $conventionScriptPath $inputPath } | Should Not Throw
-			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should Be 'install --update richlander/dotnet-inspect/skills/dotnet-inspect microsoft/playwright-cli/skills/playwright-cli'
+			{ & $conventionScriptPath $inputPath } | Should -Not -Throw
+			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install --update richlander/dotnet-inspect/skills/dotnet-inspect microsoft/playwright-cli/skills/playwright-cli'
 		}
 		finally {
 			$env:PATH = $originalPath
@@ -130,9 +132,9 @@ exit /b 0
 			Set-Content -LiteralPath $apmCommandPath -Value $apmCommand -Encoding ascii
 			$env:PATH = "$toolDirectory;$originalPath"
 
-			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory } | Should Not Throw
-			(Get-Content -LiteralPath $lockFilePath -Raw) | Should Be $originalLockContent
-			(Get-GitStatusLines -TestDirectory $testDirectory) | Should BeNullOrEmpty
+			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory } | Should -Not -Throw
+			(Get-Content -LiteralPath $lockFilePath -Raw) | Should -Be $originalLockContent
+			(Get-GitStatusLines -TestDirectory $testDirectory) | Should -BeNullOrEmpty
 		}
 		finally {
 			$env:PATH = $originalPath
@@ -165,9 +167,9 @@ exit /b 0
 			Set-Content -LiteralPath $apmCommandPath -Value $apmCommand -Encoding ascii
 			$env:PATH = "$toolDirectory;$originalPath"
 
-			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory } | Should Not Throw
-			(Get-Content -LiteralPath $lockFilePath -Raw) | Should Match 'updated: true'
-			Get-GitStatusLines -TestDirectory $testDirectory | Should Be @(' M apm.lock.yaml', ' M package.json')
+			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory } | Should -Not -Throw
+			(Get-Content -LiteralPath $lockFilePath -Raw) | Should -Match 'updated: true'
+			Get-GitStatusLines -TestDirectory $testDirectory | Should -Be @(' M apm.lock.yaml', ' M package.json')
 		}
 		finally {
 			$env:PATH = $originalPath

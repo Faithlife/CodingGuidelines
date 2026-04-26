@@ -3,36 +3,38 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
-$testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
-. $testHelpersPath
-
-function InvokeGitattributesLfConvention {
-	param(
-		[Parameter(Mandatory = $true)]
-		[string] $TestDirectory
-	)
-
-	$inputPath = New-ConventionInputFile -Settings @{}
-
-	try {
-		return Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $TestDirectory -InputPath $inputPath
-	}
-	finally {
-		Remove-Item -LiteralPath $inputPath -ErrorAction SilentlyContinue
-	}
-}
-
-function InvokeGitattributesLfConventionWithoutInput {
-	param(
-		[Parameter(Mandatory = $true)]
-		[string] $TestDirectory
-	)
-
-	return Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $TestDirectory
-}
-
 Describe 'gitattributes-lf convention' {
+	BeforeAll {
+		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
+		$script:testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
+		. $script:testHelpersPath
+
+		function script:InvokeGitattributesLfConvention {
+			param(
+				[Parameter(Mandatory = $true)]
+				[string] $TestDirectory
+			)
+
+			$inputPath = New-ConventionInputFile -Settings @{}
+
+			try {
+				return Invoke-ConventionScript -ScriptPath $script:conventionScriptPath -RepositoryRoot $TestDirectory -InputPath $inputPath
+			}
+			finally {
+				Remove-Item -LiteralPath $inputPath -ErrorAction SilentlyContinue
+			}
+		}
+
+		function script:InvokeGitattributesLfConventionWithoutInput {
+			param(
+				[Parameter(Mandatory = $true)]
+				[string] $TestDirectory
+			)
+
+			return Invoke-ConventionScript -ScriptPath $script:conventionScriptPath -RepositoryRoot $TestDirectory
+		}
+	}
+
 	BeforeEach {
 		$global:CopilotCallCount = 0
 
@@ -56,13 +58,13 @@ Describe 'gitattributes-lf convention' {
 			$commitSubjects = @(Get-CommitSubjects -TestDirectory $testDirectory -Count 2)
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
-			(Test-Path -LiteralPath (Join-Path $testDirectory '.gitattributes')) | Should Be $true
-			((Get-Content -LiteralPath (Join-Path $testDirectory '.gitattributes') -Raw).TrimEnd("`r", "`n")) | Should Be '* text=auto eol=lf'
-			$global:CopilotCallCount | Should Be 0
-			$output[0].ToString() | Should Match "Creating '.+\\.gitattributes' with LF normalization enabled\."
-			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should Be $initialHead
-			$commitSubjects[0] | Should Be 'Use LF.'
-			$status.Count | Should Be 0
+			(Test-Path -LiteralPath (Join-Path $testDirectory '.gitattributes')) | Should -Be $true
+			((Get-Content -LiteralPath (Join-Path $testDirectory '.gitattributes') -Raw).TrimEnd("`r", "`n")) | Should -Be '* text=auto eol=lf'
+			$global:CopilotCallCount | Should -Be 0
+			$output[0].ToString() | Should -Match "Creating '.+\\.gitattributes' with LF normalization enabled\."
+			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should -Be $initialHead
+			$commitSubjects[0] | Should -Be 'Use LF.'
+			$status.Count | Should -Be 0
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -97,20 +99,20 @@ Describe 'gitattributes-lf convention' {
 				Pop-Location
 			}
 
-			$global:CopilotCallCount | Should Be 1
-			(Get-Content -LiteralPath $gitattributesPath -Raw) | Should Match "^\* text=auto eol=lf\n"
-			(Get-Content -LiteralPath $gitattributesPath -Raw) | Should Match "\.png binary"
-			(@($output | ForEach-Object { $_.ToString() }) -contains ".gitattributes is not compliant; starting Copilot to update '$gitattributesPath'.") | Should Be $true
+			$global:CopilotCallCount | Should -Be 1
+			(Get-Content -LiteralPath $gitattributesPath -Raw) | Should -Match "^\* text=auto eol=lf\n"
+			(Get-Content -LiteralPath $gitattributesPath -Raw) | Should -Match "\.png binary"
+			(@($output | ForEach-Object { $_.ToString() }) -contains ".gitattributes is not compliant; starting Copilot to update '$gitattributesPath'.") | Should -Be $true
 			$commitSubjects = @(Get-CommitSubjects -TestDirectory $testDirectory -Count 4)
-			$commitSubjects[0] | Should Be 'Ignore CRLF to LF for git blame.'
-			$commitSubjects[1] | Should Be 'Convert CRLF to LF.'
-			$commitSubjects[2] | Should Be 'Use LF.'
-			$commitSubjects[3] | Should Be 'Add gitattributes.'
+			$commitSubjects[0] | Should -Be 'Ignore CRLF to LF for git blame.'
+			$commitSubjects[1] | Should -Be 'Convert CRLF to LF.'
+			$commitSubjects[2] | Should -Be 'Use LF.'
+			$commitSubjects[3] | Should -Be 'Add gitattributes.'
 			$ignoreRevsFilePath = Join-Path $testDirectory '.git-blame-ignore-revs'
-			(Test-Path -LiteralPath $ignoreRevsFilePath) | Should Be $true
+			(Test-Path -LiteralPath $ignoreRevsFilePath) | Should -Be $true
 			$renormalizeCommitId = Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1'
-			((Get-Content -LiteralPath $ignoreRevsFilePath -Raw).TrimEnd("`r", "`n")) | Should Be $renormalizeCommitId
-			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should Be 0
+			((Get-Content -LiteralPath $ignoreRevsFilePath -Raw).TrimEnd("`r", "`n")) | Should -Be $renormalizeCommitId
+			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0
 		}
 		finally {
 			Remove-Item Function:\global:copilot -ErrorAction SilentlyContinue
@@ -140,10 +142,10 @@ Describe 'gitattributes-lf convention' {
 
 			$output = InvokeGitattributesLfConvention -TestDirectory $testDirectory
 
-			$global:CopilotCallCount | Should Be 0
-			(Get-Content -LiteralPath $gitattributesPath -Raw) | Should Be $expectedContent
-			$output[0].ToString() | Should Match "'.+\\.gitattributes' already starts with '\* text=auto eol=lf'\."
-			(Get-CommitId -TestDirectory $testDirectory) | Should Be $beforeHead
+			$global:CopilotCallCount | Should -Be 0
+			(Get-Content -LiteralPath $gitattributesPath -Raw) | Should -Be $expectedContent
+			$output[0].ToString() | Should -Match "'.+\\.gitattributes' already starts with '\* text=auto eol=lf'\."
+			(Get-CommitId -TestDirectory $testDirectory) | Should -Be $beforeHead
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -178,9 +180,9 @@ Describe 'gitattributes-lf convention' {
 				Pop-Location
 			}
 
-			$global:CopilotCallCount | Should Be 1
-			$headAfterSecondRun | Should Be $headAfterFirstRun
-			$status.Count | Should Be 0
+			$global:CopilotCallCount | Should -Be 1
+			$headAfterSecondRun | Should -Be $headAfterFirstRun
+			$status.Count | Should -Be 0
 		}
 		finally {
 			Remove-Item Function:\global:copilot -ErrorAction SilentlyContinue

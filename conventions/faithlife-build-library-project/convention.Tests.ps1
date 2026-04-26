@@ -3,35 +3,37 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
-$expectedBuildCsPath = Join-Path $PSScriptRoot 'files\Build.cs'
-$expectedBuildCsprojPath = Join-Path $PSScriptRoot 'files\Build.csproj'
-$testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
-. $testHelpersPath
+Describe 'faithlife-build-library-project convention' {
+	BeforeAll {
+		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
+		$script:expectedBuildCsPath = Join-Path $PSScriptRoot 'files\Build.cs'
+		$script:expectedBuildCsprojPath = Join-Path $PSScriptRoot 'files\Build.csproj'
+		$script:testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
+		. $script:testHelpersPath
 
-function InvokeFaithlifeBuildLibraryProjectConvention {
-	param(
-		[Parameter(Mandatory = $true)]
-		[string] $TestDirectory
-	)
+		function script:InvokeFaithlifeBuildLibraryProjectConvention {
+			param(
+				[Parameter(Mandatory = $true)]
+				[string] $TestDirectory
+			)
 
-	$inputPath = New-ConventionInputFile -Settings @{}
+			$inputPath = New-ConventionInputFile -Settings @{}
 
-	try {
-		return Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $TestDirectory -InputPath $inputPath
-	}
-	finally {
-		Remove-Item -LiteralPath $inputPath -ErrorAction SilentlyContinue
-	}
-}
+			try {
+				return Invoke-ConventionScript -ScriptPath $script:conventionScriptPath -RepositoryRoot $TestDirectory -InputPath $inputPath
+			}
+			finally {
+				Remove-Item -LiteralPath $inputPath -ErrorAction SilentlyContinue
+			}
+		}
 
-function SetSolutionFileContent {
-	param(
-		[Parameter(Mandatory = $true)]
-		[string] $Path
-	)
+		function script:SetSolutionFileContent {
+			param(
+				[Parameter(Mandatory = $true)]
+				[string] $Path
+			)
 
-	$solutionContent = @"
+			$solutionContent = @"
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
@@ -43,25 +45,25 @@ Global
 EndGlobal
 "@
 
-	Write-Utf8NoBomFile -Path $Path -Content $solutionContent
-}
+			Write-Utf8NoBomFile -Path $Path -Content $solutionContent
+		}
 
-function GetAllGitStatusLines {
-	param(
-		[Parameter(Mandatory = $true)]
-		[string] $TestDirectory
-	)
+		function script:GetAllGitStatusLines {
+			param(
+				[Parameter(Mandatory = $true)]
+				[string] $TestDirectory
+			)
 
-	Push-Location $TestDirectory
-	try {
-		return @(& git status --short --untracked-files=all)
+			Push-Location $TestDirectory
+			try {
+				return @(& git status --short --untracked-files=all)
+			}
+			finally {
+				Pop-Location
+			}
+		}
 	}
-	finally {
-		Pop-Location
-	}
-}
 
-Describe 'faithlife-build-library-project convention' {
 	It 'creates both files, creates a root solution, and adds the project when they are missing' {
 		$testDirectory = New-TestDirectory
 
@@ -77,20 +79,20 @@ Describe 'faithlife-build-library-project convention' {
 			$buildCsprojPath = Join-Path $testDirectory 'tools/Build/Build.csproj'
 			$status = @(GetAllGitStatusLines -TestDirectory $testDirectory)
 
-			(Test-Path -LiteralPath $buildCsPath) | Should Be $true
-			(Test-Path -LiteralPath $buildCsprojPath) | Should Be $true
-			$solutionPaths.Count | Should Be 1
-			(Get-Content -LiteralPath $buildCsPath -Raw) | Should Be (Get-Content -LiteralPath $expectedBuildCsPath -Raw)
-			(Get-Content -LiteralPath $buildCsprojPath -Raw) | Should Be (Get-Content -LiteralPath $expectedBuildCsprojPath -Raw)
-			$status.Count | Should Be 3
-			$status[0] | Should Match '^\?\? .+\.slnx?$'
-			$status[1] | Should Match '^\?\? tools/Build/Build\.cs$'
-			$status[2] | Should Match '^\?\? tools/Build/Build\.csproj$'
-			$output.Count | Should Be 4
-			$output[0].ToString() | Should Match "Created '.+tools\\Build\\Build\.cs'\."
-			$output[1].ToString() | Should Match "Created '.+tools\\Build\\Build\.csproj'\."
-			$output[2].ToString() | Should Be 'Creating a root solution with dotnet new sln.'
-			$output[3].ToString() | Should Be "Adding './tools/Build' to the root solution."
+			(Test-Path -LiteralPath $buildCsPath) | Should -Be $true
+			(Test-Path -LiteralPath $buildCsprojPath) | Should -Be $true
+			$solutionPaths.Count | Should -Be 1
+			(Get-Content -LiteralPath $buildCsPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedBuildCsPath -Raw)
+			(Get-Content -LiteralPath $buildCsprojPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedBuildCsprojPath -Raw)
+			$status.Count | Should -Be 3
+			$status[0] | Should -Match '^\?\? .+\.slnx?$'
+			$status[1] | Should -Match '^\?\? tools/Build/Build\.cs$'
+			$status[2] | Should -Match '^\?\? tools/Build/Build\.csproj$'
+			$output.Count | Should -Be 4
+			$output[0].ToString() | Should -Match "Created '.+tools\\Build\\Build\.cs'\."
+			$output[1].ToString() | Should -Match "Created '.+tools\\Build\\Build\.csproj'\."
+			$output[2].ToString() | Should -Be 'Creating a root solution with dotnet new sln.'
+			$output[3].ToString() | Should -Be "Adding './tools/Build' to the root solution."
 
 			Push-Location $testDirectory
 			try {
@@ -100,7 +102,7 @@ Describe 'faithlife-build-library-project convention' {
 				Pop-Location
 			}
 
-			($listedProjects -join "`n") | Should Match 'tools[/\\]Build[/\\]Build\.csproj'
+			($listedProjects -join "`n") | Should -Match 'tools[/\\]Build[/\\]Build\.csproj'
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -131,10 +133,10 @@ Describe 'faithlife-build-library-project convention' {
 			$output = InvokeFaithlifeBuildLibraryProjectConvention -TestDirectory $testDirectory
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
-			((Get-Content -LiteralPath $buildCsPath -Raw).TrimEnd("`r", "`n")) | Should Be 'existing build cs'
-			((Get-Content -LiteralPath $buildCsprojPath -Raw).TrimEnd("`r", "`n")) | Should Be 'existing build csproj'
-			$status.Count | Should Be 0
-			@($output).Count | Should Be 0
+			((Get-Content -LiteralPath $buildCsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'existing build cs'
+			((Get-Content -LiteralPath $buildCsprojPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'existing build csproj'
+			$status.Count | Should -Be 0
+			@($output).Count | Should -Be 0
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -165,14 +167,14 @@ Describe 'faithlife-build-library-project convention' {
 			$buildCsprojPath = Join-Path $testDirectory 'tools/Build/Build.csproj'
 			$status = @(GetAllGitStatusLines -TestDirectory $testDirectory)
 
-			(Test-Path -LiteralPath $buildCsprojPath) | Should Be $true
-			(Get-Content -LiteralPath $buildCsprojPath -Raw) | Should Be (Get-Content -LiteralPath $expectedBuildCsprojPath -Raw)
-			$status.Count | Should Be 2
-			$status[0] | Should Match '^ M Test\.sln$'
-			$status[1] | Should Match '^\?\? tools/Build/Build\.csproj$'
-			$output.Count | Should Be 2
-			$output[0].ToString() | Should Match "Created '.+tools\\Build\\Build\.csproj'\."
-			$output[1].ToString() | Should Be "Adding './tools/Build' to the root solution."
+			(Test-Path -LiteralPath $buildCsprojPath) | Should -Be $true
+			(Get-Content -LiteralPath $buildCsprojPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedBuildCsprojPath -Raw)
+			$status.Count | Should -Be 2
+			$status[0] | Should -Match '^ M Test\.sln$'
+			$status[1] | Should -Match '^\?\? tools/Build/Build\.csproj$'
+			$output.Count | Should -Be 2
+			$output[0].ToString() | Should -Match "Created '.+tools\\Build\\Build\.csproj'\."
+			$output[1].ToString() | Should -Be "Adding './tools/Build' to the root solution."
 
 			Push-Location $testDirectory
 			try {
@@ -182,7 +184,7 @@ Describe 'faithlife-build-library-project convention' {
 				Pop-Location
 			}
 
-			($listedProjects -join "`n") | Should Match 'tools[/\\]Build[/\\]Build\.csproj'
+			($listedProjects -join "`n") | Should -Match 'tools[/\\]Build[/\\]Build\.csproj'
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -211,9 +213,9 @@ Describe 'faithlife-build-library-project convention' {
 			$headAfterSecondRun = Get-CommitId -TestDirectory $testDirectory
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
-			$headAfterSecondRun | Should Be $headAfterFirstRun
-			$status.Count | Should Be 0
-			@($output).Count | Should Be 0
+			$headAfterSecondRun | Should -Be $headAfterFirstRun
+			$status.Count | Should -Be 0
+			@($output).Count | Should -Be 0
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

@@ -3,10 +3,12 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
-. $testHelpersPath
-
 Describe 'editorconfig convention' {
+	BeforeAll {
+		$script:testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
+		. $script:testHelpersPath
+	}
+
 	It 'creates .editorconfig with the configured managed section' {
 		$testDirectory = New-TestDirectory
 
@@ -25,18 +27,18 @@ conventions:
 "@
 			Initialize-TestRepository -Path $testDirectory
 
-			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should Not Throw
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
 
 			$editorConfigPath = Join-Path $testDirectory '.editorconfig'
 			$content = Get-Content -LiteralPath $editorConfigPath -Raw
 
-			(Test-Path -LiteralPath $editorConfigPath) | Should Be $true
-			$content | Should Match "(?m)^root = true\r?$"
-			$content | Should Match "(?m)^# DO NOT EDIT: files convention\r?$"
-			$content | Should Match "(?m)^\[\*\.txt\]\r?$"
-			$content | Should Match "(?m)^indent_style = space\r?$"
-			$content | Should Match "(?m)^trim_trailing_whitespace = false\r?$"
-			$content | Should Match "(?m)^# END DO NOT EDIT\r?$"
+			(Test-Path -LiteralPath $editorConfigPath) | Should -Be $true
+			$content | Should -Match "(?m)^root = true\r?$"
+			$content | Should -Match "(?m)^# DO NOT EDIT: files convention\r?$"
+			$content | Should -Match "(?m)^\[\*\.txt\]\r?$"
+			$content | Should -Match "(?m)^indent_style = space\r?$"
+			$content | Should -Match "(?m)^trim_trailing_whitespace = false\r?$"
+			$content | Should -Match "(?m)^# END DO NOT EDIT\r?$"
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -65,10 +67,10 @@ conventions:
 "@
 			Initialize-TestRepository -Path $testDirectory
 
-			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory -CopilotCommandDirectory $testCopilot.CommandDirectory } | Should Not Throw
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory -CopilotCommandDirectory $testCopilot.CommandDirectory } | Should -Not -Throw
 
-			(Test-Path -LiteralPath $testCopilot.InputPath) | Should Be $true
-			(((Get-Content -LiteralPath $testCopilot.InputPath -Raw) -replace "`r`n", "`n").TrimEnd("`n")) | Should Be "Validate editorconfig changes.`nLeave fixes unstaged."
+			(Test-Path -LiteralPath $testCopilot.InputPath) | Should -Be $true
+			(((Get-Content -LiteralPath $testCopilot.InputPath -Raw) -replace "`r`n", "`n").TrimEnd("`n")) | Should -Be "Validate editorconfig changes.`nLeave fixes unstaged."
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -95,11 +97,11 @@ conventions:
 			Initialize-TestRepository -Path $testDirectory
 			$initialHead = Get-CommitId -TestDirectory $testDirectory
 
-			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should Not Throw
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
 
-			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should Be $initialHead
-			(@(Get-CommitSubjects -TestDirectory $testDirectory -Count 1))[0] | Should Be 'Add editorconfig.'
-			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should Be 0
+			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should -Be $initialHead
+			(@(Get-CommitSubjects -TestDirectory $testDirectory -Count 1))[0] | Should -Be 'Add editorconfig.'
+			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

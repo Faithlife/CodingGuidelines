@@ -34,6 +34,7 @@ function GetRelativeDisplayPath {
 }
 
 Set-Utf8NoBomConsoleEncoding
+Import-Module Pester -MinimumVersion 5.0.0
 
 $repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
 $conventionsRoot = GetConventionsRoot

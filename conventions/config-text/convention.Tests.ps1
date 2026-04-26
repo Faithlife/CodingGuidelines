@@ -3,30 +3,32 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
-$testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
-. $testHelpersPath
-
-function InvokeConfigTextConvention {
-	param(
-		[Parameter(Mandatory = $true)]
-		[string] $TestDirectory,
-
-		[Parameter(Mandatory = $true)]
-		[hashtable] $Settings
-	)
-
-	$inputPath = New-ConventionInputFile -Settings $Settings
-
-	try {
-		return Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $TestDirectory -InputPath $inputPath
-	}
-	finally {
-		Remove-Item -LiteralPath $inputPath -ErrorAction SilentlyContinue
-	}
-}
-
 Describe 'config-text convention' {
+	BeforeAll {
+		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
+		$script:testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
+		. $script:testHelpersPath
+
+		function script:InvokeConfigTextConvention {
+			param(
+				[Parameter(Mandatory = $true)]
+				[string] $TestDirectory,
+
+				[Parameter(Mandatory = $true)]
+				[hashtable] $Settings
+			)
+
+			$inputPath = New-ConventionInputFile -Settings $Settings
+
+			try {
+				return Invoke-ConventionScript -ScriptPath $script:conventionScriptPath -RepositoryRoot $TestDirectory -InputPath $inputPath
+			}
+			finally {
+				Remove-Item -LiteralPath $inputPath -ErrorAction SilentlyContinue
+			}
+		}
+	}
+
 	AfterEach {
 		Remove-Item Function:\global:copilot -ErrorAction SilentlyContinue
 		Remove-Variable -Name CopilotCallCount -Scope Global -ErrorAction SilentlyContinue
@@ -40,14 +42,14 @@ Describe 'config-text convention' {
 			$output = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{ path = '/.gitignore'; lines = @('bin/', 'obj/') }
 			$gitignorePath = Join-Path $testDirectory '.gitignore'
 
-			(Test-Path -LiteralPath $gitignorePath) | Should Be $true
-			(Get-Content -LiteralPath $gitignorePath -Raw) | Should Be "bin/`nobj/`n"
-			$output[-1].ToString() | Should Be "Added 2 lines to '$gitignorePath'."
+			(Test-Path -LiteralPath $gitignorePath) | Should -Be $true
+			(Get-Content -LiteralPath $gitignorePath -Raw) | Should -Be "bin/`nobj/`n"
+			$output[-1].ToString() | Should -Be "Added 2 lines to '$gitignorePath'."
 
 			$secondOutput = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{ path = '/.gitignore'; lines = @('bin/', 'obj/') }
 
-			(Get-Content -LiteralPath $gitignorePath -Raw) | Should Be "bin/`nobj/`n"
-			$secondOutput[-1].ToString() | Should Be "'$gitignorePath' already contains all configured lines."
+			(Get-Content -LiteralPath $gitignorePath -Raw) | Should -Be "bin/`nobj/`n"
+			$secondOutput[-1].ToString() | Should -Be "'$gitignorePath' already contains all configured lines."
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -80,10 +82,10 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 				agent = @{ instructions = $expectedInstructions }
 			}
 
-			(Test-Path -LiteralPath $targetPath) | Should Be $true
-			$global:CopilotCallCount | Should Be 1
-			$global:CopilotInstructions | Should Be $expectedInstructions
-			(@($output | ForEach-Object { $_.ToString() }) -contains "'$targetPath' changed; starting Copilot with configured agent instructions.") | Should Be $true
+			(Test-Path -LiteralPath $targetPath) | Should -Be $true
+			$global:CopilotCallCount | Should -Be 1
+			$global:CopilotInstructions | Should -Be $expectedInstructions
+			(@($output | ForEach-Object { $_.ToString() }) -contains "'$targetPath' changed; starting Copilot with configured agent instructions.") | Should -Be $true
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -108,8 +110,8 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 				agent = @{ instructions = 'Build the code.' }
 			}
 
-			$global:CopilotCallCount | Should Be 0
-			$output[-1].ToString() | Should Be "'$targetPath' already exists."
+			$global:CopilotCallCount | Should -Be 0
+			$output[-1].ToString() | Should -Be "'$targetPath' already exists."
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -139,13 +141,13 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 				commit = @{ message = 'Add editorconfig.' }
 			}
 
-			(Test-Path -LiteralPath $targetPath) | Should Be $true
-			(Test-Path -LiteralPath $notesPath) | Should Be $true
-			$global:CopilotCallCount | Should Be 1
-			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should Be $initialHead
-			(@(Get-CommitSubjects -TestDirectory $testDirectory -Count 1))[0] | Should Be 'Add editorconfig.'
-			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should Be 0
-			(@($output | ForEach-Object { $_.ToString() }) -contains "Committed convention changes with message 'Add editorconfig.'.") | Should Be $true
+			(Test-Path -LiteralPath $targetPath) | Should -Be $true
+			(Test-Path -LiteralPath $notesPath) | Should -Be $true
+			$global:CopilotCallCount | Should -Be 1
+			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should -Be $initialHead
+			(@(Get-CommitSubjects -TestDirectory $testDirectory -Count 1))[0] | Should -Be 'Add editorconfig.'
+			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0
+			(@($output | ForEach-Object { $_.ToString() }) -contains "Committed convention changes with message 'Add editorconfig.'.") | Should -Be $true
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -177,9 +179,9 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 				commit = @{ message = 'Normalize editorconfig.' }
 			}
 
-			(Get-CommitId -TestDirectory $testDirectory) | Should Be $headBeforeRun
-			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should Be 0
-			$output[-1].ToString() | Should Be "'$targetPath' already exists."
+			(Get-CommitId -TestDirectory $testDirectory) | Should -Be $headBeforeRun
+			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0
+			$output[-1].ToString() | Should -Be "'$targetPath' already exists."
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -214,11 +216,11 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 					agent = $agentSettings
 				}
 
-				(Test-Path -LiteralPath $targetPath) | Should Be $true
-				$output[-1].ToString() | Should Be "Initialized '$targetPath'."
+				(Test-Path -LiteralPath $targetPath) | Should -Be $true
+				$output[-1].ToString() | Should -Be "Initialized '$targetPath'."
 			}
 
-			$global:CopilotCallCount | Should Be 0
+			$global:CopilotCallCount | Should -Be 0
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -232,8 +234,8 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 			InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{ path = 'workflows/ci.yml'; lines = @('name: CI') }
 			$targetPath = Join-Path $testDirectory 'workflows\ci.yml'
 
-			(Test-Path -LiteralPath $targetPath) | Should Be $true
-			(Get-Content -LiteralPath $targetPath -Raw) | Should Be "name: CI`n"
+			(Test-Path -LiteralPath $targetPath) | Should -Be $true
+			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "name: CI`n"
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -249,7 +251,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 
 			InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{ path = '/.editorconfig'; lines = @('root = true', '[*]') }
 
-			(Get-Content -LiteralPath $targetPath -Raw) | Should Be "root = true`n[*]`n"
+			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "root = true`n[*]`n"
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -267,9 +269,9 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 
 			$output = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{ path = '.gitignore'; lines = @('bin/', 'obj/') }
 
-			(Get-Content -LiteralPath $targetPath -Raw) | Should Be "bin/`nobj/`n"
-			([System.IO.File]::GetLastWriteTimeUtc($targetPath)) | Should Be $expectedWriteTime
-			$output[-1].ToString() | Should Be "'$targetPath' already contains all configured lines."
+			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "bin/`nobj/`n"
+			([System.IO.File]::GetLastWriteTimeUtc($targetPath)) | Should -Be $expectedWriteTime
+			$output[-1].ToString() | Should -Be "'$targetPath' already contains all configured lines."
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -284,8 +286,8 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 
 			$output = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{ path = '.gitignore'; lines = @() }
 
-			(Test-Path -LiteralPath $targetPath) | Should Be $false
-			$output[-1].ToString() | Should Be "No configured lines to add for '$targetPath'."
+			(Test-Path -LiteralPath $targetPath) | Should -Be $false
+			$output[-1].ToString() | Should -Be "No configured lines to add for '$targetPath'."
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -300,12 +302,12 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 
 			$output = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{ path = '.editorconfig'; 'new-file-text' = 'root = true' }
 
-			(Test-Path -LiteralPath $targetPath) | Should Be $true
-			(Get-Content -LiteralPath $targetPath -Raw) | Should Be 'root = true'
-			$output[-1].ToString() | Should Be "Initialized '$targetPath'."
+			(Test-Path -LiteralPath $targetPath) | Should -Be $true
+			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be 'root = true'
+			$output[-1].ToString() | Should -Be "Initialized '$targetPath'."
 
 			$secondOutput = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{ path = '.editorconfig'; 'new-file-text' = 'root = true' }
-			$secondOutput[-1].ToString() | Should Be "'$targetPath' already exists."
+			$secondOutput[-1].ToString() | Should -Be "'$targetPath' already exists."
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -316,7 +318,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 		$testDirectory = New-TestDirectory
 
 		try {
-			{ InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{ path = '/.gitignore'; lines = @("bin/`nobj/") } } | Should Throw "Each line in 'lines' must be a single line."
+			{ InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{ path = '/.gitignore'; lines = @("bin/`nobj/") } } | Should -Throw "Each line in 'lines' must be a single line."
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -337,9 +339,9 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 			}
 			$targetPath = Join-Path $testDirectory '.editorconfig'
 
-			(Test-Path -LiteralPath $targetPath) | Should Be $true
-			(Get-Content -LiteralPath $targetPath -Raw) | Should Be "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n"
-			$output[-1].ToString() | Should Be "Updated 'general-editorconfig' section in '$targetPath'."
+			(Test-Path -LiteralPath $targetPath) | Should -Be $true
+			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n"
+			$output[-1].ToString() | Should -Be "Updated 'general-editorconfig' section in '$targetPath'."
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -362,7 +364,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 				}
 			}
 
-			(Get-Content -LiteralPath $targetPath -Raw) | Should Be "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`nend_of_line = lf`n# END DO NOT EDIT`n"
+			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`nend_of_line = lf`n# END DO NOT EDIT`n"
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -384,8 +386,8 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 			}
 			$targetPath = Join-Path $testDirectory '.editorconfig'
 
-			(Get-Content -LiteralPath $targetPath -Raw) | Should Be "root = true`n`n# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n"
-			$output[-1].ToString() | Should Be "Updated configured text and the 'general-editorconfig' section in '$targetPath'."
+			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "root = true`n`n# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n"
+			$output[-1].ToString() | Should -Be "Updated configured text and the 'general-editorconfig' section in '$targetPath'."
 
 			$secondOutput = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{
 				path = '/.editorconfig'
@@ -397,7 +399,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 				}
 			}
 
-			$secondOutput[-1].ToString() | Should Be "'$targetPath' already contains the 'general-editorconfig' section."
+			$secondOutput[-1].ToString() | Should -Be "'$targetPath' already contains the 'general-editorconfig' section."
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -419,7 +421,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 			}
 			$targetPath = Join-Path $testDirectory 'docs\example.html'
 
-			(Get-Content -LiteralPath $targetPath -Raw) | Should Be "<!-- DO NOT EDIT: snippet convention -->`n<div>Example</div>`n<!-- END DO NOT EDIT -->`n"
+			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "<!-- DO NOT EDIT: snippet convention -->`n<div>Example</div>`n<!-- END DO NOT EDIT -->`n"
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -433,7 +435,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 			$targetPath = Join-Path $testDirectory '.editorconfig'
 			Write-Utf8NoBomFile -Path $targetPath -Content "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n`n# DO NOT EDIT: general-editorconfig convention`n[*]`nindent_style = space`n# END DO NOT EDIT`n"
 
-			{ InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{ path = '/.editorconfig'; section = @{ name = 'general-editorconfig'; text = '[*]'; 'comment-prefix' = '#' } } } | Should Throw "Found multiple managed sections named 'general-editorconfig' in '$targetPath'."
+			{ InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{ path = '/.editorconfig'; section = @{ name = 'general-editorconfig'; text = '[*]'; 'comment-prefix' = '#' } } } | Should -Throw "Found multiple managed sections named 'general-editorconfig' in '$targetPath'."
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -456,7 +458,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 				}
 			}
 
-			(Get-Content -LiteralPath $targetPath -Raw) | Should Be "root = true`r`n`r`n# DO NOT EDIT: general-editorconfig convention`r`n[*]`r`ncharset = utf-8`r`n# END DO NOT EDIT`r`n"
+			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "root = true`r`n`r`n# DO NOT EDIT: general-editorconfig convention`r`n[*]`r`ncharset = utf-8`r`n# END DO NOT EDIT`r`n"
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

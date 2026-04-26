@@ -7,7 +7,11 @@ $packages = @()
 
 if ($args.Count -gt 0 -and (Test-Path -LiteralPath $args[0])) {
 	$conventionInput = Get-Content -LiteralPath $args[0] -Raw | ConvertFrom-Json
-	if ($null -ne $conventionInput.settings -and $null -ne $conventionInput.settings.packages) {
+	$packagesProperty = if ($null -ne $conventionInput.settings) {
+		$conventionInput.settings.PSObject.Properties['packages']
+	}
+
+	if ($null -ne $packagesProperty -and $null -ne $packagesProperty.Value) {
 		[string[]] $packages = @($conventionInput.settings.packages)
 	}
 }

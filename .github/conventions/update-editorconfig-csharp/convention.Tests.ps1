@@ -3,10 +3,12 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$testHelpersPath = Join-Path $PSScriptRoot '..\..\..\conventions\scripts\TestHelpers.ps1'
-. $testHelpersPath
-
 Describe 'update-editorconfig-csharp convention' {
+	BeforeAll {
+		$script:testHelpersPath = Join-Path $PSScriptRoot '..\..\..\conventions\scripts\TestHelpers.ps1'
+		. $script:testHelpersPath
+	}
+
 	It 'creates the published C# editorconfig source file from markdown' {
 		$testDirectory = New-TestDirectory
 
@@ -20,13 +22,13 @@ Describe 'update-editorconfig-csharp convention' {
 			Remove-Item -LiteralPath (Join-Path $testDirectory 'conventions\editorconfig-csharp\files\.editorconfig') -Force -ErrorAction SilentlyContinue
 			Initialize-TestRepository -Path $testDirectory
 
-			{ Invoke-ConventionScript -ScriptPath (Join-Path $testDirectory '.github/conventions/update-editorconfig-csharp/convention.ps1') -RepositoryRoot $testDirectory } | Should Not Throw
+			{ Invoke-ConventionScript -ScriptPath (Join-Path $testDirectory '.github/conventions/update-editorconfig-csharp/convention.ps1') -RepositoryRoot $testDirectory } | Should -Not -Throw
 
 			$generatedPath = Join-Path $testDirectory 'conventions\editorconfig-csharp\files\.editorconfig'
 			$expectedPath = Join-Path ([System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..')) ) 'conventions\editorconfig-csharp\files\.editorconfig'
 
-			(Test-Path -LiteralPath $generatedPath) | Should Be $true
-			(Test-FileContentMatches -ExpectedPath $expectedPath -ActualPath $generatedPath) | Should Be $true
+			(Test-Path -LiteralPath $generatedPath) | Should -Be $true
+			(Test-FileContentMatches -ExpectedPath $expectedPath -ActualPath $generatedPath) | Should -Be $true
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -59,7 +61,7 @@ Describe 'update-editorconfig-csharp convention' {
 
 			Invoke-ConventionScript -ScriptPath (Join-Path $testDirectory '.github/conventions/update-editorconfig-csharp/convention.ps1') -RepositoryRoot $testDirectory | Out-Null
 
-			@(Get-GitStatusLines -TestDirectory $testDirectory).Count | Should Be 0
+			@(Get-GitStatusLines -TestDirectory $testDirectory).Count | Should -Be 0
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

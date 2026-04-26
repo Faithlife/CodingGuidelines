@@ -3,30 +3,32 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
-$expectedNuGetConfigPath = Join-Path $PSScriptRoot 'files\nuget.config'
-$testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
-. $testHelpersPath
-
-function InvokeNuGetConfigConvention {
-	param(
-		[Parameter(Mandatory = $true)]
-		[string] $TestDirectory
-	)
-
-	$inputPath = New-ConventionInputFile -Settings @{}
-
-	Push-Location $TestDirectory
-	try {
-		return @(& $conventionScriptPath $inputPath 3>&1 6>&1)
-	}
-	finally {
-		Pop-Location
-		Remove-Item -LiteralPath $inputPath -ErrorAction SilentlyContinue
-	}
-}
-
 Describe 'nuget-config convention' {
+	BeforeAll {
+		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
+		$script:expectedNuGetConfigPath = Join-Path $PSScriptRoot 'files\nuget.config'
+		$script:testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
+		. $script:testHelpersPath
+
+		function script:InvokeNuGetConfigConvention {
+			param(
+				[Parameter(Mandatory = $true)]
+				[string] $TestDirectory
+			)
+
+			$inputPath = New-ConventionInputFile -Settings @{}
+
+			Push-Location $TestDirectory
+			try {
+				return @(& $script:conventionScriptPath $inputPath 3>&1 6>&1)
+			}
+			finally {
+				Pop-Location
+				Remove-Item -LiteralPath $inputPath -ErrorAction SilentlyContinue
+			}
+		}
+	}
+
 	It 'creates nuget.config when it is missing' {
 		$testDirectory = New-TestDirectory
 
@@ -37,12 +39,12 @@ Describe 'nuget-config convention' {
 			$nuGetConfigPath = Join-Path $testDirectory 'nuget.config'
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
-			(Test-Path -LiteralPath $nuGetConfigPath) | Should Be $true
-			(Get-Content -LiteralPath $nuGetConfigPath -Raw) | Should Be (Get-Content -LiteralPath $expectedNuGetConfigPath -Raw)
-			((Get-Content -LiteralPath $nuGetConfigPath -Raw) -match 'protocolVersion=') | Should Be $false
-			$status.Count | Should Be 1
-			$status[0] | Should Match '^\?\? nuget\.config$'
-			(@($output | ForEach-Object { $_.ToString() }) -contains "Created '$nuGetConfigPath' from the published NuGet config.") | Should Be $true
+			(Test-Path -LiteralPath $nuGetConfigPath) | Should -Be $true
+			(Get-Content -LiteralPath $nuGetConfigPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedNuGetConfigPath -Raw)
+			((Get-Content -LiteralPath $nuGetConfigPath -Raw) -match 'protocolVersion=') | Should -Be $false
+			$status.Count | Should -Be 1
+			$status[0] | Should -Match '^\?\? nuget\.config$'
+			(@($output | ForEach-Object { $_.ToString() }) -contains "Created '$nuGetConfigPath' from the published NuGet config.") | Should -Be $true
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -77,9 +79,9 @@ Describe 'nuget-config convention' {
 			$output = InvokeNuGetConfigConvention -TestDirectory $testDirectory
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
-			(Get-Content -LiteralPath $nuGetConfigPath -Raw) | Should Be $existingContent
-			$status.Count | Should Be 0
-			(@($output | ForEach-Object { $_.ToString() }) -contains "Existing '$nuGetConfigPath' does not match the published NuGet config; leaving it unchanged.") | Should Be $true
+			(Get-Content -LiteralPath $nuGetConfigPath -Raw) | Should -Be $existingContent
+			$status.Count | Should -Be 0
+			(@($output | ForEach-Object { $_.ToString() }) -contains "Existing '$nuGetConfigPath' does not match the published NuGet config; leaving it unchanged.") | Should -Be $true
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -108,9 +110,9 @@ Describe 'nuget-config convention' {
 			$headAfterSecondRun = Get-CommitId -TestDirectory $testDirectory
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
-			$headAfterSecondRun | Should Be $headAfterFirstRun
-			$status.Count | Should Be 0
-			(@($output | ForEach-Object { $_.ToString() }) -contains "'$($testDirectory)\nuget.config' already matches the published NuGet config.") | Should Be $true
+			$headAfterSecondRun | Should -Be $headAfterFirstRun
+			$status.Count | Should -Be 0
+			(@($output | ForEach-Object { $_.ToString() }) -contains "'$($testDirectory)\nuget.config' already matches the published NuGet config.") | Should -Be $true
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

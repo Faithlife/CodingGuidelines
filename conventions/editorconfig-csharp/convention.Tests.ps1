@@ -3,10 +3,12 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
-. $testHelpersPath
-
 Describe 'editorconfig-csharp convention' {
+	BeforeAll {
+		$script:testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
+		. $script:testHelpersPath
+	}
+
 	It 'creates .editorconfig with the shared C# section' {
 		$testDirectory = New-TestDirectory
 
@@ -20,19 +22,19 @@ conventions:
 "@
 			Initialize-TestRepository -Path $testDirectory
 
-			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory -CopilotCommandDirectory $testCopilot.CommandDirectory } | Should Not Throw
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory -CopilotCommandDirectory $testCopilot.CommandDirectory } | Should -Not -Throw
 
 			$editorConfigPath = Join-Path $testDirectory '.editorconfig'
 			$content = Get-Content -LiteralPath $editorConfigPath -Raw
 			$normalizedContent = ($content -replace "`r`n", "`n")
 			$expectedSection = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-csharp/files/.editorconfig') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
 
-			(Test-Path -LiteralPath $editorConfigPath) | Should Be $true
-			$content | Should Match "(?m)^root = true\r?$"
-			$content | Should Match "(?m)^# DO NOT EDIT: csharp convention\r?$"
-			$content | Should Match "(?m)^# generated from https://github.com/Faithlife/CodingGuidelines/blob/master/sections/csharp/editorconfig\.md\r?$"
-			$content | Should Match "(?m)^\[\*\.\{cs,cshtml,razor\}\]\r?$"
-			$normalizedContent.Contains($expectedSection) | Should Be $true
+			(Test-Path -LiteralPath $editorConfigPath) | Should -Be $true
+			$content | Should -Match "(?m)^root = true\r?$"
+			$content | Should -Match "(?m)^# DO NOT EDIT: csharp convention\r?$"
+			$content | Should -Match "(?m)^# generated from https://github.com/Faithlife/CodingGuidelines/blob/master/sections/csharp/editorconfig\.md\r?$"
+			$content | Should -Match "(?m)^\[\*\.\{cs,cshtml,razor\}\]\r?$"
+			$normalizedContent.Contains($expectedSection) | Should -Be $true
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -53,10 +55,10 @@ conventions:
 			Initialize-TestRepository -Path $testDirectory
 			$expectedInstructions = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-csharp/agent-instructions.md') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
 
-			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory -CopilotCommandDirectory $testCopilot.CommandDirectory } | Should Not Throw
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory -CopilotCommandDirectory $testCopilot.CommandDirectory } | Should -Not -Throw
 
-			(Test-Path -LiteralPath $testCopilot.InputPath) | Should Be $true
-			(((Get-Content -LiteralPath $testCopilot.InputPath -Raw) -replace "`r`n", "`n").TrimEnd("`n")) | Should Be $expectedInstructions
+			(Test-Path -LiteralPath $testCopilot.InputPath) | Should -Be $true
+			(((Get-Content -LiteralPath $testCopilot.InputPath -Raw) -replace "`r`n", "`n").TrimEnd("`n")) | Should -Be $expectedInstructions
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -77,11 +79,11 @@ conventions:
 			Initialize-TestRepository -Path $testDirectory
 			$initialHead = Get-CommitId -TestDirectory $testDirectory
 
-			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory -CopilotCommandDirectory $testCopilot.CommandDirectory } | Should Not Throw
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory -CopilotCommandDirectory $testCopilot.CommandDirectory } | Should -Not -Throw
 
-			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should Be $initialHead
-			(@(Get-CommitSubjects -TestDirectory $testDirectory -Count 1))[0] | Should Be 'Update C# editorconfig settings.'
-			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should Be 0
+			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should -Be $initialHead
+			(@(Get-CommitSubjects -TestDirectory $testDirectory -Count 1))[0] | Should -Be 'Update C# editorconfig settings.'
+			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

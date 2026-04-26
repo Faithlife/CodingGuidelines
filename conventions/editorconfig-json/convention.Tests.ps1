@@ -3,10 +3,12 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
-. $testHelpersPath
-
 Describe 'editorconfig-json convention' {
+	BeforeAll {
+		$script:testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
+		. $script:testHelpersPath
+	}
+
 	It 'creates .editorconfig with the JSON indentation section' {
 		$testDirectory = New-TestDirectory
 
@@ -19,15 +21,15 @@ conventions:
 "@
 			Initialize-TestRepository -Path $testDirectory
 
-			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should Not Throw
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
 
 			$content = Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw
 			$normalizedContent = ($content -replace "`r`n", "`n")
 			$expectedSection = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-json/files/.editorconfig') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
 
-			$content | Should Match "(?m)^# DO NOT EDIT: json convention\r?$"
-			$content | Should Match "(?m)^\[\*\.json\]\r?$"
-			$normalizedContent.Contains($expectedSection) | Should Be $true
+			$content | Should -Match "(?m)^# DO NOT EDIT: json convention\r?$"
+			$content | Should -Match "(?m)^\[\*\.json\]\r?$"
+			$normalizedContent.Contains($expectedSection) | Should -Be $true
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -58,15 +60,15 @@ indent_size = 4
 "@
 			Initialize-TestRepository -Path $testDirectory
 
-			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should Not Throw
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
 
 			$content = Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw
 			$normalizedContent = ($content -replace "`r`n", "`n")
 			$expectedSection = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-json/files/.editorconfig') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
 
-			$normalizedContent.Contains($expectedSection) | Should Be $true
-			$content | Should Match "(?m)^\[\*\.ps1\]\r?$"
-			$content | Should Match "(?m)^indent_size = 4\r?$"
+			$normalizedContent.Contains($expectedSection) | Should -Be $true
+			$content | Should -Match "(?m)^\[\*\.ps1\]\r?$"
+			$content | Should -Match "(?m)^indent_size = 4\r?$"
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -87,10 +89,10 @@ conventions:
 			Initialize-TestRepository -Path $testDirectory
 			$expectedInstructions = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-json/agent-instructions.md') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
 
-			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory -CopilotCommandDirectory $testCopilot.CommandDirectory } | Should Not Throw
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory -CopilotCommandDirectory $testCopilot.CommandDirectory } | Should -Not -Throw
 
-			(Test-Path -LiteralPath $testCopilot.InputPath) | Should Be $true
-			(((Get-Content -LiteralPath $testCopilot.InputPath -Raw) -replace "`r`n", "`n").TrimEnd("`n")) | Should Be $expectedInstructions
+			(Test-Path -LiteralPath $testCopilot.InputPath) | Should -Be $true
+			(((Get-Content -LiteralPath $testCopilot.InputPath -Raw) -replace "`r`n", "`n").TrimEnd("`n")) | Should -Be $expectedInstructions
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

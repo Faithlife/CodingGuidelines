@@ -3,10 +3,12 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
-. $testHelpersPath
-
 Describe 'editorconfig-yaml convention' {
+	BeforeAll {
+		$script:testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
+		. $script:testHelpersPath
+	}
+
 	It 'creates .editorconfig with the YAML indentation section' {
 		$testDirectory = New-TestDirectory
 
@@ -19,15 +21,15 @@ conventions:
 "@
 			Initialize-TestRepository -Path $testDirectory
 
-			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should Not Throw
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
 
 			$content = Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw
 			$normalizedContent = ($content -replace "`r`n", "`n")
 			$expectedSection = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-yaml/files/.editorconfig') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
 
-			$content | Should Match "(?m)^# DO NOT EDIT: yaml convention\r?$"
-			$content | Should Match "(?m)^\[\*\.\{yml,yaml\}\]\r?$"
-			$normalizedContent.Contains($expectedSection) | Should Be $true
+			$content | Should -Match "(?m)^# DO NOT EDIT: yaml convention\r?$"
+			$content | Should -Match "(?m)^\[\*\.\{yml,yaml\}\]\r?$"
+			$normalizedContent.Contains($expectedSection) | Should -Be $true
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -58,15 +60,15 @@ trim_trailing_whitespace = false
 "@
 			Initialize-TestRepository -Path $testDirectory
 
-			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should Not Throw
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
 
 			$content = Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw
 			$normalizedContent = ($content -replace "`r`n", "`n")
 			$expectedSection = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-yaml/files/.editorconfig') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
 
-			$normalizedContent.Contains($expectedSection) | Should Be $true
-			$content | Should Match "(?m)^\[\*\.md\]\r?$"
-			$content | Should Match "(?m)^trim_trailing_whitespace = false\r?$"
+			$normalizedContent.Contains($expectedSection) | Should -Be $true
+			$content | Should -Match "(?m)^\[\*\.md\]\r?$"
+			$content | Should -Match "(?m)^trim_trailing_whitespace = false\r?$"
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -86,11 +88,11 @@ conventions:
 			Initialize-TestRepository -Path $testDirectory
 			$initialHead = Get-CommitId -TestDirectory $testDirectory
 
-			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should Not Throw
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
 
-			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should Be $initialHead
-			(@(Get-CommitSubjects -TestDirectory $testDirectory -Count 1))[0] | Should Be 'Update YAML editorconfig settings.'
-			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should Be 0
+			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should -Be $initialHead
+			(@(Get-CommitSubjects -TestDirectory $testDirectory -Count 1))[0] | Should -Be 'Update YAML editorconfig settings.'
+			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

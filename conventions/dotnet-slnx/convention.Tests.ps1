@@ -3,26 +3,28 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
-$testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
-. $testHelpersPath
+Describe 'dotnet-slnx convention' {
+	BeforeAll {
+		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
+		$script:testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
+		. $script:testHelpersPath
 
-function InvokeDotnetSlnxConvention {
-	param(
-		[Parameter(Mandatory = $true)]
-		[string] $TestDirectory
-	)
+		function script:InvokeDotnetSlnxConvention {
+			param(
+				[Parameter(Mandatory = $true)]
+				[string] $TestDirectory
+			)
 
-	return Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $TestDirectory
-}
+			return Invoke-ConventionScript -ScriptPath $script:conventionScriptPath -RepositoryRoot $TestDirectory
+		}
 
-function SetSolutionFileContent {
-	param(
-		[Parameter(Mandatory = $true)]
-		[string] $Path
-	)
+		function script:SetSolutionFileContent {
+			param(
+				[Parameter(Mandatory = $true)]
+				[string] $Path
+			)
 
-	$solutionContent = @"
+			$solutionContent = @"
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
@@ -34,10 +36,10 @@ Global
 EndGlobal
 "@
 
-	Write-Utf8NoBomFile -Path $Path -Content $solutionContent
-}
+			Write-Utf8NoBomFile -Path $Path -Content $solutionContent
+		}
+	}
 
-Describe 'dotnet-slnx convention' {
 	It 'migrates solution files and renames matching DotSettings files' {
 		$testDirectory = New-TestDirectory
 
@@ -52,15 +54,15 @@ Describe 'dotnet-slnx convention' {
 
 			$output = InvokeDotnetSlnxConvention -TestDirectory $testDirectory
 
-			(Test-Path -LiteralPath $solutionPath) | Should Be $false
-			(Test-Path -LiteralPath $slnxPath) | Should Be $true
-			(Test-Path -LiteralPath $dotSettingsPath) | Should Be $false
-			(Test-Path -LiteralPath $slnxDotSettingsPath) | Should Be $true
-			((Get-Content -LiteralPath $slnxDotSettingsPath -Raw).TrimEnd("`r", "`n")) | Should Be 'dotsettings'
-			$output.Count | Should Be 3
-			$output[0].ToString() | Should Be "Migrating solution '$solutionPath' to '$slnxPath'."
-			$output[1].ToString() | Should Be "Removing migrated solution file '$solutionPath'."
-			$output[2].ToString() | Should Be "Renaming '$dotSettingsPath' to '$slnxDotSettingsPath'."
+			(Test-Path -LiteralPath $solutionPath) | Should -Be $false
+			(Test-Path -LiteralPath $slnxPath) | Should -Be $true
+			(Test-Path -LiteralPath $dotSettingsPath) | Should -Be $false
+			(Test-Path -LiteralPath $slnxDotSettingsPath) | Should -Be $true
+			((Get-Content -LiteralPath $slnxDotSettingsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'dotsettings'
+			$output.Count | Should -Be 3
+			$output[0].ToString() | Should -Be "Migrating solution '$solutionPath' to '$slnxPath'."
+			$output[1].ToString() | Should -Be "Removing migrated solution file '$solutionPath'."
+			$output[2].ToString() | Should -Be "Renaming '$dotSettingsPath' to '$slnxDotSettingsPath'."
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -76,8 +78,8 @@ Describe 'dotnet-slnx convention' {
 
 			InvokeDotnetSlnxConvention -TestDirectory $testDirectory
 
-			(Test-Path -LiteralPath $dotSettingsPath) | Should Be $true
-			((Get-Content -LiteralPath $dotSettingsPath -Raw).TrimEnd("`r", "`n")) | Should Be 'orphan'
+			(Test-Path -LiteralPath $dotSettingsPath) | Should -Be $true
+			((Get-Content -LiteralPath $dotSettingsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'orphan'
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -105,7 +107,7 @@ Describe 'dotnet-slnx convention' {
 				$message = $_.Exception.Message
 			}
 
-			$message | Should Match "Cannot rename '.+Conflict\.sln\.DotSettings' because '.+Conflict\.slnx\.DotSettings' already exists\."
+			$message | Should -Match "Cannot rename '.+Conflict\.sln\.DotSettings' because '.+Conflict\.slnx\.DotSettings' already exists\."
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
