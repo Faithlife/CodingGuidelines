@@ -9,7 +9,7 @@
 
 ## Fix Build If Necessary
 
-- Make sure that the .NET code in this repository (if any) still builds successfully, e.g. by running `./build.ps1 build` or `dotnet build`.
+- Make sure that the .NET solutions in this repository (if any) still build successfully, e.g. by running `./build.ps1 build` or `dotnet build`. Don't go looking for stray C# projects.
 - If the .NET code doesn't build successfully, read the error messages, read the affected files, and fix the issues by editing the code.
 - DO NOT suppress warnings by adding `<NoWarn>` properties or `#pragma warning` directives.
 - If you make changes, build the code again and keep fixing issues until it builds successfully.
