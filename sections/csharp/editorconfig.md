@@ -1,6 +1,6 @@
 # .editorconfig for C\#
 
-This document describes the standard `.editorconfig` settings for C# files. The `editorconfig` code fences in this file are extracted into [conventions/editorconfig-csharp/.editorconfig](../../conventions/editorconfig-csharp/.editorconfig) by [the local updater convention](../../.github/conventions/update-editorconfig-csharp/README.md).
+This document describes the standard `.editorconfig` settings for C# files. The `editorconfig` code fences in this file are extracted into [conventions/editorconfig-csharp/files/.editorconfig](../../conventions/editorconfig-csharp/files/.editorconfig) by [the local updater convention](../../.github/conventions/update-editorconfig-csharp/README.md).
 
 ```editorconfig
 [*.{csproj,props,slnx,targets}]
