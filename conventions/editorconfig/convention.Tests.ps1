@@ -92,7 +92,7 @@ conventions:
       [*.md]
       trim_trailing_whitespace = false
     commit:
-      message: Add editorconfig.
+      message: Add editorconfig
 "@
 			Initialize-TestRepository -Path $testDirectory
 			$initialHead = Get-CommitId -TestDirectory $testDirectory
