@@ -10,6 +10,7 @@ Set-Utf8NoBomConsoleEncoding
 
 $requiredRule = '* text=auto eol=lf'
 $gitattributesPath = Join-Path -Path (Get-Location) -ChildPath '.gitattributes'
+$gitattributesDisplayPath = Format-RepositoryRelativePath -Path $gitattributesPath
 
 function InvokeGit {
 	param(
@@ -98,7 +99,8 @@ Update `.gitattributes` in the current repository so it satisfies all of these r
 When you are done, make sure `.gitattributes` exists and starts with `* text=auto eol=lf`.
 "@
 
-	Write-Host ".gitattributes is not compliant; starting Copilot to update '$Path'."
+	$displayPath = Format-RepositoryRelativePath -Path $Path
+	Write-Host ".gitattributes is not compliant; starting Copilot to update '$displayPath'."
 	Invoke-CopilotWithIsolatedConfig -Instructions $copilotInstructions
 }
 
@@ -108,21 +110,23 @@ function SetCompliantGitattributes {
 		[string] $Path
 	)
 
+	$displayPath = Format-RepositoryRelativePath -Path $Path
+
 	if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
-		Write-Host "Creating '$Path' with LF normalization enabled."
+		Write-Host "Creating '$displayPath' with LF normalization enabled."
 		Write-Utf8NoBomFile -Path $Path -Content ($requiredRule + "`n")
 		return
 	}
 
 	if (TestConformingGitattributes -Path $Path) {
-		Write-Host "'$Path' already starts with '$requiredRule'."
+		Write-Host "'$displayPath' already starts with '$requiredRule'."
 		return
 	}
 
 	InvokeCopilotForGitattributesRepair -Path $Path
 
 	if (-not (TestConformingGitattributes -Path $Path)) {
-		throw "Copilot failed to update '$Path' to the required LF configuration."
+		throw "Copilot failed to update '$displayPath' to the required LF configuration."
 	}
 }
 
@@ -131,7 +135,7 @@ Get-Command -Name git -ErrorAction Stop | Out-Null
 SetCompliantGitattributes -Path $gitattributesPath
 
 # Commit the attribute change first so the later renormalization commit contains only file content rewrites.
-InvokeGit -Arguments @('add', '.gitattributes') -FailureMessage "Failed to stage '$gitattributesPath'."
+InvokeGit -Arguments @('add', '.gitattributes') -FailureMessage "Failed to stage '$gitattributesDisplayPath'."
 $useLfCommitId = NewCommitFromStagedChanges -Message 'Use LF'
 
 if ($null -eq $useLfCommitId) {
@@ -162,7 +166,7 @@ if (-not ($ignoreRevsLines -contains $renormalizeCommitId)) {
 }
 
 Write-Utf8NoBomFile -Path $gitBlameIgnoreRevsPath -Content (($ignoreRevsLines -join "`n") + "`n")
-InvokeGit -Arguments @('add', '.git-blame-ignore-revs') -FailureMessage "Failed to stage '$gitBlameIgnoreRevsPath'."
+InvokeGit -Arguments @('add', '.git-blame-ignore-revs') -FailureMessage "Failed to stage '$(Format-RepositoryRelativePath -Path $gitBlameIgnoreRevsPath)'."
 $ignoreRevsCommitId = NewCommitFromStagedChanges -Message 'Ignore CRLF to LF for git blame'
 
 if ($null -eq $ignoreRevsCommitId) {

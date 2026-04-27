@@ -634,6 +634,7 @@ if (-not $settings.ContainsKey('lines') -and -not $settings.ContainsKey('new-fil
 }
 
 $targetPath = Get-RepositoryPath -PathSetting $settings.path
+$targetDisplayPath = Format-RepositoryRelativePath -Path $targetPath
 $configuredLines = [System.Collections.Generic.List[string]]::new()
 $configuredNewFileText = if ($settings.ContainsKey('new-file-text')) { GetConfiguredNewFileText -NewFileTextSetting $settings['new-file-text'] } else { $null }
 $configuredAgent = if ($settings.ContainsKey('agent')) { GetConfiguredAgent -AgentSetting $settings.agent } else { $null }
@@ -646,12 +647,12 @@ if ($settings.ContainsKey('lines')) {
 $configuredSection = if ($settings.ContainsKey('section')) { GetConfiguredSection -SectionSetting $settings.section } else { $null }
 
 if ($configuredLines.Count -eq 0 -and $null -eq $configuredNewFileText -and $null -eq $configuredSection) {
-	Write-Host "No configured lines to add for '$targetPath'."
+	Write-Host "No configured lines to add for '$targetDisplayPath'."
 	return
 }
 
 if (Test-Path -LiteralPath $targetPath -PathType Container) {
-	throw "The target path '$targetPath' is a directory."
+	throw "The target path '$targetDisplayPath' is a directory."
 }
 
 $existingContent = ''
@@ -686,21 +687,21 @@ if ($null -ne $configuredSection) {
 
 if ($newContent -ceq $existingContent) {
 	if ($null -ne $configuredSection -and $configuredLines.Count -gt 0) {
-		Write-Host "'$targetPath' already contains all configured lines and the '$($configuredSection.Name)' section."
+		Write-Host "'$targetDisplayPath' already contains all configured lines and the '$($configuredSection.Name)' section."
 		return
 	}
 
 	if ($null -ne $configuredSection) {
-		Write-Host "'$targetPath' already contains the '$($configuredSection.Name)' section."
+		Write-Host "'$targetDisplayPath' already contains the '$($configuredSection.Name)' section."
 		return
 	}
 
 	if ($null -ne $configuredNewFileText) {
-		Write-Host "'$targetPath' already exists."
+		Write-Host "'$targetDisplayPath' already exists."
 		return
 	}
 
-	Write-Host "'$targetPath' already contains all configured lines."
+	Write-Host "'$targetDisplayPath' already contains all configured lines."
 	return
 }
 
@@ -713,7 +714,7 @@ if (-not [string]::IsNullOrEmpty($targetDirectory)) {
 Write-Utf8NoBomFile -Path $targetPath -Content $newContent
 
 if ($null -ne $configuredAgent -and -not [string]::IsNullOrWhiteSpace($configuredAgent.Instructions)) {
-	Write-Host "'$targetPath' changed; starting Copilot with configured agent instructions."
+	Write-Host "'$targetDisplayPath' changed; starting Copilot with configured agent instructions."
 	Invoke-CopilotWithIsolatedConfig -Instructions $configuredAgent.Instructions
 
 	if ($null -ne $configuredSection) {
@@ -740,18 +741,18 @@ if ($null -ne $configuredCommit -and -not [string]::IsNullOrWhiteSpace($configur
 }
 
 if ($null -ne $configuredSection -and ($configuredLines.Count -gt 0 -or $usedNewFileText)) {
-	Write-Host "Updated configured text and the '$($configuredSection.Name)' section in '$targetPath'."
+	Write-Host "Updated configured text and the '$($configuredSection.Name)' section in '$targetDisplayPath'."
 	return
 }
 
 if ($null -ne $configuredSection) {
-	Write-Host "Updated '$($configuredSection.Name)' section in '$targetPath'."
+	Write-Host "Updated '$($configuredSection.Name)' section in '$targetDisplayPath'."
 	return
 }
 
 if ($usedNewFileText) {
-	Write-Host "Initialized '$targetPath'."
+	Write-Host "Initialized '$targetDisplayPath'."
 	return
 	}
 
-Write-Host "Added $addedLineCount lines to '$targetPath'."
+Write-Host "Added $addedLineCount lines to '$targetDisplayPath'."

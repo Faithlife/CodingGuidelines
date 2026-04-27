@@ -156,6 +156,27 @@ function Get-RepositoryPath {
 
 <#
 .SYNOPSIS
+Formats a repository path for user-facing output as a repo-root-relative path with forward slashes.
+#>
+function Format-RepositoryRelativePath {
+	param(
+		[Parameter(Mandatory = $true)]
+		[string] $Path
+	)
+
+	$repositoryRoot = [System.IO.Path]::GetFullPath((Get-Location).Path)
+	$fullPath = [System.IO.Path]::GetFullPath($Path)
+	$relativePath = [System.IO.Path]::GetRelativePath($repositoryRoot, $fullPath)
+
+	if ($relativePath -eq '.') {
+		return '.'
+	}
+
+	return $relativePath.Replace('\', '/')
+}
+
+<#
+.SYNOPSIS
 Creates a unique temporary directory and returns its full path.
 #>
 function New-TemporaryDirectory {

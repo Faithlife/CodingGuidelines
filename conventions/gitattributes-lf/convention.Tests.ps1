@@ -61,7 +61,7 @@ Describe 'gitattributes-lf convention' {
 			(Test-Path -LiteralPath (Join-Path $testDirectory '.gitattributes')) | Should -Be $true
 			((Get-Content -LiteralPath (Join-Path $testDirectory '.gitattributes') -Raw).TrimEnd("`r", "`n")) | Should -Be '* text=auto eol=lf'
 			$global:CopilotCallCount | Should -Be 0
-			$output[0].ToString() | Should -Match "Creating '.+[/\\]\.gitattributes' with LF normalization enabled\."
+			$output[0].ToString() | Should -Be "Creating '.gitattributes' with LF normalization enabled."
 			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should -Be $initialHead
 			$commitSubjects[0] | Should -Be 'Use LF'
 			$status.Count | Should -Be 0
@@ -102,7 +102,7 @@ Describe 'gitattributes-lf convention' {
 			$global:CopilotCallCount | Should -Be 1
 			(Get-Content -LiteralPath $gitattributesPath -Raw) | Should -Match "^\* text=auto eol=lf\n"
 			(Get-Content -LiteralPath $gitattributesPath -Raw) | Should -Match "\.png binary"
-			(@($output | ForEach-Object { $_.ToString() }) -contains ".gitattributes is not compliant; starting Copilot to update '$gitattributesPath'.") | Should -Be $true
+			(@($output | ForEach-Object { $_.ToString() }) -contains ".gitattributes is not compliant; starting Copilot to update '.gitattributes'.") | Should -Be $true
 			$commitSubjects = @(Get-CommitSubjects -TestDirectory $testDirectory -Count 4)
 			$commitSubjects[0] | Should -Be 'Ignore CRLF to LF for git blame'
 			$commitSubjects[1] | Should -Be 'Convert CRLF to LF'
@@ -144,7 +144,7 @@ Describe 'gitattributes-lf convention' {
 
 			$global:CopilotCallCount | Should -Be 0
 			(Get-Content -LiteralPath $gitattributesPath -Raw) | Should -Be $expectedContent
-			$output[0].ToString() | Should -Match "'.+[/\\]\.gitattributes' already starts with '\* text=auto eol=lf'\."
+			$output[0].ToString() | Should -Be "'.gitattributes' already starts with '* text=auto eol=lf'."
 			(Get-CommitId -TestDirectory $testDirectory) | Should -Be $beforeHead
 		}
 		finally {
