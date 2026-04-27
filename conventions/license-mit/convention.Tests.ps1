@@ -109,7 +109,8 @@ Describe 'license-mit convention' {
 
 			$headAfterSecondRun | Should -Be $headAfterFirstRun
 			$status.Count | Should -Be 0
-			(@($output | ForEach-Object { $_.ToString() }) -contains "'$($testDirectory)\LICENSE' already matches the published MIT license.") | Should -Be $true
+			$expectedLicensePath = Join-Path $testDirectory 'LICENSE'
+		(@($output | ForEach-Object { $_.ToString() }) -contains "'$expectedLicensePath' already matches the published MIT license.") | Should -Be $true
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
