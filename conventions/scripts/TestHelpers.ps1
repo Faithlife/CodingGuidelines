@@ -82,7 +82,7 @@ function Initialize-TestRepository {
 
 	Push-Location $Path
 	try {
-		& git init | Out-Null
+		& git init -b master | Out-Null
 		& git config user.email 'test@example.com'
 		& git config user.name 'Test User'
 		& git config core.autocrlf false
