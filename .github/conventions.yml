@@ -7,5 +7,6 @@ conventions:
   - path: ../conventions/editorconfig-ps1
   - path: ../conventions/editorconfig-yaml
   - path: ../conventions/editorconfig-csharp
-  - path: ../conventions/license-mit
+  - path: ../conventions/faithlife-license-mit
+  - path: ../conventions/dotnet-sdk10
   - path: ./conventions/update-editorconfig-csharp
