@@ -195,7 +195,7 @@ function Invoke-RepoConventionsApply {
 	}
 
 	$originalPath = $env:PATH
-	$env:PATH = "$CopilotCommandDirectory;$originalPath"
+	$env:PATH = "$CopilotCommandDirectory$([System.IO.Path]::PathSeparator)$originalPath"
 
 	Push-Location $TestDirectory
 	try {
@@ -225,10 +225,17 @@ function New-TestCopilotCommand {
 	[System.IO.Directory]::CreateDirectory($commandDirectory) | Out-Null
 
 	$inputPath = Join-Path $commandDirectory 'copilot-input.txt'
-	$commandPath = Join-Path $commandDirectory 'copilot.cmd'
-	$escapedInputPath = $inputPath.Replace('"', '""')
 
-	Write-Utf8NoBomFile -Path $commandPath -Content "@echo off`r`nmore > `"$escapedInputPath`"`r`nexit /b 0`r`n"
+	if ($IsWindows) {
+		$commandPath = Join-Path $commandDirectory 'copilot.cmd'
+		$escapedInputPath = $inputPath.Replace('"', '""')
+		Write-Utf8NoBomFile -Path $commandPath -Content "@echo off`r`nmore > `"$escapedInputPath`"`r`nexit /b 0`r`n"
+	}
+	else {
+		$commandPath = Join-Path $commandDirectory 'copilot'
+		Write-Utf8NoBomFile -Path $commandPath -Content "#!/bin/sh`ncat > '$inputPath'`nexit 0`n"
+		& chmod +x $commandPath | Out-Null
+	}
 
 	return [pscustomobject]@{
 		CommandDirectory = $commandDirectory
@@ -243,10 +250,17 @@ Creates a fake copilot command in a temporary directory outside the test reposit
 function New-TemporaryTestCopilotCommand {
 	$commandDirectory = New-TemporaryDirectory
 	$inputPath = Join-Path $commandDirectory 'copilot-input.txt'
-	$commandPath = Join-Path $commandDirectory 'copilot.cmd'
-	$escapedInputPath = $inputPath.Replace('"', '""')
 
-	Write-Utf8NoBomFile -Path $commandPath -Content "@echo off`r`nmore > `"$escapedInputPath`"`r`nexit /b 0`r`n"
+	if ($IsWindows) {
+		$commandPath = Join-Path $commandDirectory 'copilot.cmd'
+		$escapedInputPath = $inputPath.Replace('"', '""')
+		Write-Utf8NoBomFile -Path $commandPath -Content "@echo off`r`nmore > `"$escapedInputPath`"`r`nexit /b 0`r`n"
+	}
+	else {
+		$commandPath = Join-Path $commandDirectory 'copilot'
+		Write-Utf8NoBomFile -Path $commandPath -Content "#!/bin/sh`ncat > /dev/null`nexit 0`n"
+		& chmod +x $commandPath | Out-Null
+	}
 
 	return [pscustomobject]@{
 		CommandDirectory = $commandDirectory

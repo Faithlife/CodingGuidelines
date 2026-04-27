@@ -61,7 +61,7 @@ Describe 'gitattributes-lf convention' {
 			(Test-Path -LiteralPath (Join-Path $testDirectory '.gitattributes')) | Should -Be $true
 			((Get-Content -LiteralPath (Join-Path $testDirectory '.gitattributes') -Raw).TrimEnd("`r", "`n")) | Should -Be '* text=auto eol=lf'
 			$global:CopilotCallCount | Should -Be 0
-			$output[0].ToString() | Should -Match "Creating '.+\\.gitattributes' with LF normalization enabled\."
+			$output[0].ToString() | Should -Match "Creating '.+[/\\]\.gitattributes' with LF normalization enabled\."
 			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should -Be $initialHead
 			$commitSubjects[0] | Should -Be 'Use LF'
 			$status.Count | Should -Be 0
@@ -144,7 +144,7 @@ Describe 'gitattributes-lf convention' {
 
 			$global:CopilotCallCount | Should -Be 0
 			(Get-Content -LiteralPath $gitattributesPath -Raw) | Should -Be $expectedContent
-			$output[0].ToString() | Should -Match "'.+\\.gitattributes' already starts with '\* text=auto eol=lf'\."
+			$output[0].ToString() | Should -Match "'.+[/\\]\.gitattributes' already starts with '\* text=auto eol=lf'\."
 			(Get-CommitId -TestDirectory $testDirectory) | Should -Be $beforeHead
 		}
 		finally {

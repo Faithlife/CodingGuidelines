@@ -144,7 +144,8 @@ Describe 'nuget-config convention' {
 
 			$headAfterSecondRun | Should -Be $headAfterFirstRun
 			$status.Count | Should -Be 0
-			(@($output | ForEach-Object { $_.ToString() }) -contains "'$($testDirectory)\nuget.config' already matches the published NuGet config.") | Should -Be $true
+			$nuGetConfigPath = Join-Path $testDirectory 'nuget.config'
+		(@($output | ForEach-Object { $_.ToString() }) -contains "'$nuGetConfigPath' already matches the published NuGet config.") | Should -Be $true
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
