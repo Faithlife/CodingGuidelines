@@ -8,15 +8,24 @@ Describe 'license-mit convention' {
 		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
 		$script:templateLicensePath = Join-Path $PSScriptRoot 'files\LICENSE'
 		$script:testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
+		$script:defaultCopyrightHolder = 'Faithlife'
 		. $script:testHelpersPath
 
 		function script:InvokeLicenseMitConvention {
 			param(
 				[Parameter(Mandatory = $true)]
-				[string] $TestDirectory
+				[string] $TestDirectory,
+
+				[string] $CopyrightHolder
 			)
 
-			$inputPath = New-ConventionInputFile -Settings @{}
+			$settings = @{}
+
+			if ($PSBoundParameters.ContainsKey('CopyrightHolder')) {
+				$settings['copyright-holder'] = $CopyrightHolder
+			}
+
+			$inputPath = New-ConventionInputFile -Settings $settings
 
 			try {
 				return Invoke-ConventionScript -ScriptPath $script:conventionScriptPath -RepositoryRoot $TestDirectory -InputPath $inputPath
@@ -27,9 +36,27 @@ Describe 'license-mit convention' {
 		}
 
 		function script:GetExpectedLicenseText {
+			param(
+				[Parameter(Mandatory = $true)]
+				[string] $CopyrightHolder
+			)
+
 			$templateContent = Get-Content -LiteralPath $script:templateLicensePath -Raw
 			$currentUtcYear = [DateTime]::UtcNow.Year.ToString([System.Globalization.CultureInfo]::InvariantCulture)
-			return $templateContent.Replace('<YEAR>', $currentUtcYear)
+			return $templateContent.Replace('<YEAR>', $currentUtcYear).Replace('<COPYRIGHT-HOLDER>', $CopyrightHolder)
+		}
+	}
+
+	It 'requires the copyright-holder setting' {
+		$testDirectory = New-TestDirectory
+
+		try {
+			Initialize-TestRepository -Path $testDirectory
+
+			{ InvokeLicenseMitConvention -TestDirectory $testDirectory } | Should -Throw "The 'copyright-holder' setting is required."
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
 		}
 	}
 
@@ -39,13 +66,14 @@ Describe 'license-mit convention' {
 		try {
 			Initialize-TestRepository -Path $testDirectory
 
-			$output = InvokeLicenseMitConvention -TestDirectory $testDirectory
+			$output = InvokeLicenseMitConvention -TestDirectory $testDirectory -CopyrightHolder $script:defaultCopyrightHolder
 			$licensePath = Join-Path $testDirectory 'LICENSE'
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
 			(Test-Path -LiteralPath $licensePath) | Should -Be $true
-			(Get-Content -LiteralPath $licensePath -Raw) | Should -Be (GetExpectedLicenseText)
+			(Get-Content -LiteralPath $licensePath -Raw) | Should -Be (GetExpectedLicenseText -CopyrightHolder $script:defaultCopyrightHolder)
 			((Get-Content -LiteralPath $licensePath -Raw) -match '<YEAR>') | Should -Be $false
+			((Get-Content -LiteralPath $licensePath -Raw) -match '<COPYRIGHT-HOLDER>') | Should -Be $false
 			$status.Count | Should -Be 1
 			$status[0] | Should -Match '^\?\? LICENSE$'
 			(@($output | ForEach-Object { $_.ToString() }) -contains "Created '$licensePath' from the published MIT license.") | Should -Be $true
@@ -72,10 +100,10 @@ Describe 'license-mit convention' {
 				Pop-Location
 			}
 
-			$output = InvokeLicenseMitConvention -TestDirectory $testDirectory
+			$output = InvokeLicenseMitConvention -TestDirectory $testDirectory -CopyrightHolder 'Contoso'
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
-			(Get-Content -LiteralPath $licensePath -Raw) | Should -Be (GetExpectedLicenseText)
+			(Get-Content -LiteralPath $licensePath -Raw) | Should -Be (GetExpectedLicenseText -CopyrightHolder 'Contoso')
 			$status.Count | Should -Be 1
 			$status[0] | Should -Match '^ M LICENSE$'
 			(@($output | ForEach-Object { $_.ToString() }) -contains "Replaced '$licensePath' with the published MIT license.") | Should -Be $true
@@ -91,7 +119,7 @@ Describe 'license-mit convention' {
 		try {
 			Initialize-TestRepository -Path $testDirectory
 
-			InvokeLicenseMitConvention -TestDirectory $testDirectory | Out-Null
+			InvokeLicenseMitConvention -TestDirectory $testDirectory -CopyrightHolder $script:defaultCopyrightHolder | Out-Null
 
 			Push-Location $testDirectory
 			try {
@@ -103,7 +131,7 @@ Describe 'license-mit convention' {
 				Pop-Location
 			}
 
-			$output = InvokeLicenseMitConvention -TestDirectory $testDirectory
+			$output = InvokeLicenseMitConvention -TestDirectory $testDirectory -CopyrightHolder $script:defaultCopyrightHolder
 			$headAfterSecondRun = Get-CommitId -TestDirectory $testDirectory
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 

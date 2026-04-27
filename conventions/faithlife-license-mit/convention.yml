@@ -1,0 +1,4 @@
+conventions:
+  - path: ../license-mit
+    settings:
+      copyright-holder: Faithlife
