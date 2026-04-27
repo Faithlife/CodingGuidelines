@@ -1,5 +1,5 @@
 conventions:
-  - path: ../editorconfig
+  - path: ../editorconfig-section
     settings:
       name: ps1
       text: ${{ readText("files/.editorconfig") }}

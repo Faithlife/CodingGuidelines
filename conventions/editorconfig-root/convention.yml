@@ -1,8 +1,10 @@
 conventions:
-  - path: ../editorconfig
+  - path: ../editorconfig-section
     settings:
       name: root
       text: |
+        root = true
+
         [*]
         charset = utf-8
         end_of_line = lf

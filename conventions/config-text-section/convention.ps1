@@ -6,50 +6,6 @@ $ErrorActionPreference = 'Stop'
 $helpersPath = Join-Path $PSScriptRoot '..\scripts\Helpers.ps1'
 . $helpersPath
 
-function GetConfiguredLines {
-	param(
-		[Parameter(Mandatory = $true)]
-		[object] $LinesSetting
-	)
-
-	if ($LinesSetting -is [string]) {
-		throw "The 'lines' setting must be an array of strings."
-	}
-
-	if ($LinesSetting -isnot [System.Collections.IEnumerable]) {
-		throw "The 'lines' setting must be an array of strings."
-	}
-
-	$lines = [System.Collections.Generic.List[string]]::new()
-
-	foreach ($line in $LinesSetting) {
-		if ($line -isnot [string]) {
-			throw "Each line in 'lines' must be a string."
-		}
-
-		if ($line.Contains("`r") -or $line.Contains("`n")) {
-			throw "Each line in 'lines' must be a single line."
-		}
-
-		$lines.Add($line)
-	}
-
-	return (, $lines)
-}
-
-function GetConfiguredNewFileText {
-	param(
-		[Parameter(Mandatory = $true)]
-		[object] $NewFileTextSetting
-	)
-
-	if ($NewFileTextSetting -isnot [string]) {
-		throw "The 'new-file-text' setting must be a string."
-	}
-
-	return $NewFileTextSetting
-}
-
 function GetConfiguredAgentInstructions {
 	param(
 		[AllowNull()]
@@ -133,11 +89,11 @@ function GetConfiguredSectionName {
 	)
 
 	if ($NameSetting -isnot [string] -or [string]::IsNullOrWhiteSpace($NameSetting)) {
-		throw "The 'section.name' setting must be a non-empty string."
+		throw "The 'name' setting must be a non-empty string."
 	}
 
 	if ($NameSetting.Contains("`r") -or $NameSetting.Contains("`n")) {
-		throw "The 'section.name' setting must be a single line."
+		throw "The 'name' setting must be a single line."
 	}
 
 	return $NameSetting
@@ -150,11 +106,11 @@ function GetConfiguredSectionCommentPrefix {
 	)
 
 	if ($CommentPrefixSetting -isnot [string] -or [string]::IsNullOrWhiteSpace($CommentPrefixSetting)) {
-		throw "The 'section.comment-prefix' setting must be a non-empty string."
+		throw "The 'comment-prefix' setting must be a non-empty string."
 	}
 
 	if ($CommentPrefixSetting.Contains("`r") -or $CommentPrefixSetting.Contains("`n")) {
-		throw "The 'section.comment-prefix' setting must be a single line."
+		throw "The 'comment-prefix' setting must be a single line."
 	}
 
 	return $CommentPrefixSetting
@@ -171,11 +127,11 @@ function GetConfiguredSectionCommentSuffix {
 	}
 
 	if ($CommentSuffixSetting -isnot [string]) {
-		throw "The 'section.comment-suffix' setting must be a string."
+		throw "The 'comment-suffix' setting must be a string."
 	}
 
 	if ($CommentSuffixSetting.Contains("`r") -or $CommentSuffixSetting.Contains("`n")) {
-		throw "The 'section.comment-suffix' setting must be a single line."
+		throw "The 'comment-suffix' setting must be a single line."
 	}
 
 	return $CommentSuffixSetting
@@ -209,7 +165,7 @@ function GetConfiguredSectionText {
 	)
 
 	if ($TextSetting -isnot [string]) {
-		throw "The 'section.text' setting must be a string."
+		throw "The 'text' setting must be a string."
 	}
 
 	$openingPattern = '^' + [System.Text.RegularExpressions.Regex]::Escape($CommentPrefix) + ' DO NOT EDIT: .+ convention' + [System.Text.RegularExpressions.Regex]::Escape($CommentSuffix) + '$'
@@ -218,7 +174,7 @@ function GetConfiguredSectionText {
 
 	foreach ($line in $textLines) {
 		if ($line -eq $closingLine -or $line -match $openingPattern) {
-			throw "The 'section.text' setting must not contain managed section marker lines."
+			throw "The 'text' setting must not contain managed section marker lines."
 		}
 	}
 
@@ -228,29 +184,25 @@ function GetConfiguredSectionText {
 function GetConfiguredSection {
 	param(
 		[Parameter(Mandatory = $true)]
-		[object] $SectionSetting
+		[System.Collections.IDictionary] $Settings
 	)
 
-	if ($SectionSetting -isnot [System.Collections.IDictionary]) {
-		throw "The 'section' setting must be an object."
+	if (-not $Settings.Contains('name')) {
+		throw "The 'name' setting is required."
 	}
 
-	if (-not $SectionSetting.Contains('name')) {
-		throw "The 'section.name' setting is required."
+	if (-not $Settings.Contains('text')) {
+		throw "The 'text' setting is required."
 	}
 
-	if (-not $SectionSetting.Contains('text')) {
-		throw "The 'section.text' setting is required."
+	if (-not $Settings.Contains('comment-prefix')) {
+		throw "The 'comment-prefix' setting is required."
 	}
 
-	if (-not $SectionSetting.Contains('comment-prefix')) {
-		throw "The 'section.comment-prefix' setting is required."
-	}
-
-	$commentPrefix = GetConfiguredSectionCommentPrefix -CommentPrefixSetting $SectionSetting['comment-prefix']
-	$commentSuffix = GetManagedSectionCommentSuffixText -CommentSuffix (GetConfiguredSectionCommentSuffix -CommentSuffixSetting $SectionSetting['comment-suffix'])
-	$name = GetConfiguredSectionName -NameSetting $SectionSetting.name
-	$text = GetConfiguredSectionText -TextSetting $SectionSetting.text -CommentPrefix $commentPrefix -CommentSuffix $commentSuffix
+	$commentPrefix = GetConfiguredSectionCommentPrefix -CommentPrefixSetting $Settings['comment-prefix']
+	$commentSuffix = GetManagedSectionCommentSuffixText -CommentSuffix (GetConfiguredSectionCommentSuffix -CommentSuffixSetting $Settings['comment-suffix'])
+	$name = GetConfiguredSectionName -NameSetting $Settings.name
+	$text = GetConfiguredSectionText -TextSetting $Settings.text -CommentPrefix $commentPrefix -CommentSuffix $commentSuffix
 
 	return [pscustomobject]@{
 		Name = $name
@@ -454,67 +406,6 @@ function AddManagedSectionSeparator {
 	return $Content + $LineEnding + $LineEnding
 }
 
-function AddConfiguredLinesText {
-	param(
-		[Parameter(Mandatory = $true)]
-		[AllowEmptyString()]
-		[string] $Content,
-
-		[Parameter(Mandatory = $true)]
-		[System.Collections.Generic.List[string]] $ConfiguredLines,
-
-		[Parameter(Mandatory = $true)]
-		[string] $LineEnding
-	)
-
-	if ($ConfiguredLines.Count -eq 0) {
-		return [pscustomobject]@{
-			Content = $Content
-			AddedCount = 0
-		}
-	}
-
-	$existingLines = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
-
-	if ($Content.Length -gt 0) {
-		foreach ($line in GetLineRecords -Content $Content) {
-			$null = $existingLines.Add($line.Text)
-		}
-	}
-
-	$seenLines = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
-
-	foreach ($existingLine in $existingLines) {
-		$null = $seenLines.Add($existingLine)
-	}
-
-	$linesToAdd = [System.Collections.Generic.List[string]]::new()
-
-	foreach ($line in $ConfiguredLines) {
-		if ($seenLines.Add($line)) {
-			$linesToAdd.Add($line)
-		}
-	}
-
-	if ($linesToAdd.Count -eq 0) {
-		return [pscustomobject]@{
-			Content = $Content
-			AddedCount = 0
-		}
-	}
-
-	$prefix = ''
-
-	if ($Content.Length -gt 0 -and -not ($Content.EndsWith("`r`n", [System.StringComparison]::Ordinal) -or $Content.EndsWith("`n", [System.StringComparison]::Ordinal))) {
-		$prefix = $LineEnding
-	}
-
-	return [pscustomobject]@{
-		Content = $Content + $prefix + ($linesToAdd -join $LineEnding) + $LineEnding
-		AddedCount = $linesToAdd.Count
-	}
-}
-
 function SetManagedSectionText {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -629,27 +520,11 @@ if ($null -eq $settings -or -not $settings.ContainsKey('path')) {
 	throw "The 'path' setting is required."
 }
 
-if (-not $settings.ContainsKey('lines') -and -not $settings.ContainsKey('new-file-text') -and -not $settings.ContainsKey('section')) {
-	throw "The 'lines' setting, 'new-file-text' setting, or 'section' setting is required."
-}
-
 $targetPath = Get-RepositoryPath -PathSetting $settings.path
 $targetDisplayPath = Format-RepositoryRelativePath -Path $targetPath
-$configuredLines = [System.Collections.Generic.List[string]]::new()
-$configuredNewFileText = if ($settings.ContainsKey('new-file-text')) { GetConfiguredNewFileText -NewFileTextSetting $settings['new-file-text'] } else { $null }
 $configuredAgent = if ($settings.ContainsKey('agent')) { GetConfiguredAgent -AgentSetting $settings.agent } else { $null }
 $configuredCommit = if ($settings.ContainsKey('commit')) { GetConfiguredCommit -CommitSetting $settings.commit } else { $null }
-
-if ($settings.ContainsKey('lines')) {
-	$configuredLines = GetConfiguredLines -LinesSetting $settings.lines
-}
-
-$configuredSection = if ($settings.ContainsKey('section')) { GetConfiguredSection -SectionSetting $settings.section } else { $null }
-
-if ($configuredLines.Count -eq 0 -and $null -eq $configuredNewFileText -and $null -eq $configuredSection) {
-	Write-Host "No configured lines to add for '$targetDisplayPath'."
-	return
-}
+$configuredSection = GetConfiguredSection -Settings $settings
 
 if (Test-Path -LiteralPath $targetPath -PathType Container) {
 	throw "The target path '$targetDisplayPath' is a directory."
@@ -657,51 +532,17 @@ if (Test-Path -LiteralPath $targetPath -PathType Container) {
 
 $existingContent = ''
 $lineEnding = "`n"
-$usedNewFileText = $false
 
 if (Test-Path -LiteralPath $targetPath -PathType Leaf) {
 	$existingContent = [System.IO.File]::ReadAllText($targetPath)
 	$lineEnding = Get-LineEnding -Content $existingContent
 }
 
-$newContent = $existingContent
-
-if ($existingContent.Length -eq 0 -and -not (Test-Path -LiteralPath $targetPath -PathType Leaf) -and $null -ne $configuredNewFileText) {
-	$newContent = $configuredNewFileText
-	$lineEnding = Get-LineEnding -Content $configuredNewFileText
-	$usedNewFileText = $true
-	}
-
-$addedLineCount = 0
-
-if ($configuredLines.Count -gt 0) {
-	$lineResult = AddConfiguredLinesText -Content $newContent -ConfiguredLines $configuredLines -LineEnding $lineEnding
-	$newContent = $lineResult.Content
-	$addedLineCount = $lineResult.AddedCount
-}
-
-if ($null -ne $configuredSection) {
-	$sectionResult = SetManagedSectionText -Content $newContent -Section $configuredSection -LineEnding $lineEnding -TargetPath $targetPath
-	$newContent = $sectionResult.Content
-}
+$sectionResult = SetManagedSectionText -Content $existingContent -Section $configuredSection -LineEnding $lineEnding -TargetPath $targetPath
+$newContent = $sectionResult.Content
 
 if ($newContent -ceq $existingContent) {
-	if ($null -ne $configuredSection -and $configuredLines.Count -gt 0) {
-		Write-Host "'$targetDisplayPath' already contains all configured lines and the '$($configuredSection.Name)' section."
-		return
-	}
-
-	if ($null -ne $configuredSection) {
-		Write-Host "'$targetDisplayPath' already contains the '$($configuredSection.Name)' section."
-		return
-	}
-
-	if ($null -ne $configuredNewFileText) {
-		Write-Host "'$targetDisplayPath' already exists."
-		return
-	}
-
-	Write-Host "'$targetDisplayPath' already contains all configured lines."
+	Write-Host "'$targetDisplayPath' already contains the '$($configuredSection.Name)' section."
 	return
 }
 
@@ -740,19 +581,4 @@ if ($null -ne $configuredCommit -and -not [string]::IsNullOrWhiteSpace($configur
 	}
 }
 
-if ($null -ne $configuredSection -and ($configuredLines.Count -gt 0 -or $usedNewFileText)) {
-	Write-Host "Updated configured text and the '$($configuredSection.Name)' section in '$targetDisplayPath'."
-	return
-}
-
-if ($null -ne $configuredSection) {
-	Write-Host "Updated '$($configuredSection.Name)' section in '$targetDisplayPath'."
-	return
-}
-
-if ($usedNewFileText) {
-	Write-Host "Initialized '$targetDisplayPath'."
-	return
-	}
-
-Write-Host "Added $addedLineCount lines to '$targetDisplayPath'."
+Write-Host "Updated '$($configuredSection.Name)' section in '$targetDisplayPath'."

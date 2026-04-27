@@ -1,5 +1,5 @@
 conventions:
-  - path: ../editorconfig
+  - path: ../editorconfig-section
     settings:
       name: yaml
       text: ${{ readText("files/.editorconfig") }}

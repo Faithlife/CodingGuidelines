@@ -1,0 +1,9 @@
+conventions:
+  - path: ../config-text-section
+    settings:
+      path: .gitignore
+      name: ${{ settings.name }}
+      text: ${{ settings.text }}
+      comment-prefix: '#'
+      agent: ${{ settings.agent }}
+      commit: ${{ settings.commit }}
