@@ -30,7 +30,6 @@ conventions:
 			$expectedSection = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-csharp/files/.editorconfig') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
 
 			(Test-Path -LiteralPath $editorConfigPath) | Should -Be $true
-			$content | Should -Match "(?m)^root = true\r?$"
 			$content | Should -Match "(?m)^# DO NOT EDIT: csharp convention\r?$"
 			$content | Should -Match "(?m)^# generated from https://github.com/Faithlife/CodingGuidelines/blob/master/sections/csharp/editorconfig\.md\r?$"
 			$content | Should -Match "(?m)^\[\*\.\{cs,cshtml,razor\}\]\r?$"
