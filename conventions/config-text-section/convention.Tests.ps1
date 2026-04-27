@@ -3,13 +3,13 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-Describe 'config-text convention' {
+Describe 'config-text-section convention' {
 	BeforeAll {
 		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
 		$script:testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
 		. $script:testHelpersPath
 
-		function script:InvokeConfigTextConvention {
+		function script:InvokeConfigTextSectionConvention {
 			param(
 				[Parameter(Mandatory = $true)]
 				[string] $TestDirectory,
@@ -35,21 +35,21 @@ Describe 'config-text convention' {
 		Remove-Variable -Name CopilotInstructions -Scope Global -ErrorAction SilentlyContinue
 	}
 
-	It 'creates a repository-root-relative file and is idempotent' {
+	It 'creates a repository-root-relative file with a managed section and is idempotent' {
 		$testDirectory = New-TestDirectory
 
 		try {
-			$output = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{ path = '/.gitignore'; lines = @('bin/', 'obj/') }
-			$gitignorePath = Join-Path $testDirectory '.gitignore'
+			$output = InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = '/.editorconfig'; name = 'general-editorconfig'; text = "[*]`ncharset = utf-8"; 'comment-prefix' = '#' }
+			$targetPath = Join-Path $testDirectory '.editorconfig'
 
-			(Test-Path -LiteralPath $gitignorePath) | Should -Be $true
-			(Get-Content -LiteralPath $gitignorePath -Raw) | Should -Be "bin/`nobj/`n"
-			$output[-1].ToString() | Should -Be "Added 2 lines to '.gitignore'."
+			(Test-Path -LiteralPath $targetPath) | Should -Be $true
+			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n"
+			$output[-1].ToString() | Should -Be "Updated 'general-editorconfig' section in '.editorconfig'."
 
-			$secondOutput = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{ path = '/.gitignore'; lines = @('bin/', 'obj/') }
+			$secondOutput = InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = '/.editorconfig'; name = 'general-editorconfig'; text = "[*]`ncharset = utf-8"; 'comment-prefix' = '#' }
 
-			(Get-Content -LiteralPath $gitignorePath -Raw) | Should -Be "bin/`nobj/`n"
-			$secondOutput[-1].ToString() | Should -Be "'.gitignore' already contains all configured lines."
+			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n"
+			$secondOutput[-1].ToString() | Should -Be "'.editorconfig' already contains the 'general-editorconfig' section."
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -76,9 +76,11 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 				$global:CopilotInstructions = (@($input) -join '')
 			}
 
-			$output = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{
+			$output = InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{
 				path = '.editorconfig'
-				'new-file-text' = 'root = true'
+				name = 'general-editorconfig'
+				text = "[*]`ncharset = utf-8"
+				'comment-prefix' = '#'
 				agent = @{ instructions = $expectedInstructions }
 			}
 
@@ -97,21 +99,23 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 
 		try {
 			$targetPath = Join-Path $testDirectory '.editorconfig'
-			Write-Utf8NoBomFile -Path $targetPath -Content 'root = true'
+			Write-Utf8NoBomFile -Path $targetPath -Content "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n"
 			$global:CopilotCallCount = 0
 
 			function global:copilot {
 				$global:CopilotCallCount++
 			}
 
-			$output = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{
+			$output = InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{
 				path = '.editorconfig'
-				'new-file-text' = 'root = true'
+				name = 'general-editorconfig'
+				text = "[*]`ncharset = utf-8"
+				'comment-prefix' = '#'
 				agent = @{ instructions = 'Build the code.' }
 			}
 
 			$global:CopilotCallCount | Should -Be 0
-			$output[-1].ToString() | Should -Be "'.editorconfig' already exists."
+			$output[-1].ToString() | Should -Be "'.editorconfig' already contains the 'general-editorconfig' section."
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -127,22 +131,19 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 
 			function global:copilot {
 				$global:CopilotCallCount++
-				Write-Utf8NoBomFile -Path $targetPath -Content "root = true`n`n# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = latin1`n# END DO NOT EDIT`n"
+				Write-Utf8NoBomFile -Path $targetPath -Content "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = latin1`n# END DO NOT EDIT`n"
 			}
 
-			$output = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{
+			$output = InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{
 				path = '.editorconfig'
-				'new-file-text' = 'root = true'
+				name = 'general-editorconfig'
+				text = "[*]`ncharset = utf-8"
+				'comment-prefix' = '#'
 				agent = @{ instructions = 'Review the file.' }
-				section = @{
-					name = 'general-editorconfig'
-					text = "[*]`ncharset = utf-8"
-					'comment-prefix' = '#'
-				}
 			}
 
 			$global:CopilotCallCount | Should -Be 1
-			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "root = true`n`n# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n"
+			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n"
 			(@($output | ForEach-Object { $_.ToString() }) -contains "'.editorconfig' changed; starting Copilot with configured agent instructions.") | Should -Be $true
 		}
 		finally {
@@ -166,9 +167,11 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 				Write-Utf8NoBomFile -Path $notesPath -Content "Created by Copilot.`n"
 			}
 
-			$output = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{
+			$output = InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{
 				path = '.editorconfig'
-				'new-file-text' = 'root = true'
+				name = 'general-editorconfig'
+				text = "[*]`ncharset = utf-8"
+				'comment-prefix' = '#'
 				agent = @{ instructions = 'Create notes.' }
 				commit = @{ message = 'Add editorconfig' }
 			}
@@ -192,7 +195,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 		try {
 			$targetPath = Join-Path $testDirectory '.editorconfig'
 			Initialize-TestRepository -Path $testDirectory
-			Write-Utf8NoBomFile -Path $targetPath -Content 'root = true'
+			Write-Utf8NoBomFile -Path $targetPath -Content "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n"
 
 			Push-Location $testDirectory
 			try {
@@ -205,15 +208,17 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 
 			$headBeforeRun = Get-CommitId -TestDirectory $testDirectory
 
-			$output = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{
+			$output = InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{
 				path = '.editorconfig'
-				'new-file-text' = 'root = true'
+				name = 'general-editorconfig'
+				text = "[*]`ncharset = utf-8"
+				'comment-prefix' = '#'
 				commit = @{ message = 'Normalize editorconfig.' }
 			}
 
 			(Get-CommitId -TestDirectory $testDirectory) | Should -Be $headBeforeRun
 			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0
-			$output[-1].ToString() | Should -Be "'.editorconfig' already exists."
+			$output[-1].ToString() | Should -Be "'.editorconfig' already contains the 'general-editorconfig' section."
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -242,14 +247,16 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 				[System.IO.Directory]::CreateDirectory($caseDirectory) | Out-Null
 				$targetPath = Join-Path $caseDirectory '.editorconfig'
 
-				$output = InvokeConfigTextConvention -TestDirectory $caseDirectory -Settings @{
+				$output = InvokeConfigTextSectionConvention -TestDirectory $caseDirectory -Settings @{
 					path = '.editorconfig'
-					'new-file-text' = 'root = true'
+					name = 'general-editorconfig'
+					text = "[*]`ncharset = utf-8"
+					'comment-prefix' = '#'
 					agent = $agentSettings
 				}
 
 				(Test-Path -LiteralPath $targetPath) | Should -Be $true
-				$output[-1].ToString() | Should -Be "Initialized '.editorconfig'."
+				$output[-1].ToString() | Should -Be "Updated 'general-editorconfig' section in '.editorconfig'."
 			}
 
 			$global:CopilotCallCount | Should -Be 0
@@ -263,117 +270,11 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 		$testDirectory = New-TestDirectory
 
 		try {
-			InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{ path = 'workflows/ci.yml'; lines = @('name: CI') }
+			InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = 'workflows/ci.yml'; name = 'ci'; text = 'name: CI'; 'comment-prefix' = '#' }
 			$targetPath = Join-Path $testDirectory 'workflows\ci.yml'
 
 			(Test-Path -LiteralPath $targetPath) | Should -Be $true
-			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "name: CI`n"
-		}
-		finally {
-			Remove-Item -LiteralPath $testDirectory -Recurse -Force
-		}
-	}
-
-	It 'appends only lines that are not already present' {
-		$testDirectory = New-TestDirectory
-
-		try {
-			$targetPath = Join-Path $testDirectory '.editorconfig'
-			Write-Utf8NoBomFile -Path $targetPath -Content 'root = true'
-
-			InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{ path = '/.editorconfig'; lines = @('root = true', '[*]') }
-
-			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "root = true`n[*]`n"
-		}
-		finally {
-			Remove-Item -LiteralPath $testDirectory -Recurse -Force
-		}
-	}
-
-	It 'does not touch the target file when all configured lines already exist' {
-		$testDirectory = New-TestDirectory
-
-		try {
-			$targetPath = Join-Path $testDirectory '.gitignore'
-			Write-Utf8NoBomFile -Path $targetPath -Content "bin/`nobj/`n"
-			$expectedWriteTime = [datetime]::SpecifyKind([datetime]::Parse('2001-02-03T04:05:06Z'), [System.DateTimeKind]::Utc)
-			[System.IO.File]::SetLastWriteTimeUtc($targetPath, $expectedWriteTime)
-
-			$output = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{ path = '.gitignore'; lines = @('bin/', 'obj/') }
-
-			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "bin/`nobj/`n"
-			([System.IO.File]::GetLastWriteTimeUtc($targetPath)) | Should -Be $expectedWriteTime
-			$output[-1].ToString() | Should -Be "'.gitignore' already contains all configured lines."
-		}
-		finally {
-			Remove-Item -LiteralPath $testDirectory -Recurse -Force
-		}
-	}
-
-	It 'does not create the target file when the configured lines list is empty' {
-		$testDirectory = New-TestDirectory
-
-		try {
-			$targetPath = Join-Path $testDirectory '.gitignore'
-
-			$output = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{ path = '.gitignore'; lines = @() }
-
-			(Test-Path -LiteralPath $targetPath) | Should -Be $false
-			$output[-1].ToString() | Should -Be "No configured lines to add for '.gitignore'."
-		}
-		finally {
-			Remove-Item -LiteralPath $testDirectory -Recurse -Force
-		}
-	}
-
-	It 'initializes a missing file from new-file-text' {
-		$testDirectory = New-TestDirectory
-
-		try {
-			$targetPath = Join-Path $testDirectory '.editorconfig'
-
-			$output = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{ path = '.editorconfig'; 'new-file-text' = 'root = true' }
-
-			(Test-Path -LiteralPath $targetPath) | Should -Be $true
-			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be 'root = true'
-			$output[-1].ToString() | Should -Be "Initialized '.editorconfig'."
-
-			$secondOutput = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{ path = '.editorconfig'; 'new-file-text' = 'root = true' }
-			$secondOutput[-1].ToString() | Should -Be "'.editorconfig' already exists."
-		}
-		finally {
-			Remove-Item -LiteralPath $testDirectory -Recurse -Force
-		}
-	}
-
-	It 'rejects lines that contain newlines' {
-		$testDirectory = New-TestDirectory
-
-		try {
-			{ InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{ path = '/.gitignore'; lines = @("bin/`nobj/") } } | Should -Throw "Each line in 'lines' must be a single line."
-		}
-		finally {
-			Remove-Item -LiteralPath $testDirectory -Recurse -Force
-		}
-	}
-
-	It 'creates a managed section when the file is missing' {
-		$testDirectory = New-TestDirectory
-
-		try {
-			$output = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{
-				path = '/.editorconfig'
-				section = @{
-					name = 'general-editorconfig'
-					text = "[*]`ncharset = utf-8"
-					'comment-prefix' = '#'
-				}
-			}
-			$targetPath = Join-Path $testDirectory '.editorconfig'
-
-			(Test-Path -LiteralPath $targetPath) | Should -Be $true
-			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n"
-			$output[-1].ToString() | Should -Be "Updated 'general-editorconfig' section in '.editorconfig'."
+			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "# DO NOT EDIT: ci convention`nname: CI`n# END DO NOT EDIT`n"
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -387,14 +288,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 			$targetPath = Join-Path $testDirectory '.editorconfig'
 			Write-Utf8NoBomFile -Path $targetPath -Content "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = latin1`n# END DO NOT EDIT`n"
 
-			InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{
-				path = '/.editorconfig'
-				section = @{
-					name = 'general-editorconfig'
-					text = "[*]`ncharset = utf-8`nend_of_line = lf"
-					'comment-prefix' = '#'
-				}
-			}
+			InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = '/.editorconfig'; name = 'general-editorconfig'; text = "[*]`ncharset = utf-8`nend_of_line = lf"; 'comment-prefix' = '#' }
 
 			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`nend_of_line = lf`n# END DO NOT EDIT`n"
 		}
@@ -413,14 +307,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 			Write-Utf8NoBomFile -Path $targetPath -Content $expectedContent
 			[System.IO.File]::SetLastWriteTimeUtc($targetPath, $expectedWriteTime)
 
-			$output = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{
-				path = '/.editorconfig'
-				section = @{
-					name = 'general-editorconfig'
-					text = "[*]`ncharset = utf-8"
-					'comment-prefix' = '#'
-				}
-			}
+			$output = InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = '/.editorconfig'; name = 'general-editorconfig'; text = "[*]`ncharset = utf-8"; 'comment-prefix' = '#' }
 
 			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be $expectedContent
 			([System.IO.File]::GetLastWriteTimeUtc($targetPath)) | Should -Be $expectedWriteTime
@@ -438,64 +325,9 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 			$targetPath = Join-Path $testDirectory '.editorconfig'
 			Write-Utf8NoBomFile -Path $targetPath -Content "root = true`n`n# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = latin1`n# END DO NOT EDIT`n`n[*.cs]`nindent_style = space`n"
 
-			InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{
-				path = '/.editorconfig'
-				section = @{
-					name = 'general-editorconfig'
-					text = "[*]`ncharset = utf-8"
-					'comment-prefix' = '#'
-				}
-			}
+			InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = '/.editorconfig'; name = 'general-editorconfig'; text = "[*]`ncharset = utf-8"; 'comment-prefix' = '#' }
 
 			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "root = true`n`n# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n`n[*.cs]`nindent_style = space`n"
-		}
-		finally {
-			Remove-Item -LiteralPath $testDirectory -Recurse -Force
-		}
-	}
-
-	It 'supports combined new-file-text and section behavior' {
-		$testDirectory = New-TestDirectory
-
-		try {
-			$output = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{
-				path = '/.editorconfig'
-				'new-file-text' = 'root = true'
-				section = @{
-					name = 'general-editorconfig'
-					text = "[*]`ncharset = utf-8"
-					'comment-prefix' = '#'
-				}
-			}
-			$targetPath = Join-Path $testDirectory '.editorconfig'
-
-			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "root = true`n`n# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n"
-			$output[-1].ToString() | Should -Be "Updated configured text and the 'general-editorconfig' section in '.editorconfig'."
-
-			$secondOutput = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{
-				path = '/.editorconfig'
-				'new-file-text' = 'root = true'
-				section = @{
-					name = 'general-editorconfig'
-					text = "[*]`ncharset = utf-8"
-					'comment-prefix' = '#'
-				}
-			}
-
-			$secondOutput[-1].ToString() | Should -Be "'.editorconfig' already contains the 'general-editorconfig' section."
-		}
-		finally {
-			Remove-Item -LiteralPath $testDirectory -Recurse -Force
-		}
-	}
-
-	It 'uses forward slashes for nested relative paths in messages' {
-		$testDirectory = New-TestDirectory
-
-		try {
-			$output = InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{ path = '/docs/example.html'; 'new-file-text' = '<div>Example</div>' }
-
-			$output[-1].ToString() | Should -Be "Initialized 'docs/example.html'."
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -506,15 +338,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 		$testDirectory = New-TestDirectory
 
 		try {
-			InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{
-				path = '/docs/example.html'
-				section = @{
-					name = 'snippet'
-					text = '<div>Example</div>'
-					'comment-prefix' = '<!--'
-					'comment-suffix' = '-->'
-				}
-			}
+			InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = '/docs/example.html'; name = 'snippet'; text = '<div>Example</div>'; 'comment-prefix' = '<!--'; 'comment-suffix' = '-->' }
 			$targetPath = Join-Path $testDirectory 'docs\example.html'
 
 			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "<!-- DO NOT EDIT: snippet convention -->`n<div>Example</div>`n<!-- END DO NOT EDIT -->`n"
@@ -531,7 +355,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 			$targetPath = Join-Path $testDirectory '.editorconfig'
 			Write-Utf8NoBomFile -Path $targetPath -Content "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n`n# DO NOT EDIT: general-editorconfig convention`n[*]`nindent_style = space`n# END DO NOT EDIT`n"
 
-			{ InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{ path = '/.editorconfig'; section = @{ name = 'general-editorconfig'; text = '[*]'; 'comment-prefix' = '#' } } } | Should -Throw "Found multiple managed sections named 'general-editorconfig' in '$targetPath'."
+			{ InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = '/.editorconfig'; name = 'general-editorconfig'; text = '[*]'; 'comment-prefix' = '#' } } | Should -Throw "Found multiple managed sections named 'general-editorconfig' in '$targetPath'."
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -545,16 +369,22 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 			$targetPath = Join-Path $testDirectory '.editorconfig'
 			Write-Utf8NoBomFile -Path $targetPath -Content "root = true`r`n"
 
-			InvokeConfigTextConvention -TestDirectory $testDirectory -Settings @{
-				path = '/.editorconfig'
-				section = @{
-					name = 'general-editorconfig'
-					text = "[*]`ncharset = utf-8"
-					'comment-prefix' = '#'
-				}
-			}
+			InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = '/.editorconfig'; name = 'general-editorconfig'; text = "[*]`ncharset = utf-8"; 'comment-prefix' = '#' }
 
 			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "root = true`r`n`r`n# DO NOT EDIT: general-editorconfig convention`r`n[*]`r`ncharset = utf-8`r`n# END DO NOT EDIT`r`n"
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'requires top-level section settings' {
+		$testDirectory = New-TestDirectory
+
+		try {
+			{ InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = '.editorconfig'; text = '[*]'; 'comment-prefix' = '#' } } | Should -Throw "The 'name' setting is required."
+			{ InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = '.editorconfig'; name = 'general-editorconfig'; 'comment-prefix' = '#' } } | Should -Throw "The 'text' setting is required."
+			{ InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = '.editorconfig'; name = 'general-editorconfig'; text = '[*]' } } | Should -Throw "The 'comment-prefix' setting is required."
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

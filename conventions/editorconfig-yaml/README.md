@@ -4,7 +4,7 @@ This [convention](https://github.com/Faithlife/RepoConventions) ensures the repo
 
 This convention does not support any settings.
 
-The convention composes [editorconfig](../editorconfig/README.md) with the fixed `yaml` managed section and reads the section text from the convention-local [files/.editorconfig](files/.editorconfig) file. When it changes `.editorconfig`, it runs packaged Copilot follow-up instructions and commits the result with the message `Update YAML editorconfig settings`.
+The convention composes [editorconfig-section](../editorconfig-section/README.md) with the fixed `yaml` managed section and reads the section text from the convention-local [files/.editorconfig](files/.editorconfig) file. When it changes `.editorconfig`, it runs packaged Copilot follow-up instructions and commits the result with the message `Update YAML editorconfig settings`.
 
 ```yaml
 conventions:

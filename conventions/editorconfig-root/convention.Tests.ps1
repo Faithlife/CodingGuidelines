@@ -50,9 +50,9 @@ conventions:
 - path: ../conventions/editorconfig-root
 "@
 			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.editorconfig') -Content @"
+# DO NOT EDIT: root convention
 root = true
 
-# DO NOT EDIT: root convention
 [*]
 charset = latin1
 # END DO NOT EDIT

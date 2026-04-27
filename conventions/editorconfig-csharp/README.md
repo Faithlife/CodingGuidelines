@@ -4,7 +4,7 @@ This [convention](https://github.com/Faithlife/RepoConventions) ensures the repo
 
 This convention does not support any settings.
 
-The convention composes [editorconfig](../editorconfig/README.md) with the fixed `csharp-editorconfig` managed section and reads the section text from the generated [files/.editorconfig](files/.editorconfig) asset. In this repository, [the local updater convention](../../.github/conventions/update-editorconfig-csharp/README.md) regenerates that file from [sections/csharp/editorconfig.md](../../sections/csharp/editorconfig.md). When it changes `.editorconfig`, it runs the packaged Copilot instructions and commits the result with the message `Update C# editorconfig settings`.
+The convention composes [editorconfig-section](../editorconfig-section/README.md) with the fixed `csharp-editorconfig` managed section and reads the section text from the generated [files/.editorconfig](files/.editorconfig) asset. In this repository, [the local updater convention](../../.github/conventions/update-editorconfig-csharp/README.md) regenerates that file from [sections/csharp/editorconfig.md](../../sections/csharp/editorconfig.md). When it changes `.editorconfig`, it runs the packaged Copilot instructions and commits the result with the message `Update C# editorconfig settings`.
 
 ```yaml
 conventions:

@@ -3,7 +3,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-Describe 'editorconfig convention' {
+Describe 'editorconfig-section convention' {
 	BeforeAll {
 		$script:testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
 		. $script:testHelpersPath
@@ -17,7 +17,7 @@ Describe 'editorconfig convention' {
 			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
 			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
 conventions:
-- path: ../conventions/editorconfig
+- path: ../conventions/editorconfig-section
   settings:
     name: files
     text: |
@@ -33,7 +33,6 @@ conventions:
 			$content = Get-Content -LiteralPath $editorConfigPath -Raw
 
 			(Test-Path -LiteralPath $editorConfigPath) | Should -Be $true
-			$content | Should -Match "(?m)^root = true\r?$"
 			$content | Should -Match "(?m)^# DO NOT EDIT: files convention\r?$"
 			$content | Should -Match "(?m)^\[\*\.txt\]\r?$"
 			$content | Should -Match "(?m)^indent_style = space\r?$"
@@ -54,7 +53,7 @@ conventions:
 			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
 			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
 conventions:
-- path: ../conventions/editorconfig
+- path: ../conventions/editorconfig-section
   settings:
     name: files
     text: |
@@ -85,7 +84,7 @@ conventions:
 			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
 			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
 conventions:
-- path: ../conventions/editorconfig
+- path: ../conventions/editorconfig-section
   settings:
     name: files
     text: |

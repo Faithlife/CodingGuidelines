@@ -2,12 +2,12 @@
 
 ## Goal
 
-Change the `prettierignore` convention so it only manages `.prettierignore` in repositories that appear to use Prettier.
+Change the `prettierignore-section` convention so it only manages `.prettierignore` in repositories that appear to use Prettier.
 
 The convention should:
 
-- Continue publishing the same convention path: `conventions/prettierignore`.
-- Keep the existing settings surface: `lines`, `name`, `text`, `agent`, and `commit`.
+- Continue publishing the same convention path: `conventions/prettierignore-section`.
+- Keep the existing settings surface: `name`, `text`, `agent`, and `commit`.
 - Treat an existing `.prettierignore` file as enough evidence that the repository uses Prettier.
 - Detect common Prettier configuration files.
 - Detect Prettier listed in an NPM package manifest.
@@ -16,26 +16,26 @@ The convention should:
 
 ## Current Shape
 
-`conventions/prettierignore/convention.yml` is currently a pure composite convention over `conventions/config-text`.
+`conventions/prettierignore-section/convention.yml` is currently a pure composite convention over `conventions/config-text-section`.
 
-That works for unconditional file management, but it leaves no place to inspect the target repository before `config-text` creates `.prettierignore`. Adding a `convention.ps1` beside the existing `convention.yml` would not solve this, because repo-conventions applies `convention.yml` before running `convention.ps1` when both files exist.
+That works for unconditional file management, but it leaves no place to inspect the target repository before `config-text-section` creates `.prettierignore`. Adding a `convention.ps1` beside the existing `convention.yml` would not solve this, because repo-conventions applies `convention.yml` before running `convention.ps1` when both files exist.
 
 ## Recommendation
 
-Replace `conventions/prettierignore/convention.yml` with an executable `convention.ps1` that performs Prettier detection before invoking `conventions/config-text/convention.ps1`.
+Replace `conventions/prettierignore-section/convention.yml` with an executable `convention.ps1` that performs Prettier detection before invoking `conventions/config-text-section/convention.ps1`.
 
-This keeps the extra policy local to `prettierignore`, avoids expanding the generic `config-text` contract for one convention, and preserves the existing `config-text` implementation for the actual file rewrite, agent, and commit behavior.
+This keeps the extra policy local to `prettierignore-section`, avoids expanding the generic `config-text-section` contract for one convention, and preserves the existing `config-text-section` implementation for the actual file rewrite, agent, and commit behavior.
 
 Expected files after the change:
 
 ```text
-conventions/prettierignore/
+conventions/prettierignore-section/
   convention.ps1
   convention.Tests.ps1
   README.md
 ```
 
-Remove `convention.yml`, because keeping it would still run `config-text` unconditionally.
+Remove `convention.yml`, because keeping it would still run `config-text-section` unconditionally.
 
 ## Detection Rules
 
@@ -72,27 +72,25 @@ Start with root-level detection. If later consumers need monorepo-wide detection
 
 The new `prettierignore` script should:
 
-- Read the convention input JSON and validate the settings needed to pass through to `config-text`.
+- Read the convention input JSON and validate the settings needed to pass through to `config-text-section`.
 - Check whether Prettier is present using the detection rules above.
 - If Prettier is not present, write a focused message such as `Prettier was not detected; leaving '.prettierignore' unchanged.` and exit with code zero.
-- If Prettier is present, create a temporary input JSON file for `config-text` with the same effective settings currently expressed in `convention.yml`.
-- Invoke `../config-text/convention.ps1` with that temporary input file while the working directory remains the target repository root.
+- If Prettier is present, create a temporary input JSON file for `config-text-section` with the same effective settings currently expressed in `convention.yml`.
+- Invoke `../config-text-section/convention.ps1` with that temporary input file while the working directory remains the target repository root.
 - Clean up the temporary input file in a `finally` block.
 
-The generated `config-text` settings should match the current composite mapping:
+The generated `config-text-section` settings should match the current composite mapping:
 
 ```yaml
 path: .prettierignore
-lines: <settings.lines>
-section:
-  name: <settings.name>
-  text: <settings.text>
-  comment-prefix: '#'
+name: <settings.name>
+text: <settings.text>
+comment-prefix: '#'
 agent: <settings.agent>
 commit: <settings.commit>
 ```
 
-The script should only include optional settings that were present in the original input, so missing `agent`, `commit`, `lines`, `name`, or `text` continue to behave consistently with `config-text` validation.
+The script should only include optional settings that were present in the original input, so missing `agent`, `commit`, `name`, or `text` continue to behave consistently with `config-text-section` validation.
 
 ## Package Detection Details
 
@@ -109,31 +107,31 @@ Do not use lockfiles as the primary signal in the first pass. Lockfiles can cont
 
 ## Tests
 
-Add `conventions/prettierignore/convention.Tests.ps1` using `conventions/scripts/TestHelpers.ps1`.
+Add `conventions/prettierignore-section/convention.Tests.ps1` using `conventions/scripts/TestHelpers.ps1`.
 
 Suggested Pester cases:
 
 - Does nothing when there is no `.prettierignore`, no Prettier config, and no root package Prettier signal.
-- Applies configured lines when `.prettierignore` already exists.
-- Applies configured lines when `.prettierrc` exists.
-- Applies configured lines when `prettier.config.js` exists.
-- Applies configured lines when `package.json` has a top-level `prettier` property.
-- Applies configured lines when `package.json` has `devDependencies.prettier`.
+- Applies the configured section when `.prettierignore` already exists.
+- Applies the configured section when `.prettierrc` exists.
+- Applies the configured section when `prettier.config.js` exists.
+- Applies the configured section when `package.json` has a top-level `prettier` property.
+- Applies the configured section when `package.json` has `devDependencies.prettier`.
 - Does not treat a lockfile-only transitive Prettier reference as a match.
 - Fails clearly when `package.json` is malformed.
-- Passes through managed section settings to `config-text`.
-- Passes through `commit` settings and creates the same commit that `config-text` would create.
+- Passes through managed section settings to `config-text-section`.
+- Passes through `commit` settings and creates the same commit that `config-text-section` would create.
 - Is idempotent on a second run.
 
 Per repository instructions, run only this Pester script directly:
 
 ```powershell
-Invoke-Pester -Path conventions/prettierignore/convention.Tests.ps1
+Invoke-Pester -Path conventions/prettierignore-section/convention.Tests.ps1
 ```
 
 ## Documentation
 
-Update `conventions/prettierignore/README.md` to explain that the convention is conditional.
+Update `conventions/prettierignore-section/README.md` to explain that the convention is conditional.
 
 The README should document:
 
@@ -143,9 +141,9 @@ The README should document:
 - Root `package.json` Prettier config or dependency entries count as detection.
 - Repositories without those signals are left unchanged.
 
-## Alternative: Add A Predicate Setting To `config-text`
+## Alternative: Add A Predicate Setting To `config-text-section`
 
-Another possible design is adding a generic setting to `config-text`, such as `apply-when-script`, `condition-script`, or `skip-when-script`, then keeping `prettierignore` as a composite convention that passes a predicate script path into `config-text`.
+Another possible design is adding a generic setting to `config-text-section`, such as `apply-when-script`, `condition-script`, or `skip-when-script`, then keeping `prettierignore-section` as a composite convention that passes a predicate script path into `config-text-section`.
 
 This is not the recommended first step.
 
@@ -156,23 +154,23 @@ Pros:
 
 Cons:
 
-- Expands the generic `config-text` API with script execution semantics.
+- Expands the generic `config-text-section` API with script execution semantics.
 - Requires defining path resolution, input shape, output contract, and failure behavior for predicate scripts.
-- Makes `config-text` responsible for policy decisions outside text management.
+- Makes `config-text-section` responsible for policy decisions outside text management.
 - Adds a new public extension point before there is more than one concrete consumer.
 
 Use this option later only if multiple conventions need the same conditional behavior.
 
-## Alternative: Extract Reusable Config-Text Logic
+## Alternative: Extract Reusable Config-Text-Section Logic
 
-Another option is extracting the file-rewrite functions from `config-text` into a reusable runtime helper and then implementing `prettierignore` entirely in its own script.
+Another option is extracting the file-rewrite functions from `config-text-section` into a reusable runtime helper and then implementing `prettierignore-section` entirely in its own script.
 
-This is useful if several executable conventions need to manage config files with similar line and section semantics. For this change, it is more work than necessary because the wrapper can call `config-text` directly and preserve its current behavior.
+This is useful if several executable conventions need to manage config files with similar section semantics. For this change, it is more work than necessary because the wrapper can call `config-text-section` directly and preserve its current behavior.
 
 ## Implementation Order
 
-- Add the `prettierignore` executable wrapper script and remove the composite YAML file.
+- Add the `prettierignore-section` executable wrapper script and remove the composite YAML file.
 - Add focused tests for detection, pass-through behavior, and idempotency.
-- Update the `prettierignore` README.
-- Run `Invoke-Pester -Path conventions/prettierignore/convention.Tests.ps1`.
-- If any shared helper need appears while writing tests, extract only test helper mechanics, not `prettierignore` policy.
+- Update the `prettierignore-section` README.
+- Run `Invoke-Pester -Path conventions/prettierignore-section/convention.Tests.ps1`.
+- If any shared helper need appears while writing tests, extract only test helper mechanics, not `prettierignore-section` policy.

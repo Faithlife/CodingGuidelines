@@ -47,7 +47,7 @@ This should be an executable convention, not a composite one, because it needs t
 Recommended published path:
 
 ```text
-conventions/editorconfig
+conventions/editorconfig-section
 ```
 
 Expected files:
@@ -77,7 +77,7 @@ Use YAML block scalars for short or medium sections:
 
 ```yaml
 conventions:
-  - path: Faithlife/CodingGuidelines/conventions/editorconfig
+  - path: Faithlife/CodingGuidelines/conventions/editorconfig-section
     settings:
       name: general-editorconfig
       text: |
@@ -113,8 +113,8 @@ The block contents should be written exactly as provided, aside from normalizing
 
 ## Suggested Implementation Notes
 
-- Reuse the UTF-8 no BOM write pattern from [conventions/config-text/convention.ps1](../conventions/config-text/convention.ps1).
-- Reuse the existing line-ending detection approach from [conventions/config-text/convention.ps1](../conventions/config-text/convention.ps1).
+- Reuse the UTF-8 no BOM write pattern from [conventions/config-text-section/convention.ps1](../conventions/config-text-section/convention.ps1).
+- Reuse the existing line-ending detection approach from [conventions/config-text-section/convention.ps1](../conventions/config-text-section/convention.ps1).
 - Use a marker-based parser rather than line-by-line append logic.
 - Treat malformed or duplicated named blocks as errors.
 - Keep output focused, for example `Updated 'general-editorconfig' section in '.editorconfig'.`
@@ -132,4 +132,4 @@ The block contents should be written exactly as provided, aside from normalizing
 
 ## Recommendation
 
-Publish an executable convention named `editorconfig` using required `name` plus inline `text`.
+Publish an executable convention named `editorconfig-section` using required `name` plus inline `text`.

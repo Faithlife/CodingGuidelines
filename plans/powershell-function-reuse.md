@@ -19,7 +19,7 @@ The repository already shows two different kinds of reuse pressure.
 
 The Pester suites repeat the same mechanics in multiple places:
 
-- `NewTestDirectory` appears in multiple files, including `conventions/config-text/convention.Tests.ps1`, `conventions/dotnet-sdk/convention.Tests.ps1`, `conventions/dotnet-slnx/convention.Tests.ps1`, `conventions/gitattributes-lf/convention.Tests.ps1`, and `conventions/apm-install-updates/convention.Tests.ps1`.
+- `NewTestDirectory` appears in multiple files, including `conventions/config-text-section/convention.Tests.ps1`, `conventions/dotnet-sdk/convention.Tests.ps1`, `conventions/dotnet-slnx/convention.Tests.ps1`, `conventions/gitattributes-lf/convention.Tests.ps1`, and `conventions/apm-install-updates/convention.Tests.ps1`.
 - `WriteUtf8NoBomFile` is duplicated in several test files.
 - Multiple suites repeat the pattern of creating a temporary JSON input file, invoking `convention.ps1` from a temporary repository directory, and cleaning up afterward.
 - The git-backed tests in `conventions/gitattributes-lf/convention.Tests.ps1` add another reusable layer: initialize a repository, read commit IDs, read commit subjects, and inspect status.
@@ -30,10 +30,10 @@ This duplication is large enough to justify a shared test helper surface now.
 
 The executable conventions also repeat low-level mechanics:
 
-- `WriteUtf8NoBomFile` exists in both `conventions/config-text/convention.ps1` and `conventions/gitattributes-lf/convention.ps1`.
+- `WriteUtf8NoBomFile` exists in both `conventions/config-text-section/convention.ps1` and `conventions/gitattributes-lf/convention.ps1`.
 - Several scripts read convention input JSON using the same `Get-Content ... | ConvertFrom-Json` pattern.
 - `conventions/gitattributes-lf/convention.ps1` and `conventions/dotnet-sdk/convention.ps1` both set up temporary Copilot config directories and validate external commands before invoking them.
-- `conventions/config-text/convention.ps1` already contains reusable file-content utilities such as newline detection.
+- `conventions/config-text-section/convention.ps1` already contains reusable file-content utilities such as newline detection.
 
 The reuse signal is real, but smaller than the test duplication. The current conventions are still specialized enough that most policy logic should remain local to each convention.
 
@@ -43,9 +43,9 @@ Convention composition is already the correct reuse mechanism for policy-level b
 
 Examples:
 
-- `conventions/gitattributes/convention.yml` delegates to `conventions/config-text`.
-- `conventions/gitignore/convention.yml` delegates to `conventions/config-text`.
-- `conventions/prettierignore/convention.yml` delegates to `conventions/config-text`.
+- `conventions/gitattributes-section/convention.yml` delegates to `conventions/config-text-section`.
+- `conventions/gitignore-section/convention.yml` delegates to `conventions/config-text-section`.
+- `conventions/prettierignore-section/convention.yml` delegates to `conventions/config-text-section`.
 
 This means the repository does not need a shared PowerShell layer for every kind of reuse. It only needs shared functions for repeated low-level mechanics.
 
@@ -207,15 +207,15 @@ One practical pattern is a repo-local support file that multiple Pester suites d
 ```powershell
 . "$PSScriptRoot\..\scripts\TestHelpers.ps1"
 
-Describe 'config-text convention' {
+Describe 'config-text-section convention' {
   It 'creates a repository-root-relative file' {
     $testDirectory = New-TestDirectory
-    $inputPath = New-ConventionInputFile -Settings @{ path = '/.gitignore'; lines = @('bin/', 'obj/') }
+    $inputPath = New-ConventionInputFile -Settings @{ path = '/.gitignore'; name = 'build-output'; text = "bin/`nobj/"; 'comment-prefix' = '#' }
 
     try {
       $output = Invoke-ConventionScript -ScriptPath (Join-Path $PSScriptRoot 'convention.ps1') -RepositoryRoot $testDirectory -InputPath $inputPath
-      (Get-Content -LiteralPath (Join-Path $testDirectory '.gitignore') -Raw) | Should Be "bin/`nobj/`n"
-      $output[-1].ToString() | Should Be "Added 2 lines to '$(Join-Path $testDirectory '.gitignore')'."
+      (Get-Content -LiteralPath (Join-Path $testDirectory '.gitignore') -Raw) | Should Be "# DO NOT EDIT: build-output convention`nbin/`nobj/`n# END DO NOT EDIT`n"
+      $output[-1].ToString() | Should Be "Updated 'build-output' section in '.gitignore'."
     }
     finally {
       Remove-Item -LiteralPath $inputPath -ErrorAction SilentlyContinue
