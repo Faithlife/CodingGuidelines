@@ -16,6 +16,8 @@ Settings:
 
 If the target file does not exist, the convention creates it with the managed section. If the named section already exists, the convention replaces only that section. Other file content is preserved. When `commit.message` is configured and the convention or its configured agent changes the repository, the script stages those changes and creates a commit before it exits.
 
+The reusable implementation lives in [conventions/scripts/ConfigTextSection.ps1](../scripts/ConfigTextSection.ps1). Executable conventions that need repository-specific inspection before managing a section can dot-source that script and call `Invoke-ConfigTextSection` with their effective settings.
+
 ```yaml
 conventions:
   - path: Faithlife/CodingGuidelines/conventions/config-text-section

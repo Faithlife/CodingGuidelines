@@ -14,28 +14,36 @@ The convention should:
 - Exit successfully without changing files when Prettier is not detected.
 - Stay idempotent.
 
-## Current Shape
+## Starting Shape
 
-`conventions/prettierignore-section/convention.yml` is currently a pure composite convention over `conventions/config-text-section`.
+Before this change, `conventions/prettierignore-section/convention.yml` was a pure composite convention over `conventions/config-text-section`.
 
 That works for unconditional file management, but it leaves no place to inspect the target repository before `config-text-section` creates `.prettierignore`. Adding a `convention.ps1` beside the existing `convention.yml` would not solve this, because repo-conventions applies `convention.yml` before running `convention.ps1` when both files exist.
 
 ## Recommendation
 
-Replace `conventions/prettierignore-section/convention.yml` with an executable `convention.ps1` that performs Prettier detection before invoking `conventions/config-text-section/convention.ps1`.
+Extract the reusable section-management logic from `conventions/config-text-section/convention.ps1` into `conventions/scripts/ConfigTextSection.ps1`, then replace `conventions/prettierignore-section/convention.yml` with an executable `convention.ps1` that performs Prettier detection before calling the shared helper.
 
-This keeps the extra policy local to `prettierignore-section`, avoids expanding the generic `config-text-section` contract for one convention, and preserves the existing `config-text-section` implementation for the actual file rewrite, agent, and commit behavior.
+This keeps the extra policy local to `prettierignore-section`, avoids expanding the generic `config-text-section` contract for one convention, and lets both conventions share the same file rewrite, agent, and commit behavior without shelling out to another convention script.
 
 Expected files after the change:
 
 ```text
+conventions/scripts/
+  ConfigTextSection.ps1
+
+conventions/config-text-section/
+  convention.ps1
+  convention.Tests.ps1
+  README.md
+
 conventions/prettierignore-section/
   convention.ps1
   convention.Tests.ps1
   README.md
 ```
 
-Remove `convention.yml`, because keeping it would still run `config-text-section` unconditionally.
+Remove `prettierignore-section/convention.yml`, because keeping it would still run `config-text-section` unconditionally.
 
 ## Detection Rules
 
@@ -75,9 +83,8 @@ The new `prettierignore` script should:
 - Read the convention input JSON and validate the settings needed to pass through to `config-text-section`.
 - Check whether Prettier is present using the detection rules above.
 - If Prettier is not present, write a focused message such as `Prettier was not detected; leaving '.prettierignore' unchanged.` and exit with code zero.
-- If Prettier is present, create a temporary input JSON file for `config-text-section` with the same effective settings currently expressed in `convention.yml`.
-- Invoke `../config-text-section/convention.ps1` with that temporary input file while the working directory remains the target repository root.
-- Clean up the temporary input file in a `finally` block.
+- If Prettier is present, build the same effective settings currently expressed in `convention.yml`.
+- Call `Invoke-ConfigTextSection` from `../scripts/ConfigTextSection.ps1` with those settings while the working directory remains the target repository root.
 
 The generated `config-text-section` settings should match the current composite mapping:
 
@@ -141,6 +148,8 @@ The README should document:
 - Root `package.json` Prettier config or dependency entries count as detection.
 - Repositories without those signals are left unchanged.
 
+Update `conventions/config-text-section/README.md` to mention that the reusable implementation lives in `conventions/scripts/ConfigTextSection.ps1` for executable conventions that need section behavior plus their own repository inspection.
+
 ## Alternative: Add A Predicate Setting To `config-text-section`
 
 Another possible design is adding a generic setting to `config-text-section`, such as `apply-when-script`, `condition-script`, or `skip-when-script`, then keeping `prettierignore-section` as a composite convention that passes a predicate script path into `config-text-section`.
@@ -161,16 +170,17 @@ Cons:
 
 Use this option later only if multiple conventions need the same conditional behavior.
 
-## Alternative: Extract Reusable Config-Text-Section Logic
+## Reusable Config-Text-Section Logic
 
-Another option is extracting the file-rewrite functions from `config-text-section` into a reusable runtime helper and then implementing `prettierignore-section` entirely in its own script.
+Extract the file-rewrite functions from `config-text-section` into a reusable runtime helper and then implement `prettierignore-section` entirely in its own script.
 
-This is useful if several executable conventions need to manage config files with similar section semantics. For this change, it is more work than necessary because the wrapper can call `config-text-section` directly and preserve its current behavior.
+This is the preferred implementation because it gives `prettierignore-section` room for repository inspection while keeping section rewrite behavior shared with `config-text-section`.
 
 ## Implementation Order
 
-- Add the `prettierignore-section` executable wrapper script and remove the composite YAML file.
+- Extract `conventions/scripts/ConfigTextSection.ps1` and update `config-text-section/convention.ps1` to call it.
+- Add the `prettierignore-section` executable script and remove the composite YAML file.
 - Add focused tests for detection, pass-through behavior, and idempotency.
-- Update the `prettierignore-section` README.
+- Update the `config-text-section` and `prettierignore-section` READMEs.
 - Run `Invoke-Pester -Path conventions/prettierignore-section/convention.Tests.ps1`.
-- If any shared helper need appears while writing tests, extract only test helper mechanics, not `prettierignore-section` policy.
+- Run `Invoke-Pester -Path conventions/config-text-section/convention.Tests.ps1` to confirm the shared helper preserves existing behavior.

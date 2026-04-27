@@ -1,9 +1,0 @@
-conventions:
-  - path: ../config-text-section
-    settings:
-      path: .prettierignore
-      name: ${{ settings.name }}
-      text: ${{ settings.text }}
-      comment-prefix: '#'
-      agent: ${{ settings.agent }}
-      commit: ${{ settings.commit }}
