@@ -1,0 +1,14 @@
+conventions:
+  - path: ../conventions/repo-conventions-workflow
+  - path: ../conventions/gitattributes-lf
+  - path: ../conventions/dotnet-sdk10
+  - path: ../conventions/dotnet-slnx
+  - path: ../conventions/editorconfig-root
+  - path: ../conventions/editorconfig-json
+  - path: ../conventions/editorconfig-md
+  - path: ../conventions/editorconfig-ps1
+  - path: ../conventions/editorconfig-yaml
+  - path: ../conventions/editorconfig-csharp
+  - path: ../conventions/faithlife-build-script
+  - path: ../conventions/faithlife-build-library-project
+  - path: ../conventions/faithlife-build-library-workflow
