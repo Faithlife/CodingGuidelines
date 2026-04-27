@@ -89,8 +89,8 @@ EndGlobal
 			$status[1] | Should -Match '^\?\? tools/Build/Build\.cs$'
 			$status[2] | Should -Match '^\?\? tools/Build/Build\.csproj$'
 			$output.Count | Should -Be 4
-			$output[0].ToString() | Should -Match "Created '.+tools\\Build\\Build\.cs'\."
-			$output[1].ToString() | Should -Match "Created '.+tools\\Build\\Build\.csproj'\."
+			$output[0].ToString() | Should -Match "Created '.+tools[/\\]Build[/\\]Build\.cs'\."
+			$output[1].ToString() | Should -Match "Created '.+tools[/\\]Build[/\\]Build\.csproj'\."
 			$output[2].ToString() | Should -Be 'Creating a root solution with dotnet new sln.'
 			$output[3].ToString() | Should -Be "Adding './tools/Build' to the root solution."
 
@@ -173,7 +173,7 @@ EndGlobal
 			$status[0] | Should -Match '^ M Test\.sln$'
 			$status[1] | Should -Match '^\?\? tools/Build/Build\.csproj$'
 			$output.Count | Should -Be 2
-			$output[0].ToString() | Should -Match "Created '.+tools\\Build\\Build\.csproj'\."
+			$output[0].ToString() | Should -Match "Created '.+tools[/\\]Build[/\\]Build\.csproj'\."
 			$output[1].ToString() | Should -Be "Adding './tools/Build' to the root solution."
 
 			Push-Location $testDirectory

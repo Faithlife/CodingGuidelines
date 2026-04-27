@@ -117,7 +117,8 @@ Describe 'faithlife-build-library-workflow convention' {
 
 			$headAfterSecondRun | Should -Be $headAfterFirstRun
 			$status.Count | Should -Be 0
-			(@($output | ForEach-Object { $_.ToString() }) -contains "'$($testDirectory)\.github\workflows\build.yaml' already matches the published Faithlife build workflow.") | Should -Be $true
+			$expectedWorkflowPath = Join-Path $testDirectory '.github' 'workflows' 'build.yaml'
+		(@($output | ForEach-Object { $_.ToString() }) -contains "'$expectedWorkflowPath' already matches the published Faithlife build workflow.") | Should -Be $true
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

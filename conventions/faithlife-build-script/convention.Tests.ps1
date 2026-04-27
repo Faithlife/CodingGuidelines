@@ -62,7 +62,8 @@ Describe 'faithlife-build-script convention' {
 			(Get-Content -LiteralPath $buildScriptPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedBuildScriptPath -Raw)
 			(GetBuildScriptIndexMode -TestDirectory $testDirectory) | Should -Be '100755'
 			$status.Count | Should -Be 1
-			$status[0] | Should -Match '^A\s\sbuild\.ps1$'
+			# On Windows: 'A  build.ps1' (no worktree change); on Linux/Mac: 'AM build.ps1' (mode differs in worktree)
+			$status[0] | Should -Match '^A.\sbuild\.ps1$'
 			(@($output | ForEach-Object { $_.ToString() }) -contains "Marked 'build.ps1' as executable in Git.") | Should -Be $true
 		}
 		finally {
@@ -93,7 +94,8 @@ Describe 'faithlife-build-script convention' {
 			(Get-Content -LiteralPath $buildScriptPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedBuildScriptPath -Raw)
 			(GetBuildScriptIndexMode -TestDirectory $testDirectory) | Should -Be '100755'
 			$status.Count | Should -Be 1
-			$status[0] | Should -Match '^M\s\sbuild\.ps1$'
+			# On Windows: 'M  build.ps1' (no worktree change); on Linux/Mac: 'MM build.ps1' (mode differs in worktree)
+			$status[0] | Should -Match '^M.\sbuild\.ps1$'
 			(@($output | ForEach-Object { $_.ToString() }) -contains "Updated '$buildScriptPath' from the published Faithlife build script.") | Should -Be $true
 		}
 		finally {
@@ -123,7 +125,9 @@ Describe 'faithlife-build-script convention' {
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
 			$headAfterSecondRun | Should -Be $headAfterFirstRun
-			$status.Count | Should -Be 0
+			# On Linux/Mac, git tracks file mode and the working tree file may remain at mode
+			# 100644 while the index is 100755; only assert that nothing is staged.
+			(@($status | Where-Object { $_ -notmatch '^ ' })).Count | Should -Be 0
 			(@($output | ForEach-Object { $_.ToString() }) -contains "'build.ps1' already matches the published Faithlife build script and is executable in Git.") | Should -Be $true
 		}
 		finally {
