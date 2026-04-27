@@ -3,4 +3,9 @@ conventions:
     settings:
       path: .gitattributes
       lines: ${{ settings.lines }}
+      section:
+        name: ${{ settings.name }}
+        text: ${{ settings.text }}
+        comment-prefix: '#'
+      agent: ${{ settings.agent }}
       commit: ${{ settings.commit }}
