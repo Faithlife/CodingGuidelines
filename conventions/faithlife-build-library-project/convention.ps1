@@ -56,8 +56,8 @@ function EnsureRootSolutionExists {
 	return $true
 }
 
-$conventionBuildCsPath = Join-Path $PSScriptRoot 'files\Build.cs'
-$conventionBuildCsprojPath = Join-Path $PSScriptRoot 'files\Build.csproj.xml'
+$conventionBuildCsPath = Join-Path $PSScriptRoot 'files' 'Build.cs'
+$conventionBuildCsprojPath = Join-Path $PSScriptRoot 'files' 'Build.csproj.xml'
 $targetDirectoryPath = Join-Path (Get-Location) 'tools/Build'
 $targetBuildCsPath = Join-Path $targetDirectoryPath 'Build.cs'
 $targetBuildCsprojPath = Join-Path $targetDirectoryPath 'Build.csproj'

@@ -6,8 +6,8 @@ $ErrorActionPreference = 'Stop'
 Describe 'license-mit convention' {
 	BeforeAll {
 		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
-		$script:templateLicensePath = Join-Path $PSScriptRoot 'files\LICENSE'
-		$script:testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
+		$script:templateLicensePath = Join-Path $PSScriptRoot 'files' 'LICENSE'
+		$script:testHelpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'TestHelpers.ps1'
 		$script:defaultCopyrightHolder = 'Faithlife'
 		. $script:testHelpersPath
 

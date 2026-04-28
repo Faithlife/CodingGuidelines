@@ -6,8 +6,8 @@ $ErrorActionPreference = 'Stop'
 Describe 'faithlife-build-library-workflow convention' {
 	BeforeAll {
 		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
-		$script:expectedWorkflowPath = Join-Path $PSScriptRoot 'files\build.yaml'
-		$script:testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
+		$script:expectedWorkflowPath = Join-Path $PSScriptRoot 'files' 'build.yaml'
+		$script:testHelpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'TestHelpers.ps1'
 		. $script:testHelpersPath
 
 		function script:InvokeFaithlifeBuildLibraryWorkflowConvention {

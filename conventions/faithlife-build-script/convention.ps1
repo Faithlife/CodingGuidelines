@@ -3,7 +3,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$helpersPath = Join-Path $PSScriptRoot '..\scripts\Helpers.ps1'
+$helpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'Helpers.ps1'
 . $helpersPath
 
 Set-Utf8NoBomConsoleEncoding
@@ -50,7 +50,7 @@ function GetGitIndexMode {
 	return ($indexLines[0] -split '\s+', 2)[0]
 }
 
-$sourceBuildScriptPath = Join-Path $PSScriptRoot 'files\build.ps1'
+$sourceBuildScriptPath = Join-Path $PSScriptRoot 'files' 'build.ps1'
 $targetBuildScriptPath = Join-Path (Get-Location) 'build.ps1'
 $copyResult = Copy-FileIfDifferent -SourcePath $sourceBuildScriptPath -DestinationPath $targetBuildScriptPath
 $modeBefore = GetGitIndexMode -RepositoryRelativePath 'build.ps1'

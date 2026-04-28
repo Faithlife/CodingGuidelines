@@ -6,7 +6,7 @@ $ErrorActionPreference = 'Stop'
 Describe 'config-text-section convention' {
 	BeforeAll {
 		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
-		$script:testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
+		$script:testHelpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'TestHelpers.ps1'
 		. $script:testHelpersPath
 
 		function script:InvokeConfigTextSectionConvention {
@@ -271,7 +271,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 
 		try {
 			InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = 'workflows/ci.yml'; name = 'ci'; text = 'name: CI'; 'comment-prefix' = '#' }
-			$targetPath = Join-Path $testDirectory 'workflows\ci.yml'
+			$targetPath = Join-Path $testDirectory 'workflows' 'ci.yml'
 
 			(Test-Path -LiteralPath $targetPath) | Should -Be $true
 			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "# DO NOT EDIT: ci convention`nname: CI`n# END DO NOT EDIT`n"
@@ -339,7 +339,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 
 		try {
 			InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = '/docs/example.html'; name = 'snippet'; text = '<div>Example</div>'; 'comment-prefix' = '<!--'; 'comment-suffix' = '-->' }
-			$targetPath = Join-Path $testDirectory 'docs\example.html'
+			$targetPath = Join-Path $testDirectory 'docs' 'example.html'
 
 			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "<!-- DO NOT EDIT: snippet convention -->`n<div>Example</div>`n<!-- END DO NOT EDIT -->`n"
 		}

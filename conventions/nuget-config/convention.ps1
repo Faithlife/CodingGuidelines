@@ -3,12 +3,12 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$helpersPath = Join-Path $PSScriptRoot '..\scripts\Helpers.ps1'
+$helpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'Helpers.ps1'
 . $helpersPath
 
 Set-Utf8NoBomConsoleEncoding
 
-$sourceNuGetConfigPath = Join-Path $PSScriptRoot 'files\nuget.config'
+$sourceNuGetConfigPath = Join-Path $PSScriptRoot 'files' 'nuget.config'
 $targetNuGetConfigPath = Join-Path (Get-Location) 'nuget.config'
 $existingNuGetConfigItem = Get-Item -LiteralPath $targetNuGetConfigPath -ErrorAction SilentlyContinue
 

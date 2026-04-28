@@ -3,7 +3,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$configTextSectionPath = Join-Path $PSScriptRoot '..\scripts\ConfigTextSection.ps1'
+$configTextSectionPath = Join-Path $PSScriptRoot '..' 'scripts' 'ConfigTextSection.ps1'
 . $configTextSectionPath
 
 $prettierConfigFileNames = @(

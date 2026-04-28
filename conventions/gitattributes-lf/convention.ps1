@@ -3,7 +3,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$helpersPath = Join-Path $PSScriptRoot '..\scripts\Helpers.ps1'
+$helpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'Helpers.ps1'
 . $helpersPath
 
 Set-Utf8NoBomConsoleEncoding

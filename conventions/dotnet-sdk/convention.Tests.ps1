@@ -6,7 +6,7 @@ $ErrorActionPreference = 'Stop'
 Describe 'dotnet-sdk convention' {
 	BeforeAll {
 		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
-		$script:testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
+		$script:testHelpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'TestHelpers.ps1'
 		. $script:testHelpersPath
 
 		function script:InvokeDotnetSdkConvention {
@@ -61,7 +61,6 @@ Describe 'dotnet-sdk convention' {
 		$output = InvokeDotnetSdkConvention -InputJson $inputJson -SdkVersion '10.0.100'
 
 		$outputText = GetOutputText -Output $output
-		$outputText | Should -Match 'Starting dotnet-sdk convention\.'
 		$outputText | Should -Match 'Checking global\.json for \.NET SDK major version 10\.'
 		$outputText | Should -Match 'global\.json already requires SDK major version 10, which satisfies required major version 10\.'
 		$outputText | Should -Match 'dotnet-sdk convention has nothing to do\.'

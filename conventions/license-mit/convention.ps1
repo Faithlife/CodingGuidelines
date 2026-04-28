@@ -3,7 +3,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$helpersPath = Join-Path $PSScriptRoot '..\scripts\Helpers.ps1'
+$helpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'Helpers.ps1'
 . $helpersPath
 
 Set-Utf8NoBomConsoleEncoding
@@ -24,7 +24,7 @@ if ($copyrightHolder -isnot [string] -or [string]::IsNullOrWhiteSpace($copyright
 	throw "The 'copyright-holder' setting must be a non-empty string."
 }
 
-$templateLicensePath = Join-Path $PSScriptRoot 'files\LICENSE'
+$templateLicensePath = Join-Path $PSScriptRoot 'files' 'LICENSE'
 $targetLicensePath = Join-Path (Get-Location) 'LICENSE'
 $currentUtcYear = [DateTime]::UtcNow.Year.ToString([System.Globalization.CultureInfo]::InvariantCulture)
 $templateContent = Get-Content -LiteralPath $templateLicensePath -Raw

@@ -6,8 +6,8 @@ $ErrorActionPreference = 'Stop'
 Describe 'nuget-config convention' {
 	BeforeAll {
 		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
-		$script:expectedNuGetConfigPath = Join-Path $PSScriptRoot 'files\nuget.config'
-		$script:testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
+		$script:expectedNuGetConfigPath = Join-Path $PSScriptRoot 'files' 'nuget.config'
+		$script:testHelpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'TestHelpers.ps1'
 		. $script:testHelpersPath
 
 		function script:InvokeNuGetConfigConvention {

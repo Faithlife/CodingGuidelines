@@ -39,7 +39,7 @@ function GetRelativeDisplayPath {
 	return [System.IO.Path]::GetRelativePath($RootPath, $ChildPath)
 }
 
-$repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
+$repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..' '..'))
 $conventionsRoot = GetConventionsRoot
 $testScriptPaths = GetTestScriptPaths -ConventionsRoot $conventionsRoot
 

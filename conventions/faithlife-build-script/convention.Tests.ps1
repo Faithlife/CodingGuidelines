@@ -6,8 +6,8 @@ $ErrorActionPreference = 'Stop'
 Describe 'faithlife-build-script convention' {
 	BeforeAll {
 		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
-		$script:expectedBuildScriptPath = Join-Path $PSScriptRoot 'files\build.ps1'
-		$script:testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
+		$script:expectedBuildScriptPath = Join-Path $PSScriptRoot 'files' 'build.ps1'
+		$script:testHelpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'TestHelpers.ps1'
 		. $script:testHelpersPath
 
 		function script:InvokeFaithlifeBuildScriptConvention {

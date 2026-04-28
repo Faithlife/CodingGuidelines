@@ -6,9 +6,9 @@ $ErrorActionPreference = 'Stop'
 Describe 'faithlife-build-library-project convention' {
 	BeforeAll {
 		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
-		$script:expectedBuildCsPath = Join-Path $PSScriptRoot 'files\Build.cs'
-		$script:expectedBuildCsprojPath = Join-Path $PSScriptRoot 'files\Build.csproj.xml'
-		$script:testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
+		$script:expectedBuildCsPath = Join-Path $PSScriptRoot 'files' 'Build.cs'
+		$script:expectedBuildCsprojPath = Join-Path $PSScriptRoot 'files' 'Build.csproj.xml'
+		$script:testHelpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'TestHelpers.ps1'
 		. $script:testHelpersPath
 
 		function script:InvokeFaithlifeBuildLibraryProjectConvention {

@@ -5,7 +5,7 @@ $ErrorActionPreference = 'Stop'
 
 Describe 'update-editorconfig-csharp convention' {
 	BeforeAll {
-		$script:testHelpersPath = Join-Path $PSScriptRoot '..\..\..\conventions\scripts\TestHelpers.ps1'
+		$script:testHelpersPath = Join-Path $PSScriptRoot '..' '..' '..' 'conventions' 'scripts' 'TestHelpers.ps1'
 		. $script:testHelpersPath
 	}
 
@@ -13,19 +13,19 @@ Describe 'update-editorconfig-csharp convention' {
 		$testDirectory = New-TestDirectory
 
 		try {
-			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github\conventions\update-editorconfig-csharp')) | Out-Null
+			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github' 'conventions' 'update-editorconfig-csharp')) | Out-Null
 			Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'convention.ps1') -Destination (Join-Path $testDirectory '.github/conventions/update-editorconfig-csharp/convention.ps1') -Force
 			Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'README.md') -Destination (Join-Path $testDirectory '.github/conventions/update-editorconfig-csharp/README.md') -Force
-			Copy-Item -LiteralPath (Join-Path $PSScriptRoot '..\..\..\conventions\editorconfig-csharp') -Destination (Join-Path $testDirectory 'conventions\editorconfig-csharp') -Recurse
-			Copy-Item -LiteralPath (Join-Path $PSScriptRoot '..\..\..\conventions\scripts') -Destination (Join-Path $testDirectory 'conventions\scripts') -Recurse
-			Copy-Item -LiteralPath (Join-Path $PSScriptRoot '..\..\..\sections\csharp') -Destination (Join-Path $testDirectory 'sections\csharp') -Recurse
-			Remove-Item -LiteralPath (Join-Path $testDirectory 'conventions\editorconfig-csharp\files\.editorconfig') -Force -ErrorAction SilentlyContinue
+			Copy-Item -LiteralPath (Join-Path $PSScriptRoot '..' '..' '..' 'conventions' 'editorconfig-csharp') -Destination (Join-Path $testDirectory 'conventions' 'editorconfig-csharp') -Recurse
+			Copy-Item -LiteralPath (Join-Path $PSScriptRoot '..' '..' '..' 'conventions' 'scripts') -Destination (Join-Path $testDirectory 'conventions' 'scripts') -Recurse
+			Copy-Item -LiteralPath (Join-Path $PSScriptRoot '..' '..' '..' 'sections' 'csharp') -Destination (Join-Path $testDirectory 'sections' 'csharp') -Recurse
+			Remove-Item -LiteralPath (Join-Path $testDirectory 'conventions' 'editorconfig-csharp' 'files' '.editorconfig') -Force -ErrorAction SilentlyContinue
 			Initialize-TestRepository -Path $testDirectory
 
 			{ Invoke-ConventionScript -ScriptPath (Join-Path $testDirectory '.github/conventions/update-editorconfig-csharp/convention.ps1') -RepositoryRoot $testDirectory } | Should -Not -Throw
 
-			$generatedPath = Join-Path $testDirectory 'conventions\editorconfig-csharp\files\.editorconfig'
-			$expectedPath = Join-Path ([System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..')) ) 'conventions\editorconfig-csharp\files\.editorconfig'
+			$generatedPath = Join-Path $testDirectory 'conventions' 'editorconfig-csharp' 'files' '.editorconfig'
+			$expectedPath = Join-Path ([System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..' '..' '..')) ) 'conventions' 'editorconfig-csharp' 'files' '.editorconfig'
 
 			(Test-Path -LiteralPath $generatedPath) | Should -Be $true
 			(Test-FileContentMatches -ExpectedPath $expectedPath -ActualPath $generatedPath) | Should -Be $true
@@ -39,11 +39,11 @@ Describe 'update-editorconfig-csharp convention' {
 		$testDirectory = New-TestDirectory
 
 		try {
-			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github\conventions\update-editorconfig-csharp')) | Out-Null
-			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory 'conventions\editorconfig-csharp\files')) | Out-Null
-			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory 'sections\csharp')) | Out-Null
+			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github' 'conventions' 'update-editorconfig-csharp')) | Out-Null
+			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory 'conventions' 'editorconfig-csharp' 'files')) | Out-Null
+			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory 'sections' 'csharp')) | Out-Null
 			Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'convention.ps1') -Destination (Join-Path $testDirectory '.github/conventions/update-editorconfig-csharp/convention.ps1') -Force
-			Copy-Item -LiteralPath (Join-Path $PSScriptRoot '..\..\..\conventions\scripts') -Destination (Join-Path $testDirectory 'conventions\scripts') -Recurse
+			Copy-Item -LiteralPath (Join-Path $PSScriptRoot '..' '..' '..' 'conventions' 'scripts') -Destination (Join-Path $testDirectory 'conventions' 'scripts') -Recurse
 
 			$markdownContent = (@(
 				'# .editorconfig for C#'
@@ -64,12 +64,12 @@ Describe 'update-editorconfig-csharp convention' {
 				'indent_size = 4'
 				'```'
 			) -join "`n") + "`n"
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory 'sections\csharp\editorconfig.md') -Content $markdownContent
+			Write-Utf8NoBomFile -Path (Join-Path $testDirectory 'sections' 'csharp' 'editorconfig.md') -Content $markdownContent
 			Initialize-TestRepository -Path $testDirectory
 
 			{ Invoke-ConventionScript -ScriptPath (Join-Path $testDirectory '.github/conventions/update-editorconfig-csharp/convention.ps1') -RepositoryRoot $testDirectory } | Should -Not -Throw
 
-			$generatedPath = Join-Path $testDirectory 'conventions\editorconfig-csharp\files\.editorconfig'
+			$generatedPath = Join-Path $testDirectory 'conventions' 'editorconfig-csharp' 'files' '.editorconfig'
 			$expectedContent = (@(
 				'# generated from https://github.com/Faithlife/CodingGuidelines/blob/master/sections/csharp/editorconfig.md'
 				'[*.props]'
@@ -96,13 +96,13 @@ Describe 'update-editorconfig-csharp convention' {
 		$testDirectory = New-TestDirectory
 
 		try {
-			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github\conventions\update-editorconfig-csharp')) | Out-Null
+			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github' 'conventions' 'update-editorconfig-csharp')) | Out-Null
 			Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'convention.ps1') -Destination (Join-Path $testDirectory '.github/conventions/update-editorconfig-csharp/convention.ps1') -Force
 			Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'README.md') -Destination (Join-Path $testDirectory '.github/conventions/update-editorconfig-csharp/README.md') -Force
-			Copy-Item -LiteralPath (Join-Path $PSScriptRoot '..\..\..\conventions\editorconfig-csharp') -Destination (Join-Path $testDirectory 'conventions\editorconfig-csharp') -Recurse
-			Copy-Item -LiteralPath (Join-Path $PSScriptRoot '..\..\..\conventions\scripts') -Destination (Join-Path $testDirectory 'conventions\scripts') -Recurse
-			Copy-Item -LiteralPath (Join-Path $PSScriptRoot '..\..\..\sections\csharp') -Destination (Join-Path $testDirectory 'sections\csharp') -Recurse
-			Remove-Item -LiteralPath (Join-Path $testDirectory 'conventions\editorconfig-csharp\files\.editorconfig') -Force -ErrorAction SilentlyContinue
+			Copy-Item -LiteralPath (Join-Path $PSScriptRoot '..' '..' '..' 'conventions' 'editorconfig-csharp') -Destination (Join-Path $testDirectory 'conventions' 'editorconfig-csharp') -Recurse
+			Copy-Item -LiteralPath (Join-Path $PSScriptRoot '..' '..' '..' 'conventions' 'scripts') -Destination (Join-Path $testDirectory 'conventions' 'scripts') -Recurse
+			Copy-Item -LiteralPath (Join-Path $PSScriptRoot '..' '..' '..' 'sections' 'csharp') -Destination (Join-Path $testDirectory 'sections' 'csharp') -Recurse
+			Remove-Item -LiteralPath (Join-Path $testDirectory 'conventions' 'editorconfig-csharp' 'files' '.editorconfig') -Force -ErrorAction SilentlyContinue
 			Initialize-TestRepository -Path $testDirectory
 
 			Invoke-ConventionScript -ScriptPath (Join-Path $testDirectory '.github/conventions/update-editorconfig-csharp/convention.ps1') -RepositoryRoot $testDirectory | Out-Null

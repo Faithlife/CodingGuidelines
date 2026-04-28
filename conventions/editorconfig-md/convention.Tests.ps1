@@ -5,7 +5,7 @@ $ErrorActionPreference = 'Stop'
 
 Describe 'editorconfig-md convention' {
 	BeforeAll {
-		$script:testHelpersPath = Join-Path $PSScriptRoot '..\scripts\TestHelpers.ps1'
+		$script:testHelpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'TestHelpers.ps1'
 		. $script:testHelpersPath
 	}
 
