@@ -1,5 +1,4 @@
 conventions:
-  - path: ../repo-conventions-workflow
   - path: ../gitattributes-section
     settings:
       name: agentic-repo
