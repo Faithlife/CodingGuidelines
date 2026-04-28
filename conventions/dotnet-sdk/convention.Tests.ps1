@@ -14,7 +14,7 @@ Describe 'dotnet-sdk convention' {
 				[Parameter(Mandatory = $true)]
 				[string] $InputJson,
 
-				[string] $SdkVersion = '10.0.100'
+				[object] $SdkVersion = '10.0.100'
 			)
 
 			$testDirectory = New-TestDirectory
@@ -34,12 +34,20 @@ Describe 'dotnet-sdk convention' {
 					Write-Utf8NoBomFile -Path $globalJsonPath -Content $globalJson
 				}
 
-				Invoke-ConventionScript -ScriptPath $script:conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath | Out-Null
+				return Invoke-ConventionScript -ScriptPath $script:conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath
 			}
 			finally {
 				Remove-Item -LiteralPath $inputPath -ErrorAction SilentlyContinue
 				Remove-Item -LiteralPath $testDirectory -Recurse -Force
 			}
+		}
+
+		function script:GetOutputText {
+			param(
+				[object[]] $Output
+			)
+
+			return (@($Output | ForEach-Object { $_.ToString() }) -join "`n")
 		}
 	}
 
@@ -50,13 +58,43 @@ Describe 'dotnet-sdk convention' {
 	It 'accepts an integer major version when global.json already conforms' {
 		$inputJson = '{"settings":{"version":10}}'
 
-		{ InvokeDotnetSdkConvention -InputJson $inputJson -SdkVersion '10.0.100' } | Should -Not -Throw
+		$output = InvokeDotnetSdkConvention -InputJson $inputJson -SdkVersion '10.0.100'
+
+		$outputText = GetOutputText -Output $output
+		$outputText | Should -Match 'Starting dotnet-sdk convention\.'
+		$outputText | Should -Match 'Checking global\.json for \.NET SDK major version 10\.'
+		$outputText | Should -Match 'global\.json already requires SDK major version 10, which satisfies required major version 10\.'
+		$outputText | Should -Match 'dotnet-sdk convention has nothing to do\.'
 	}
 
 	It 'accepts a string major version when global.json already conforms' {
 		$inputJson = '{"settings":{"version":"10"}}'
 
-		{ InvokeDotnetSdkConvention -InputJson $inputJson -SdkVersion '11.0.100' } | Should -Not -Throw
+		$output = InvokeDotnetSdkConvention -InputJson $inputJson -SdkVersion '11.0.100'
+
+		GetOutputText -Output $output | Should -Match 'global\.json already requires SDK major version 11, which satisfies required major version 10\.'
+	}
+
+	It 'logs why it starts Copilot when global.json is missing' {
+		$inputJson = '{"settings":{"version":10}}'
+
+		function global:copilot {
+			Write-Utf8NoBomFile -Path (Join-Path (Get-Location) 'global.json') -Content @'
+{
+  "sdk": {
+    "version": "10.0.100",
+    "rollForward": "latestFeature"
+  }
+}
+'@
+		}
+
+		$output = InvokeDotnetSdkConvention -InputJson $inputJson -SdkVersion $null
+
+		$outputText = GetOutputText -Output $output
+		$outputText | Should -Match 'global\.json is missing\.'
+		$outputText | Should -Match 'global\.json does not conform; starting Copilot to update it\.'
+		$outputText | Should -Match 'global\.json already requires SDK major version 10, which satisfies required major version 10\.'
 	}
 
 	It 'rejects a missing version setting' {

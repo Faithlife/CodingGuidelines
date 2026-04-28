@@ -3,37 +3,63 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$helpersPath = Join-Path $PSScriptRoot '..\scripts\Helpers.ps1'
+Write-Host 'Starting dotnet-sdk convention.'
+
+$helpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'Helpers.ps1'
 . $helpersPath
 
-function TestConformingGlobalJson {
+function GetGlobalJsonSdkStatus {
 	param(
 		[string] $GlobalJsonPath,
 		[int] $MajorVersion
 	)
 
 	if (-not (Test-Path -LiteralPath $GlobalJsonPath -PathType Leaf)) {
-		return $false
+		return [pscustomobject]@{
+			Conforms = $false
+			Message = 'global.json is missing.'
+		}
 	}
 
 	try {
 		$sdkVersion = (Get-Content -LiteralPath $GlobalJsonPath -Raw | ConvertFrom-Json -AsHashtable).sdk.version
 	}
 	catch {
-		return $false
+		return [pscustomobject]@{
+			Conforms = $false
+			Message = 'global.json does not contain valid JSON with an sdk.version value.'
+		}
 	}
 
 	if ($sdkVersion -isnot [string]) {
-		return $false
+		return [pscustomobject]@{
+			Conforms = $false
+			Message = 'global.json sdk.version is missing or is not a string.'
+		}
 	}
 
 	$versionMatch = [System.Text.RegularExpressions.Regex]::Match($sdkVersion, '^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)')
 
 	if (-not $versionMatch.Success) {
-		return $false
+		return [pscustomobject]@{
+			Conforms = $false
+			Message = "global.json sdk.version '$sdkVersion' is not a three-part SDK version."
+		}
 	}
 
-	return [int] $versionMatch.Groups['major'].Value -ge $MajorVersion
+	$currentMajorVersion = [int] $versionMatch.Groups['major'].Value
+
+	if ($currentMajorVersion -lt $MajorVersion) {
+		return [pscustomobject]@{
+			Conforms = $false
+			Message = "global.json sdk.version '$sdkVersion' is lower than required major version $MajorVersion."
+		}
+	}
+
+	return [pscustomobject]@{
+		Conforms = $true
+		Message = "global.json already requires SDK major version $currentMajorVersion, which satisfies required major version $MajorVersion."
+	}
 }
 
 if ($args.Count -eq 0) {
@@ -71,8 +97,15 @@ if ($majorVersion -le 0) {
 }
 
 $globalJsonPath = Join-Path -Path (Get-Location) -ChildPath 'global.json'
+$globalJsonDisplayPath = Format-RepositoryRelativePath -Path $globalJsonPath
 
-if (TestConformingGlobalJson -GlobalJsonPath $globalJsonPath -MajorVersion $majorVersion) {
+Write-Host "Checking $globalJsonDisplayPath for .NET SDK major version $majorVersion."
+
+$globalJsonStatus = GetGlobalJsonSdkStatus -GlobalJsonPath $globalJsonPath -MajorVersion $majorVersion
+Write-Host $globalJsonStatus.Message
+
+if ($globalJsonStatus.Conforms) {
+	Write-Host 'dotnet-sdk convention has nothing to do.'
 	return
 }
 
@@ -105,6 +138,9 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 Write-Host 'global.json does not conform; starting Copilot to update it.'
 Invoke-CopilotWithIsolatedConfig -Instructions $copilotInstructions
 
-if (-not (TestConformingGlobalJson -GlobalJsonPath $globalJsonPath -MajorVersion $majorVersion)) {
+$globalJsonStatus = GetGlobalJsonSdkStatus -GlobalJsonPath $globalJsonPath -MajorVersion $majorVersion
+Write-Host $globalJsonStatus.Message
+
+if (-not $globalJsonStatus.Conforms) {
 	throw 'Copilot failed to update global.json to the required .NET SDK configuration.'
 }
