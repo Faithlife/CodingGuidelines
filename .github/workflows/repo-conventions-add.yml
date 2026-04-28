@@ -1,0 +1,73 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+# Workflow that adds repository conventions to a specified repository and opens a pull request when needed.
+name: Add Repository Conventions
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        type: string
+        description: The owner/name of the repository to update.
+        required: true
+      conventions:
+        type: string
+        description: Space-delimited convention package names to add.
+        required: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: pwsh
+
+concurrency:
+  group: repo-conventions-add-${{ inputs.repository }}
+  cancel-in-progress: false
+
+jobs:
+  add:
+    name: Add conventions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out target repository
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ inputs.repository }}
+          token: ${{ secrets.GH_PR_WRITE_PAT }}
+          # full history needed for git merge-base in repo-conventions tool
+          fetch-depth: 0
+
+      - name: Install .NET
+        uses: actions/setup-dotnet@v5
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+
+      - name: Install APM
+        uses: microsoft/apm-action@v1
+        continue-on-error: true # until cli-only is supported
+
+      - name: Install Copilot
+        run: npm install -g @github/copilot
+
+      - name: Configure git
+        run: |
+          git config user.name 'logosghservice'
+          git config user.email 'github.service@logos.com'
+
+      - name: Add repository conventions
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PR_WRITE_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GH_PR_WRITE_PAT }}
+          REPO_CONVENTIONS_PACKAGES: ${{ inputs.conventions }}
+        # use `dnx repo-conventions --yes -- add @packages --open-pr` when .NET 8 is no longer supported
+        run: |
+          $packages = $env:REPO_CONVENTIONS_PACKAGES -split '\s+' | Where-Object { $_ }
+          if (-not $packages) {
+            throw 'At least one convention package name is required.'
+          }
+
+          dotnet tool install -g repo-conventions
+          repo-conventions add @packages --open-pr
