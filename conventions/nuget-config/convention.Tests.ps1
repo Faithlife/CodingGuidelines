@@ -83,7 +83,7 @@ Describe 'nuget-config convention' {
 		}
 	}
 
-	It 'warns and leaves an existing different nuget.config unchanged' {
+	It 'replaces an existing different nuget.config' {
 		$testDirectory = New-TestDirectory
 
 		try {
@@ -111,9 +111,10 @@ Describe 'nuget-config convention' {
 			$output = InvokeNuGetConfigConvention -TestDirectory $testDirectory
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
-			(Get-Content -LiteralPath $nuGetConfigPath -Raw) | Should -Be $existingContent
-			$status.Count | Should -Be 0
-			(@($output | ForEach-Object { $_.ToString() }) -contains "Existing '$nuGetConfigPath' does not match the published NuGet config; leaving it unchanged.") | Should -Be $true
+			(Get-Content -LiteralPath $nuGetConfigPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedNuGetConfigPath -Raw)
+			$status.Count | Should -Be 1
+			$status[0] | Should -Match '^ M nuget\.config$'
+			(@($output | ForEach-Object { $_.ToString() }) -contains "Replaced '$nuGetConfigPath' with the published NuGet config.") | Should -Be $true
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -145,7 +146,7 @@ Describe 'nuget-config convention' {
 			$headAfterSecondRun | Should -Be $headAfterFirstRun
 			$status.Count | Should -Be 0
 			$nuGetConfigPath = Join-Path $testDirectory 'nuget.config'
-		(@($output | ForEach-Object { $_.ToString() }) -contains "'$nuGetConfigPath' already matches the published NuGet config.") | Should -Be $true
+			(@($output | ForEach-Object { $_.ToString() }) -contains "'$nuGetConfigPath' already matches the published NuGet config.") | Should -Be $true
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

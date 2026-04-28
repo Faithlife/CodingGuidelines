@@ -55,4 +55,10 @@ if (Test-FileContentMatches -ExpectedPath $sourceNuGetConfigPath -ActualPath $ta
 	return
 }
 
-Write-Warning "Existing '$targetNuGetConfigPath' does not match the published NuGet config; leaving it unchanged."
+$copyResult = Copy-FileIfDifferent -SourcePath $sourceNuGetConfigPath -DestinationPath $targetNuGetConfigPath
+
+if (-not $copyResult.Updated) {
+	throw "Expected '$targetNuGetConfigPath' to be replaced."
+}
+
+Write-Host "Replaced '$targetNuGetConfigPath' with the published NuGet config."
