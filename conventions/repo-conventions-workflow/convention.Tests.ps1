@@ -30,6 +30,31 @@ Describe 'repo-conventions-workflow' {
 				Pop-Location
 			}
 		}
+
+		function script:GetExpectedWorkflowContent {
+			param(
+				[Parameter(Mandatory = $true)]
+				[int] $Minute
+			)
+
+			return @"
+name: Apply Repository Conventions
+
+on:
+  schedule:
+  - cron: '$Minute 9 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  apply:
+    uses: Faithlife/CodingGuidelines/.github/workflows/repo-conventions-call.yml@master
+    secrets: inherit
+"@
+		}
 	}
 
 	It 'creates the workflow when missing' {
@@ -51,18 +76,38 @@ Describe 'repo-conventions-workflow' {
 		}
 	}
 
-	It 'leaves an existing workflow unchanged' {
+	It 'overwrites an existing workflow' {
 		$repoPath = NewTestDirectory
 		try {
 			$workflowPath = Join-Path $repoPath '.github/workflows/repo-conventions.yml'
 			New-Item -ItemType Directory -Path (Split-Path -Parent $workflowPath) -Force | Out-Null
-			Set-Content -LiteralPath $workflowPath -Value 'existing content' -Encoding utf8NoBOM
+			Set-Content -LiteralPath $workflowPath -Value "name: Old Workflow`n`non:`n  schedule:`n  - cron: '42 9 * * 1-5'" -Encoding utf8NoBOM
 
 			InvokeConvention -RepositoryPath $repoPath
 
-			((Get-Content -LiteralPath $workflowPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'existing content'
+			((Get-Content -LiteralPath $workflowPath -Raw).TrimEnd("`r", "`n")) | Should -Be (GetExpectedWorkflowContent -Minute 42)
 		}
 		finally {
+			Remove-Item -LiteralPath $repoPath -Recurse -Force
+		}
+	}
+
+	It 'leaves an up-to-date workflow unchanged when the existing minute differs from a new random minute' {
+		$repoPath = NewTestDirectory
+		try {
+			$workflowPath = Join-Path $repoPath '.github/workflows/repo-conventions.yml'
+			New-Item -ItemType Directory -Path (Split-Path -Parent $workflowPath) -Force | Out-Null
+			Set-Content -LiteralPath $workflowPath -Value (GetExpectedWorkflowContent -Minute 17) -Encoding utf8NoBOM
+
+			Set-ItemProperty -LiteralPath $workflowPath -Name IsReadOnly -Value $true
+			InvokeConvention -RepositoryPath $repoPath
+
+			((Get-Content -LiteralPath $workflowPath -Raw).TrimEnd("`r", "`n")) | Should -Be (GetExpectedWorkflowContent -Minute 17)
+		}
+		finally {
+			if (Test-Path -LiteralPath $workflowPath) {
+				Set-ItemProperty -LiteralPath $workflowPath -Name IsReadOnly -Value $false
+			}
 			Remove-Item -LiteralPath $repoPath -Recurse -Force
 		}
 	}

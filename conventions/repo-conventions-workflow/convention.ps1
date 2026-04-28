@@ -5,15 +5,23 @@ $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $workflowPath = Join-Path $PWD '.github/workflows/repo-conventions.yml'
+$existingWorkflowContent = $null
+$existingMinute = $null
 if (Test-Path -LiteralPath $workflowPath) {
-	Write-Host 'Workflow already exists.'
-	exit 0
+  $existingWorkflowContent = Get-Content -LiteralPath $workflowPath -Raw
+  if ($existingWorkflowContent -match "(?m)^  - cron: '(?<minute>([0-9]|[1-5][0-9])) 9 \* \* 1-5'\r?$") {
+    $existingMinute = $Matches.minute
+  }
 }
 
 $workflowDirectory = Split-Path -Parent $workflowPath
 New-Item -ItemType Directory -Path $workflowDirectory -Force | Out-Null
 
-$minute = Get-Random -Minimum 1 -Maximum 60
+$minute = if ($null -ne $existingMinute) {
+  $existingMinute
+} else {
+  Get-Random -Minimum 1 -Maximum 60
+}
 $workflowContent = @"
 name: Apply Repository Conventions
 
@@ -32,5 +40,14 @@ jobs:
     secrets: inherit
 "@
 
+$normalizedWorkflowContent = $workflowContent.Replace("`r`n", "`n").TrimEnd("`n")
+if ($null -ne $existingWorkflowContent) {
+  $normalizedExistingWorkflowContent = $existingWorkflowContent.Replace("`r`n", "`n").TrimEnd("`n")
+  if ($normalizedExistingWorkflowContent -eq $normalizedWorkflowContent) {
+    Write-Host 'Workflow already up to date.'
+    exit 0
+  }
+}
+
 Set-Content -LiteralPath $workflowPath -Value $workflowContent -Encoding utf8NoBOM
-Write-Host "Created $workflowPath"
+Write-Host "Updated $workflowPath"
