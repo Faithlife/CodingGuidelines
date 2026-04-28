@@ -11,3 +11,4 @@ conventions:
   - path: ../conventions/dotnet-sdk10
   - path: ./conventions/update-editorconfig-csharp
   - path: ../conventions/apm-install
+  - path: ../conventions/nuget-config
