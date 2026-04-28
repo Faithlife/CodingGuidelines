@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-# Reusable workflow that applies repository conventions and opens a pull request when needed.
+# Reusable workflow that applies or adds repository conventions and opens a pull request when needed.
 name: repo-conventions-call
 
 on:
@@ -10,6 +10,21 @@ on:
         description: The runner to use.
         required: false
         default: ubuntu-latest
+      command:
+        type: string
+        description: The repo-conventions command to run.
+        required: false
+        default: apply
+      repository:
+        type: string
+        description: The owner/name of the repository to update.
+        required: false
+        default: ""
+      conventions:
+        type: string
+        description: Space-delimited convention package names to add.
+        required: false
+        default: ""
     secrets:
       COPILOT_GITHUB_TOKEN:
         description: A GitHub.com PAT with access to GitHub Copilot.
@@ -27,7 +42,7 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: repo-conventions
+  group: repo-conventions-${{ inputs.command }}-${{ inputs.repository || github.repository }}
   cancel-in-progress: false
 
 jobs:
@@ -37,6 +52,8 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v6
         with:
+          repository: ${{ inputs.repository || github.repository }}
+          token: ${{ secrets.GH_PR_WRITE_PAT }}
           # full history needed for git merge-base in repo-conventions tool
           fetch-depth: 0
 
@@ -58,12 +75,26 @@ jobs:
           git config user.name 'logosghservice'
           git config user.email 'github.service@logos.com'
 
-      - name: Apply repository conventions
+      - name: Run repository conventions
         env:
           COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_PR_WRITE_PAT }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # use `dnx repo-conventions --yes -- apply --open-pr` when .NET 8 is no longer supported
+          GITHUB_TOKEN: ${{ inputs.repository == '' && secrets.GITHUB_TOKEN || secrets.GH_PR_WRITE_PAT }}
+          REPO_CONVENTIONS_COMMAND: ${{ inputs.command }}
+          REPO_CONVENTIONS_PACKAGES: ${{ inputs.conventions }}
+        # use `dnx repo-conventions --yes -- <command> --open-pr` when .NET 8 is no longer supported
         run: |
           dotnet tool install -g repo-conventions
-          repo-conventions apply --open-pr
+
+          if ($env:REPO_CONVENTIONS_COMMAND -eq 'apply') {
+            repo-conventions apply --open-pr
+          } elseif ($env:REPO_CONVENTIONS_COMMAND -eq 'add') {
+            $packages = $env:REPO_CONVENTIONS_PACKAGES -split '\s+' | Where-Object { $_ }
+            if (-not $packages) {
+              throw 'At least one convention package name is required.'
+            }
+
+            repo-conventions add @packages --open-pr
+          } else {
+            throw "Unsupported repo-conventions command: $env:REPO_CONVENTIONS_COMMAND"
+          }
