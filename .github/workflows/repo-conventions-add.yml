@@ -7,11 +7,11 @@ on:
     inputs:
       repository:
         type: string
-        description: The owner/name of the repository to update.
+        description: The owner/name of the repository to update, e.g. Faithlife/SomeRepo
         required: true
       conventions:
         type: string
-        description: Space-delimited convention package names to add.
+        description: Space-delimited convention names to add, e.g. Faithlife/CodingGuidelines/conventions/repo-conventions-workflow
         required: true
 
 permissions:
