@@ -2,3 +2,14 @@
 
 .github/skills/** linguist-generated=true
 apm.lock.yaml linguist-generated=true
+
+# DO NOT EDIT: agentic-repo convention
+.github/hooks/** linguist-generated=true
+.github/instructions/** linguist-generated=true
+.github/prompts/** linguist-generated=true
+.github/skills/** linguist-generated=true
+.opencode/hooks/** linguist-generated=true
+.opencode/instructions/** linguist-generated=true
+.opencode/prompts/** linguist-generated=true
+.opencode/skills/** linguist-generated=true
+# END DO NOT EDIT
