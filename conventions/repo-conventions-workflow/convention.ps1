@@ -29,6 +29,12 @@ on:
   schedule:
   - cron: '$minute 9 * * 1-5'
   workflow_dispatch:
+    inputs:
+      conventions:
+        type: string
+        description: Space-delimited convention names to add.
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -37,6 +43,8 @@ permissions:
 jobs:
   apply:
     uses: Faithlife/CodingGuidelines/.github/workflows/repo-conventions-call.yml@master
+    with:
+      conventions: `${{ github.event.inputs.conventions || '' }}
     secrets: inherit
 "@
 

@@ -44,6 +44,12 @@ on:
   schedule:
   - cron: '$Minute 9 * * 1-5'
   workflow_dispatch:
+    inputs:
+      conventions:
+        type: string
+        description: Space-delimited convention names to add.
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -52,6 +58,8 @@ permissions:
 jobs:
   apply:
     uses: Faithlife/CodingGuidelines/.github/workflows/repo-conventions-call.yml@master
+    with:
+      conventions: `${{ github.event.inputs.conventions || '' }}
     secrets: inherit
 "@
 		}
@@ -69,6 +77,7 @@ jobs:
 			$content | Should -Match "(?m)^name: Apply Repository Conventions\r?$"
 			$content | Should -Match "(?m)^  - cron: '([1-9]|[1-5][0-9]) 9 \* \* 1-5'\r?$"
 			$content | Should -Match "(?m)^    uses: Faithlife/CodingGuidelines/\.github/workflows/repo-conventions-call\.yml@master\r?$"
+			$content | Should -Match "(?m)^      conventions: \$\{\{ github\.event\.inputs\.conventions \|\| '' \}\}\r?$"
 			$content | Should -Match "(?m)^    secrets: inherit\r?$"
 		}
 		finally {
