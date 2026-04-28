@@ -89,11 +89,7 @@ jobs:
           if ($env:REPO_CONVENTIONS_COMMAND -eq 'apply') {
             repo-conventions apply --open-pr
           } elseif ($env:REPO_CONVENTIONS_COMMAND -eq 'add') {
-            $packages = $env:REPO_CONVENTIONS_PACKAGES -split '\s+' | Where-Object { $_ }
-            if (-not $packages) {
-              throw 'At least one convention package name is required.'
-            }
-
+            $packages = @($env:REPO_CONVENTIONS_PACKAGES -split '\s+' | Where-Object { $_ })
             repo-conventions add @packages --open-pr
           } else {
             throw "Unsupported repo-conventions command: $env:REPO_CONVENTIONS_COMMAND"
