@@ -12,7 +12,8 @@ Describe 'convention script helpers' {
 	It 'sets console and native pipeline encodings to UTF-8 without BOM' {
 		$originalInputEncoding = [Console]::InputEncoding
 		$originalOutputEncoding = [Console]::OutputEncoding
-		$originalPipelineEncoding = $script:OutputEncoding
+		$hadOriginalPipelineEncoding = Test-Path -LiteralPath variable:script:OutputEncoding
+		$originalPipelineEncoding = if ($hadOriginalPipelineEncoding) { $script:OutputEncoding } else { $null }
 
 		try {
 			[Console]::InputEncoding = [System.Text.Encoding]::ASCII
@@ -30,7 +31,13 @@ Describe 'convention script helpers' {
 		finally {
 			[Console]::InputEncoding = $originalInputEncoding
 			[Console]::OutputEncoding = $originalOutputEncoding
-			$script:OutputEncoding = $originalPipelineEncoding
+
+			if ($hadOriginalPipelineEncoding) {
+				$script:OutputEncoding = $originalPipelineEncoding
+			}
+			else {
+				Remove-Variable -Name OutputEncoding -Scope Script -ErrorAction SilentlyContinue
+			}
 		}
 	}
 }
