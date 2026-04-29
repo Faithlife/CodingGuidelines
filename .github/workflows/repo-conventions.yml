@@ -7,7 +7,7 @@ on:
     inputs:
       conventions:
         type: string
-        description: Space-delimited convention names to add.
+        description: Optional convention names to add (space-delimited)
         required: false
         default: ''
 
