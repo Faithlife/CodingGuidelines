@@ -3,6 +3,7 @@ conventions:
     settings:
       name: agentic-repo
       text: |
+        apm.lock.yaml linguist-generated=true
         .github/hooks/** linguist-generated=true
         .github/instructions/** linguist-generated=true
         .github/prompts/** linguist-generated=true

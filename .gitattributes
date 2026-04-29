@@ -1,8 +1,5 @@
 * text=auto eol=lf
 
-.github/skills/** linguist-generated=true
-apm.lock.yaml linguist-generated=true
-
 # DO NOT EDIT: agentic-repo convention
 .github/hooks/** linguist-generated=true
 .github/instructions/** linguist-generated=true
