@@ -198,6 +198,35 @@ function Set-Utf8NoBomConsoleEncoding {
 
 <#
 .SYNOPSIS
+Finds the Copilot command to invoke.
+#>
+function Get-CopilotCommand {
+	$commands = @(Get-Command -Name copilot -All -ErrorAction Stop)
+	$firstCommand = $commands[0]
+
+	if ($firstCommand.CommandType -ne [System.Management.Automation.CommandTypes]::ExternalScript) {
+		return $firstCommand
+	}
+
+	$applicationCommands = @($commands | Where-Object { $_.CommandType -eq [System.Management.Automation.CommandTypes]::Application })
+	if ($applicationCommands.Count -eq 0) {
+		return $firstCommand
+	}
+
+	$bootstrapDirectory = if ($firstCommand.Source) { Split-Path -Parent $firstCommand.Source } else { $null }
+	$outsideBootstrapApplications = @($applicationCommands | Where-Object { -not $bootstrapDirectory -or (Split-Path -Parent $_.Source) -ne $bootstrapDirectory })
+	$preferredApplications = if ($outsideBootstrapApplications.Count -gt 0) { $outsideBootstrapApplications } else { $applicationCommands }
+	$exeApplications = @($preferredApplications | Where-Object { [System.IO.Path]::GetExtension($_.Source) -eq '.exe' })
+
+	if ($exeApplications.Count -gt 0) {
+		return $exeApplications[0]
+	}
+
+	return $preferredApplications[0]
+}
+
+<#
+.SYNOPSIS
 Runs Copilot with shared convention settings and an isolated config directory.
 #>
 function Invoke-CopilotWithIsolatedConfig {
@@ -206,7 +235,7 @@ function Invoke-CopilotWithIsolatedConfig {
 		[string] $Instructions
 	)
 
-	$copilotCommand = Get-Command -Name copilot -ErrorAction Stop
+	$copilotCommand = Get-CopilotCommand
 
 	# Use an isolated Copilot config directory so convention runs do not depend on or mutate the user's setup.
 	$copilotConfigDirectory = New-TemporaryDirectory

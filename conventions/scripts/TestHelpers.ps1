@@ -227,25 +227,27 @@ function New-TestCopilotCommand {
 	[System.IO.Directory]::CreateDirectory($commandDirectory) | Out-Null
 
 	$inputPath = Join-Path $commandDirectory 'copilot-input.txt'
-	$outputScriptPath = Join-Path $commandDirectory 'copilot-output.ps1'
+	$commandScriptPath = Join-Path $commandDirectory 'copilot-command.ps1'
+	$escapedInputPath = $inputPath.Replace("'", "''")
+	$escapedOutputText = if ($PSBoundParameters.ContainsKey('OutputText')) { $OutputText.Replace("'", "''") } else { '' }
 
-	if ($PSBoundParameters.ContainsKey('OutputText')) {
-		$escapedOutputText = $OutputText.Replace("'", "''")
-		Write-Utf8NoBomFile -Path $outputScriptPath -Content @"
+	Write-Utf8NoBomFile -Path $commandScriptPath -Content @"
+	`$standardInput = [Console]::In.ReadToEnd()
+	[System.IO.File]::WriteAllText('$escapedInputPath', `$standardInput, [System.Text.UTF8Encoding]::new(`$false))
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new(`$false)
 [Console]::Out.Write('$escapedOutputText')
 "@
-	}
+	$pwshPath = (Get-Command pwsh -ErrorAction Stop).Source
 
 	if ($IsWindows) {
 		$commandPath = Join-Path $commandDirectory 'copilot.cmd'
-		$escapedInputPath = $inputPath.Replace('"', '""')
-		$escapedOutputScriptPath = $outputScriptPath.Replace('"', '""')
-		Write-Utf8NoBomFile -Path $commandPath -Content "@echo off`r`nmore > `"$escapedInputPath`"`r`nif exist `"$escapedOutputScriptPath`" pwsh -NoProfile -ExecutionPolicy Bypass -File `"$escapedOutputScriptPath`"`r`nexit /b %ERRORLEVEL%`r`n"
+		$escapedPwshPath = $pwshPath.Replace('"', '""')
+		$escapedCommandScriptPath = $commandScriptPath.Replace('"', '""')
+		Write-Utf8NoBomFile -Path $commandPath -Content "@echo off`r`n`"$escapedPwshPath`" -NoProfile -ExecutionPolicy Bypass -File `"$escapedCommandScriptPath`"`r`nexit /b %ERRORLEVEL%`r`n"
 	}
 	else {
 		$commandPath = Join-Path $commandDirectory 'copilot'
-		Write-Utf8NoBomFile -Path $commandPath -Content "#!/bin/sh`ncat > '$inputPath'`nif [ -f '$outputScriptPath' ]; then pwsh -NoProfile -File '$outputScriptPath'; fi`nexit $?`n"
+		Write-Utf8NoBomFile -Path $commandPath -Content "#!/bin/sh`n'$pwshPath' -NoProfile -File '$commandScriptPath'`nexit $?`n"
 		& chmod +x $commandPath | Out-Null
 	}
 
