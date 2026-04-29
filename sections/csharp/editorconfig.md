@@ -943,9 +943,9 @@ Members are frequently unused in libraries, unit tests, etc.
 ## [ReSharper: Spelling Issues](https://www.jetbrains.com/help/resharper/Reference__Code_Inspections_CSHARP.html#Spelling)
 
 ```editorconfig
-resharper_comment_typo_highlighting = hint
-resharper_identifier_typo_highlighting = hint
-resharper_string_literal_typo_highlighting = hint
+resharper_comment_typo_highlighting = none
+resharper_identifier_typo_highlighting = none
+resharper_string_literal_typo_highlighting = none
 ```
 
 ## [ReSharper: Syntax Style](https://www.jetbrains.com/help/resharper/Reference__Code_Inspections_CSHARP.html#CodeStyleIssues)
