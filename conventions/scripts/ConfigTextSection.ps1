@@ -4,6 +4,8 @@
 $helpersPath = Join-Path $PSScriptRoot 'Helpers.ps1'
 . $helpersPath
 
+Set-Utf8NoBomConsoleEncoding
+
 function Get-ConfigTextSectionAgentInstructions {
 	param(
 		[AllowNull()]
