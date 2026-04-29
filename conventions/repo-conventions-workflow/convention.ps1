@@ -32,7 +32,7 @@ on:
     inputs:
       conventions:
         type: string
-        description: Space-delimited convention names to add.
+        description: Optional convention names to add (space-separated)
         required: false
         default: ''
 
