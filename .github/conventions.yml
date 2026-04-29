@@ -11,3 +11,7 @@ conventions:
   - path: ../conventions/faithlife-license-mit
   - path: ../conventions/dotnet-sdk10
   - path: ./conventions/update-editorconfig-csharp
+
+pull-request:
+  reviewers:
+    - ejball
