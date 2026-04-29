@@ -19,10 +19,22 @@ function GetConventionsRoot {
 function GetTestScriptPaths {
 	param(
 		[Parameter(Mandatory = $true)]
+		[string] $RepositoryRoot,
+
+		[Parameter(Mandatory = $true)]
 		[string] $ConventionsRoot
 	)
 
-	return @(Get-ChildItem -Path $ConventionsRoot -Filter 'convention.Tests.ps1' -File -Recurse |
+	$testRoots = [System.Collections.Generic.List[string]]::new()
+	$testRoots.Add($ConventionsRoot)
+
+	$githubConventionsRoot = [System.IO.Path]::GetFullPath((Join-Path (Join-Path $RepositoryRoot '.github') 'conventions'))
+
+	if (Test-Path -LiteralPath $githubConventionsRoot -PathType Container) {
+		$testRoots.Add($githubConventionsRoot)
+	}
+
+	return @($testRoots | ForEach-Object { Get-ChildItem -Path $_ -Filter 'convention.Tests.ps1' -File -Recurse } |
 		Where-Object { $_.DirectoryName -ne $PSScriptRoot } |
 		Sort-Object FullName)
 }
@@ -39,9 +51,9 @@ function GetRelativeDisplayPath {
 	return [System.IO.Path]::GetRelativePath($RootPath, $ChildPath)
 }
 
-$repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..' '..'))
+$repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $conventionsRoot = GetConventionsRoot
-$testScriptPaths = GetTestScriptPaths -ConventionsRoot $conventionsRoot
+$testScriptPaths = GetTestScriptPaths -RepositoryRoot $repositoryRoot -ConventionsRoot $conventionsRoot
 
 if ($testScriptPaths.Count -eq 0) {
 	throw "No convention test scripts were found under '$conventionsRoot'."
