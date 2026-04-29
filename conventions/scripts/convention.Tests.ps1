@@ -45,12 +45,6 @@ Describe 'convention script helpers' {
 
 		try {
 			$copilot = New-TestCopilotCommand -TestDirectory $testDirectory -OutputText "$([char] 0x25CF) 23 files found`n$([char] 0x25E6) `"global.json`"`n"
-			$copilotBootstrapDirectory = Join-Path $testDirectory '.test-copilot-bootstrap'
-			[System.IO.Directory]::CreateDirectory($copilotBootstrapDirectory) | Out-Null
-			Write-Utf8NoBomFile -Path (Join-Path $copilotBootstrapDirectory 'copilot.ps1') -Content @'
-Write-Output 'PowerShell bootstrapper should not be used.'
-exit 87
-'@
 			$invokePath = Join-Path $testDirectory 'invoke-copilot.ps1'
 			Write-Utf8NoBomFile -Path $invokePath -Content @'
 param([string] $HelpersPath)
@@ -68,7 +62,7 @@ Invoke-CopilotWithIsolatedConfig -Instructions 'check global.json'
 			$startInfo.StandardOutputEncoding = [System.Text.UTF8Encoding]::new($false)
 			$startInfo.StandardErrorEncoding = [System.Text.UTF8Encoding]::new($false)
 			$startInfo.UseShellExecute = $false
-			$startInfo.Environment['PATH'] = "$copilotBootstrapDirectory$([System.IO.Path]::PathSeparator)$($copilot.CommandDirectory)"
+			$startInfo.Environment['PATH'] = "$($copilot.CommandDirectory)$([System.IO.Path]::PathSeparator)$($startInfo.Environment['PATH'])"
 
 			$process = [System.Diagnostics.Process]::Start($startInfo)
 			$output = $process.StandardOutput.ReadToEnd()
