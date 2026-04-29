@@ -6,6 +6,8 @@ $ErrorActionPreference = 'Stop'
 $helpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'Helpers.ps1'
 . $helpersPath
 
+Set-Utf8NoBomConsoleEncoding
+
 function GetGlobalJsonSdkStatus {
 	param(
 		[string] $GlobalJsonPath,
