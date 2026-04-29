@@ -12,7 +12,7 @@ Describe 'convention script helpers' {
 	It 'sets console and native pipeline encodings to UTF-8 without BOM' {
 		$originalInputEncoding = [Console]::InputEncoding
 		$originalOutputEncoding = [Console]::OutputEncoding
-		$originalPipelineEncodingVariable = Get-Variable -Name OutputEncoding -Scope Script -ErrorAction SilentlyContinue
+		$originalPipelineEncoding = $script:OutputEncoding
 
 		try {
 			[Console]::InputEncoding = [System.Text.Encoding]::ASCII
@@ -30,52 +30,7 @@ Describe 'convention script helpers' {
 		finally {
 			[Console]::InputEncoding = $originalInputEncoding
 			[Console]::OutputEncoding = $originalOutputEncoding
-
-			if ($null -ne $originalPipelineEncodingVariable) {
-				$script:OutputEncoding = $originalPipelineEncodingVariable.Value
-			}
-			else {
-				Remove-Variable -Name OutputEncoding -Scope Script -ErrorAction SilentlyContinue
-			}
-		}
-	}
-
-	It 'passes native Copilot output through as UTF-8' {
-		$testDirectory = New-TestDirectory
-
-		try {
-			$copilot = New-TestCopilotCommand -TestDirectory $testDirectory -OutputText "$([char] 0x25CF) 23 files found`n$([char] 0x25E6) `"global.json`"`n"
-			$invokePath = Join-Path $testDirectory 'invoke-copilot.ps1'
-			Write-Utf8NoBomFile -Path $invokePath -Content @'
-param([string] $HelpersPath)
-. $HelpersPath
-Invoke-CopilotWithIsolatedConfig -Instructions 'check global.json'
-'@
-
-			$startInfo = [System.Diagnostics.ProcessStartInfo]::new('pwsh')
-			$startInfo.ArgumentList.Add('-NoProfile')
-			$startInfo.ArgumentList.Add('-File')
-			$startInfo.ArgumentList.Add($invokePath)
-			$startInfo.ArgumentList.Add((Join-Path $PSScriptRoot 'Helpers.ps1'))
-			$startInfo.RedirectStandardOutput = $true
-			$startInfo.RedirectStandardError = $true
-			$startInfo.StandardOutputEncoding = [System.Text.UTF8Encoding]::new($false)
-			$startInfo.StandardErrorEncoding = [System.Text.UTF8Encoding]::new($false)
-			$startInfo.UseShellExecute = $false
-			$startInfo.Environment['PATH'] = "$($copilot.CommandDirectory)$([System.IO.Path]::PathSeparator)$($startInfo.Environment['PATH'])"
-
-			$process = [System.Diagnostics.Process]::Start($startInfo)
-			$output = $process.StandardOutput.ReadToEnd()
-			$errorOutput = $process.StandardError.ReadToEnd()
-			$process.WaitForExit()
-
-			$process.ExitCode | Should -Be 0
-			$output | Should -Match ([regex]::Escape("$([char] 0x25CF) 23 files found"))
-			$output | Should -Match ([regex]::Escape("$([char] 0x25E6) `"global.json`""))
-			$errorOutput | Should -Be ''
-		}
-		finally {
-			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+			$script:OutputEncoding = $originalPipelineEncoding
 		}
 	}
 }

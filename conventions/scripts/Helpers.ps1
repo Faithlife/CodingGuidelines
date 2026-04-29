@@ -206,46 +206,13 @@ function Invoke-CopilotWithIsolatedConfig {
 		[string] $Instructions
 	)
 
-	$copilotCommand = Get-Command -Name copilot -ErrorAction Stop
+	Get-Command -Name copilot -ErrorAction Stop | Out-Null
 
 	# Use an isolated Copilot config directory so convention runs do not depend on or mutate the user's setup.
 	$copilotConfigDirectory = New-TemporaryDirectory
 
 	try {
-		$arguments = @('--config-dir', $copilotConfigDirectory, '--no-ask-user', '--allow-all-tools', '--allow-all-paths', '--model', 'auto')
-
-		if ($copilotCommand.CommandType -eq [System.Management.Automation.CommandTypes]::Application) {
-			$startInfo = [System.Diagnostics.ProcessStartInfo]::new()
-			$startInfo.FileName = $copilotCommand.Source
-			$startInfo.UseShellExecute = $false
-			$startInfo.RedirectStandardInput = $true
-
-			$standardInputEncodingProperty = [System.Diagnostics.ProcessStartInfo].GetProperty('StandardInputEncoding')
-			if ($null -ne $standardInputEncodingProperty) {
-				$standardInputEncodingProperty.SetValue($startInfo, [System.Text.UTF8Encoding]::new($false))
-			}
-
-			foreach ($argument in $arguments) {
-				$startInfo.ArgumentList.Add($argument)
-			}
-
-			$process = [System.Diagnostics.Process]::Start($startInfo)
-			try {
-				$process.StandardInput.Write($Instructions)
-				$process.StandardInput.Close()
-				$process.WaitForExit()
-
-				if ($process.ExitCode -ne 0) {
-					throw "Copilot exited with code $($process.ExitCode)."
-				}
-			}
-			finally {
-				$process.Dispose()
-			}
-		}
-		else {
-			$Instructions | & copilot @arguments
-		}
+		$Instructions | & copilot --config-dir $copilotConfigDirectory --no-ask-user --allow-all-tools --allow-all-paths --model auto
 	}
 	finally {
 		Remove-Item -LiteralPath $copilotConfigDirectory -Recurse -Force
