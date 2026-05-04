@@ -1,5 +1,4 @@
 conventions:
-  - path: ../repo-conventions-workflow
   - path: ../gitattributes-lf
   - path: ../dotnet-sdk10
   - path: ../dotnet-slnx

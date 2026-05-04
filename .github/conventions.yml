@@ -1,5 +1,4 @@
 conventions:
-  - path: ../conventions/repo-conventions-workflow
   - path: ../conventions/gitattributes-lf
   - path: ../conventions/agentic-repo
   - path: ../conventions/editorconfig-root
