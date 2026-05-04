@@ -53,7 +53,8 @@ jobs:
 
       - name: Install APM
         uses: microsoft/apm-action@v1
-        continue-on-error: true # until cli-only is supported
+        with:
+          setup-only: true
 
       - name: Install Copilot
         run: npm install -g @github/copilot
