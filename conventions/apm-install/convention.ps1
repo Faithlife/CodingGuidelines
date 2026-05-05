@@ -21,7 +21,7 @@ if ($packages.Count -eq 0 -and -not (Test-Path -LiteralPath 'apm.yml')) {
 	return
 }
 
-$apmArguments = @('install', '--update')
+$apmArguments = @('install', '--update', '--target', 'agent-skills')
 
 if ($packages.Count -gt 0) {
 	$apmArguments += $packages
@@ -33,7 +33,7 @@ Write-Host ('Running apm ' + ($apmArguments -join ' ') + '.')
 & apm @apmArguments
 
 if ($LASTEXITCODE -ne 0) {
-	throw 'apm install --update failed.'
+	throw 'apm install failed.'
 }
 
 [string[]] $changedPaths = @(
