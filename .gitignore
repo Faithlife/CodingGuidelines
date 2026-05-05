@@ -2,4 +2,5 @@
 
 # DO NOT EDIT: agentic-repo convention
 apm_modules/
+.apm-pin
 # END DO NOT EDIT
