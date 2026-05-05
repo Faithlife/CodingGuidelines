@@ -70,7 +70,7 @@ exit 0
 		}
 	}
 
-	It 'ignores the input path and runs apm install --update' {
+	It 'ignores the input path and runs apm install --update --target agent-skills' {
 		$testDirectory = New-TestDirectory
 		$toolDirectory = New-TestDirectory
 		$argumentsPath = Join-Path $toolDirectory 'apm-arguments.txt'
@@ -94,7 +94,7 @@ exit 0
 			$env:PATH = $toolDirectory + [System.IO.Path]::PathSeparator + $originalPath
 
 			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath (Join-Path $testDirectory 'missing-input.json') } | Should -Not -Throw
-			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install --update'
+			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install --update --target agent-skills'
 		}
 		finally {
 			$env:PATH = $originalPath
@@ -104,7 +104,7 @@ exit 0
 		}
 	}
 
-	It 'passes configured packages to apm install --update' {
+	It 'passes configured packages to apm install --update --target agent-skills' {
 		$testDirectory = New-TestDirectory
 		$toolDirectory = Join-Path $testDirectory 'tools'
 		$argumentsPath = Join-Path $testDirectory 'apm-arguments.txt'
@@ -133,7 +133,7 @@ exit 0
 			$env:PATH = $toolDirectory + [System.IO.Path]::PathSeparator + $originalPath
 
 			{ & $conventionScriptPath $inputPath } | Should -Not -Throw
-			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install --update richlander/dotnet-inspect/skills/dotnet-inspect microsoft/playwright-cli/skills/playwright-cli'
+			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install --update --target agent-skills richlander/dotnet-inspect/skills/dotnet-inspect microsoft/playwright-cli/skills/playwright-cli'
 		}
 		finally {
 			$env:PATH = $originalPath
