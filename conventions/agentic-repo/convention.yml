@@ -10,6 +10,7 @@ conventions:
       name: agentic-repo
       text: |
         apm_modules/
+        .apm-pin
   - path: ../prettierignore-section
     settings:
       name: agentic-repo
