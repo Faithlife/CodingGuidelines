@@ -1,0 +1,10 @@
+conventions:
+  - path: ../copilot-lsp
+    settings:
+      servers:
+        csharp:
+          command: dnx
+          args: [--yes, --prerelease, roslyn-language-server, --, --stdio, --autoLoadProjects]
+          fileExtensions:
+            .cs: csharp
+            .cshtml: csharp
