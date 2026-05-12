@@ -320,6 +320,13 @@ dotnet_diagnostic.IDE0370.severity = suggestion
 
 As of this writing, detection of unnecessary nullable warning suppressions using the null-forgiving operator (!) is problematic for multitargeted projects.
 
+```editorconfig
+dotnet_diagnostic.IDE0390.severity = suggestion
+dotnet_diagnostic.IDE0391.severity = suggestion
+```
+
+We prefer to use the `async` keyword for cleaner code, even when it is less efficient than returning `Task.FromResult` or `Task.CompletedTask`.
+
 ## [Style: Formatting Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/ide0055)
 
 ```editorconfig
