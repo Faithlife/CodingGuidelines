@@ -1,6 +1,5 @@
 #requires -PSEdition Core
 #requires -Version 7.0
-# Configure strict PowerShell execution and UTF-8 IO.
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $true
@@ -26,12 +25,14 @@ $codeFenceCollection = [System.Text.RegularExpressions.Regex]::Matches($markdown
 function GetLineSortRank {
 	param([string] $line)
 
-	# Put indentation settings before other settings, in a consistent order.
+	# Put whitespace settings before other settings, in a consistent order.
 	switch -Regex ($line) {
 		'^indent_size\s*=' { return 0 }
 		'^indent_style\s*=' { return 1 }
 		'^tab_width\s*=' { return 2 }
-		default { return 3 }
+		'^insert_final_newline\s*=' { return 3 }
+		'^trim_trailing_whitespace\s*=' { return 4 }
+		default { return 5 }
 	}
 }
 
