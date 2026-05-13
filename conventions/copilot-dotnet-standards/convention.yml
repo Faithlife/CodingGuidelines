@@ -1,0 +1,7 @@
+conventions:
+  - path: ../apm-install
+    settings:
+      packages:
+        - LogosBible/AgentConfiguration/common/dotnet-standards
+  - path: ../copilot-lsp-csharp
+  - path: ../copilot-dotnet-format-hook
