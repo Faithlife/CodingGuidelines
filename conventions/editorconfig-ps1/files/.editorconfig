@@ -1,3 +1,4 @@
 [*.ps1]
 indent_size = tab
 indent_style = tab
+insert_final_newline = true
