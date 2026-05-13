@@ -13,3 +13,7 @@
 * [Android](sections/android/README.md)
 * [Source Control](sections/source-control/readme.md)
 * [Internationalization](sections/internationalization.md)
+
+## Repository Setup
+
+* [Agentic Repository System](conventions/agentic-repository-system.md)
