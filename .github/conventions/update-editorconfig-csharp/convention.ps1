@@ -2,6 +2,11 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $true
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 $helpersPath = Join-Path $PSScriptRoot '..' '..' '..' 'conventions' 'scripts' 'Helpers.ps1'
 . $helpersPath
