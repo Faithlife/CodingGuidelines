@@ -1,6 +1,5 @@
 #requires -PSEdition Core
 #requires -Version 7.0
-# Configure strict PowerShell execution and UTF-8 IO.
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $true
