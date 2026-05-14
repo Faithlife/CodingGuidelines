@@ -98,8 +98,6 @@ Install these tools once:
 - **[APM](https://microsoft.github.io/apm/getting-started/quick-start/)**: run `curl -sSL https://aka.ms/apm-unix | sh` (macOS/Linux) or `irm https://aka.ms/apm-windows | iex` (Windows)
 - **[.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)**: includes `dnx`, which runs .NET tools without a local manifest
 
-The pattern for all project types is the same: `apm install` first (populates `apm.yml`), then `repo-conventions add`, one commit, then `repo-conventions apply` (which auto-commits the boilerplate changes it makes).
-
 ### Web project
 
 ```sh
