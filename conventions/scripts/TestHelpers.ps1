@@ -1,5 +1,11 @@
 #requires -PSEdition Core
 #requires -Version 7.0
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 if ((Get-Module -ListAvailable Pester | Sort-Object Version -Descending | Select-Object -First 1).Version -lt [version]'5.0.0') {
 	throw "Pester 5 is required to run these tests. Currently using $((Get-Module Pester).Version)."
@@ -7,15 +13,6 @@ if ((Get-Module -ListAvailable Pester | Sort-Object Version -Descending | Select
 
 $helpersPath = Join-Path $PSScriptRoot 'Helpers.ps1'
 . $helpersPath
-
-<#
-.SYNOPSIS
-Creates a unique temporary directory for a test case.
-#>
-function New-TestDirectory {
-	# Delegate temp directory creation to the shared helper used by conventions.
-	return New-TemporaryDirectory
-}
 
 <#
 .SYNOPSIS

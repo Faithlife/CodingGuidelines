@@ -2,8 +2,10 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 # Copy a published support file only when the target is missing.
 function CopyMissingConventionFile {

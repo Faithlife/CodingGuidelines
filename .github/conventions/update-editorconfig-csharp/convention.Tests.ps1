@@ -2,7 +2,6 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-$PSNativeCommandUseErrorActionPreference = $true
 $utf8 = [System.Text.UTF8Encoding]::new($false)
 [Console]::InputEncoding = $utf8
 [Console]::OutputEncoding = $utf8
@@ -18,7 +17,7 @@ Describe 'update-editorconfig-csharp convention' {
 
 	It 'creates the published C# editorconfig source file from markdown' {
 		# Create an isolated repository for the generation scenario.
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Copy the convention and real source inputs into the isolated repository.
@@ -49,7 +48,7 @@ Describe 'update-editorconfig-csharp convention' {
 
 	It 'separates sections and sorts indentation settings first within each section' {
 		# Create an isolated repository for the custom markdown scenario.
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange only the convention files needed for a focused markdown input.
@@ -112,7 +111,7 @@ Describe 'update-editorconfig-csharp convention' {
 
 	It 'is idempotent after the generated file is committed' {
 		# Create an isolated repository for the idempotency scenario.
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Copy the convention and real source inputs into the isolated repository.

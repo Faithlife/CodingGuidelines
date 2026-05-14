@@ -46,7 +46,7 @@ EndGlobal
 
 	It 'migrates solution files and renames matching DotSettings files' {
 		# Set up a repository with a legacy solution and matching DotSettings file.
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			$solutionPath = Join-Path $testDirectory 'Test.sln'
@@ -79,7 +79,7 @@ EndGlobal
 
 	It 'leaves DotSettings files in place when the corresponding slnx file does not exist' {
 		# Set up an orphaned DotSettings file without a matching slnx file.
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			$dotSettingsPath = Join-Path $testDirectory 'Orphan.sln.DotSettings'
@@ -100,7 +100,7 @@ EndGlobal
 
 	It 'throws when the destination DotSettings file already exists' {
 		# Set up conflicting source and destination DotSettings files.
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			$slnxPath = Join-Path $testDirectory 'Conflict.slnx'

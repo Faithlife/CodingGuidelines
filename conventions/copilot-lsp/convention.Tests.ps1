@@ -54,7 +54,7 @@ Describe 'copilot-lsp convention' {
 
 	It 'creates .github/lsp.json when it is missing' {
 		# Set up an empty repository with no existing LSP config.
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			Initialize-TestRepository -Path $testDirectory
@@ -83,7 +83,7 @@ Describe 'copilot-lsp convention' {
 
 	It 'adds and replaces named servers without merging them or affecting other servers' {
 		# Set up a repository with existing LSP servers and unrelated settings.
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			Initialize-TestRepository -Path $testDirectory
@@ -166,7 +166,7 @@ Describe 'copilot-lsp convention' {
 
 	It 'does nothing when the configured servers already match exactly' {
 		# Set up a repository whose LSP config already matches the settings.
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			Initialize-TestRepository -Path $testDirectory

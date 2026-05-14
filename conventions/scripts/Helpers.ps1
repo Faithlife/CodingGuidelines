@@ -1,5 +1,12 @@
 #requires -PSEdition Core
 #requires -Version 7.0
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
+
 <#
 .SYNOPSIS
 Writes text as UTF-8 without a byte order mark.
@@ -203,18 +210,6 @@ function New-TemporaryDirectory {
 	$path = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString('N'))
 	[System.IO.Directory]::CreateDirectory($path) | Out-Null
 	return $path
-}
-
-<#
-.SYNOPSIS
-Sets console encodings to UTF-8 without a byte order mark.
-#>
-function Set-Utf8NoBomConsoleEncoding {
-	# Apply the same no-BOM UTF-8 encoding to console and native pipeline streams.
-	[System.Text.Encoding] $utf8 = [System.Text.UTF8Encoding]::new($false)
-	[Console]::InputEncoding = $utf8
-	[Console]::OutputEncoding = $utf8
-	$script:OutputEncoding = $utf8
 }
 
 <#

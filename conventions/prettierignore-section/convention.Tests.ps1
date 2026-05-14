@@ -40,7 +40,7 @@ Describe 'prettierignore-section convention' {
 	}
 
 	It 'does nothing when Prettier is not detected' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Apply the convention in a directory without Prettier markers.
@@ -57,7 +57,7 @@ Describe 'prettierignore-section convention' {
 	}
 
 	It 'applies the configured section when .prettierignore already exists and is idempotent' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange an existing prettierignore file.
@@ -82,7 +82,7 @@ Describe 'prettierignore-section convention' {
 	}
 
 	It 'applies the configured section when .prettierrc exists' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a Prettier config marker file.
@@ -100,7 +100,7 @@ Describe 'prettierignore-section convention' {
 	}
 
 	It 'applies the configured section when prettier.config.js exists' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a JavaScript Prettier config marker file.
@@ -118,7 +118,7 @@ Describe 'prettierignore-section convention' {
 	}
 
 	It 'applies the configured section when package.json has a top-level prettier property' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a package manifest with top-level Prettier settings.
@@ -136,7 +136,7 @@ Describe 'prettierignore-section convention' {
 	}
 
 	It 'applies the configured section when package.json has a prettier devDependency' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a package manifest with a Prettier dev dependency.
@@ -154,7 +154,7 @@ Describe 'prettierignore-section convention' {
 	}
 
 	It 'does not treat a lockfile-only transitive prettier reference as detection' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a lockfile-only transitive Prettier reference.
@@ -173,7 +173,7 @@ Describe 'prettierignore-section convention' {
 	}
 
 	It 'fails clearly when package.json is malformed' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a malformed package manifest.
@@ -188,7 +188,7 @@ Describe 'prettierignore-section convention' {
 	}
 
 	It 'passes through configured section settings to config text section logic' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a Prettier config marker file.

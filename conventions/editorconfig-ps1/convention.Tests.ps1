@@ -11,7 +11,7 @@ Describe 'editorconfig-ps1 convention' {
 	}
 
 	It 'creates .editorconfig with the PowerShell indentation section' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange an isolated repository with the PowerShell editorconfig convention enabled.
@@ -42,7 +42,7 @@ conventions:
 	}
 
 	It 'updates the managed PowerShell section and preserves unrelated content' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a repository with stale managed PowerShell settings and unrelated content.

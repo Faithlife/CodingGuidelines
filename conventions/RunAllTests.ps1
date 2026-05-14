@@ -2,16 +2,14 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 if ((Get-Module -ListAvailable Pester | Sort-Object Version -Descending | Select-Object -First 1).Version -lt [version]'5.0.0') {
 	throw "Pester 5 is required to run these tests. Currently using $((Get-Module Pester).Version)."
 }
-
-# Load shared helpers and normalize test output encoding.
-$helpersPath = Join-Path $PSScriptRoot 'scripts' 'Helpers.ps1'
-. $helpersPath
-
-Set-Utf8NoBomConsoleEncoding
 
 # Return the conventions directory used as the primary test root.
 function GetConventionsRoot {
@@ -37,7 +35,7 @@ function GetTestScriptPaths {
 		$testRoots.Add($githubConventionsRoot)
 	}
 
-	return @($testRoots | ForEach-Object { Get-ChildItem -Path $_ -Filter 'convention.Tests.ps1' -File -Recurse } |
+	return @($testRoots | ForEach-Object { Get-ChildItem -Path $_ -Filter '*.Tests.ps1' -File -Recurse } |
 		Where-Object { $_.DirectoryName -ne $PSScriptRoot } |
 		Sort-Object FullName)
 }

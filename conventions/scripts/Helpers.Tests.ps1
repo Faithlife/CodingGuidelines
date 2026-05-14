@@ -10,48 +10,15 @@ Describe 'convention script helpers' {
 		. $script:testHelpersPath
 	}
 
-	It 'sets console and native pipeline encodings to UTF-8 without BOM' {
-		# Capture original encodings so the test can restore process state.
-		$originalInputEncoding = [Console]::InputEncoding
-		$originalOutputEncoding = [Console]::OutputEncoding
-		$hadOriginalPipelineEncoding = Test-Path -LiteralPath variable:script:OutputEncoding
-		$originalPipelineEncoding = if ($hadOriginalPipelineEncoding) { $script:OutputEncoding } else { $null }
-
-		try {
-			# Start from ASCII encodings to prove the helper updates each stream.
-			[Console]::InputEncoding = [System.Text.Encoding]::ASCII
-			[Console]::OutputEncoding = [System.Text.Encoding]::ASCII
-			$script:OutputEncoding = [System.Text.Encoding]::ASCII
-
-			Set-Utf8NoBomConsoleEncoding
-
-			# Assert all configured encodings are UTF-8 and omit byte order marks.
-			[Console]::InputEncoding.WebName | Should -Be 'utf-8'
-			[Console]::OutputEncoding.WebName | Should -Be 'utf-8'
-			$script:OutputEncoding.WebName | Should -Be 'utf-8'
-			[Console]::OutputEncoding.GetPreamble().Length | Should -Be 0
-			$script:OutputEncoding.GetPreamble().Length | Should -Be 0
-		}
-		finally {
-			# Restore console encodings and the script-scope pipeline variable.
-			[Console]::InputEncoding = $originalInputEncoding
-			[Console]::OutputEncoding = $originalOutputEncoding
-
-			if ($hadOriginalPipelineEncoding) {
-				$script:OutputEncoding = $originalPipelineEncoding
-			}
-			else {
-				Remove-Variable -Name OutputEncoding -Scope Script -ErrorAction SilentlyContinue
-			}
-		}
-	}
-
 	It 'runs Copilot with COPILOT_HOME instead of deprecated config-dir' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 		$originalPath = $env:PATH
 		$originalCopilotHome = Get-Item -LiteralPath Env:\COPILOT_HOME -ErrorAction SilentlyContinue
+		$originalCopilotFunction = Get-Command -Name copilot -CommandType Function -ErrorAction SilentlyContinue
 
 		try {
+			Remove-Item -Path Function:\copilot -ErrorAction SilentlyContinue
+
 			$testCopilot = New-TestCopilotCommand -TestDirectory $testDirectory
 			$env:PATH = "$($testCopilot.CommandDirectory)$([System.IO.Path]::PathSeparator)$originalPath"
 			$env:COPILOT_HOME = 'original-copilot-home'
@@ -75,6 +42,10 @@ Describe 'convention script helpers' {
 			}
 			else {
 				Set-Item -LiteralPath Env:\COPILOT_HOME -Value $originalCopilotHome.Value
+			}
+
+			if ($null -ne $originalCopilotFunction) {
+				Set-Item -Path Function:\copilot -Value $originalCopilotFunction.ScriptBlock
 			}
 
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

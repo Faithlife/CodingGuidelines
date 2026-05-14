@@ -32,7 +32,7 @@ Describe 'nuget-config convention' {
 	}
 
 	It 'creates nuget.config when it is missing' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange an empty initialized repository.
@@ -57,7 +57,7 @@ Describe 'nuget-config convention' {
 	}
 
 	It 'renames an existing non-lowercase NuGet config to nuget.config' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a repository with a committed differently-cased NuGet config.
@@ -92,7 +92,7 @@ Describe 'nuget-config convention' {
 	}
 
 	It 'replaces an existing different nuget.config' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a repository with a committed divergent NuGet config.
@@ -133,7 +133,7 @@ Describe 'nuget-config convention' {
 	}
 
 	It 'is idempotent after the first successful application' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a repository after a successful first convention run.

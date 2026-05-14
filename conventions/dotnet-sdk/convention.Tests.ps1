@@ -20,7 +20,7 @@ Describe 'dotnet-sdk convention' {
 				[object] $SdkVersion = '10.0.100'
 			)
 
-			$testDirectory = New-TestDirectory
+			$testDirectory = New-TemporaryDirectory
 			$inputPath = $null
 
 			try {

@@ -41,8 +41,8 @@ Describe 'apm-install convention' {
 
 	It 'exits successfully without invoking apm when there is no apm.yml and no configured packages' {
 		# Set up an empty repository and a fake apm invocation marker.
-		$testDirectory = New-TestDirectory
-		$toolDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
+		$toolDirectory = New-TemporaryDirectory
 		$apmInvocationPath = Join-Path $toolDirectory 'apm-invoked.txt'
 		$inputPath = New-ConventionInputFile -Settings @{}
 		$originalPath = $env:PATH
@@ -79,8 +79,8 @@ exit 0
 
 	It 'ignores the input path and runs apm install --update --target agent-skills' {
 		# Set up a repository with apm.yml and a fake argument capture file.
-		$testDirectory = New-TestDirectory
-		$toolDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
+		$toolDirectory = New-TemporaryDirectory
 		$argumentsPath = Join-Path $toolDirectory 'apm-arguments.txt'
 		$originalPath = $env:PATH
 
@@ -117,7 +117,7 @@ exit 0
 
 	It 'passes configured packages to apm install --update --target agent-skills' {
 		# Set up convention input that includes configured apm packages.
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 		$toolDirectory = Join-Path $testDirectory 'tools'
 		$argumentsPath = Join-Path $testDirectory 'apm-arguments.txt'
 		$inputPath = New-ConventionInputFile -Settings @{
@@ -160,8 +160,8 @@ exit 0
 
 	It 'reverts apm.lock.yaml when it is the only changed file' {
 		# Set up a repository where apm can only update the lock file.
-		$testDirectory = New-TestDirectory
-		$toolDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
+		$toolDirectory = New-TemporaryDirectory
 		$lockFilePath = Join-Path $testDirectory 'apm.lock.yaml'
 		$originalPath = $env:PATH
 		$originalLockContent = "packages:`n  sample: 1.0.0`n"
@@ -199,8 +199,8 @@ exit 0
 
 	It 'keeps apm.lock.yaml when apm also changes another file' {
 		# Set up a repository where apm updates the lock file and package metadata.
-		$testDirectory = New-TestDirectory
-		$toolDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
+		$toolDirectory = New-TemporaryDirectory
 		$lockFilePath = Join-Path $testDirectory 'apm.lock.yaml'
 		$packageFilePath = Join-Path $testDirectory 'package.json'
 		$originalPath = $env:PATH

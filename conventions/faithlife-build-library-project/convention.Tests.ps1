@@ -69,7 +69,7 @@ EndGlobal
 	}
 
 	It 'creates both files, creates a root solution, and adds the project when they are missing' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange an empty initialized repository.
@@ -119,7 +119,7 @@ EndGlobal
 	}
 
 	It 'leaves existing files unchanged' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a repository with existing build files committed.
@@ -156,7 +156,7 @@ EndGlobal
 	}
 
 	It 'adds tools/Build to an existing root solution when it copies Build.csproj' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a repository with a root solution and existing Build.cs.
@@ -209,7 +209,7 @@ EndGlobal
 	}
 
 	It 'is idempotent after the first successful application' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a repository after a successful first convention run.

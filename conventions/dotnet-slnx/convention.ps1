@@ -2,9 +2,7 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-
-# Copilot uses UTF-8 (no BOM)
-[System.Text.Encoding] $utf8 = [System.Text.UTF8Encoding]::new($false)
+$utf8 = [System.Text.UTF8Encoding]::new($false)
 [Console]::InputEncoding = $utf8
 [Console]::OutputEncoding = $utf8
 $OutputEncoding = $utf8

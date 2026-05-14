@@ -11,7 +11,7 @@ Describe 'editorconfig-section convention' {
 	}
 
 	It 'creates .editorconfig with the configured managed section' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange an isolated repository with a configured editorconfig section.
@@ -50,7 +50,7 @@ conventions:
 	}
 
 	It 'forwards agent instructions when it changes .editorconfig' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange an isolated repository with inline agent instructions.
@@ -85,7 +85,7 @@ conventions:
 	}
 
 	It 'uses native commit settings when it changes .editorconfig' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange an isolated repository with a configured commit message.

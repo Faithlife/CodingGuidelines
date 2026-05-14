@@ -52,7 +52,7 @@ Describe 'faithlife-build-script convention' {
 	}
 
 	It 'creates build.ps1 in the repository root and marks it executable in Git' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange an empty initialized repository.
@@ -78,7 +78,7 @@ Describe 'faithlife-build-script convention' {
 	}
 
 	It 'updates an existing build.ps1 to the published script' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a repository with a committed placeholder build script.
@@ -113,7 +113,7 @@ Describe 'faithlife-build-script convention' {
 	}
 
 	It 'is idempotent after the first successful application' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a repository after a successful first convention run.

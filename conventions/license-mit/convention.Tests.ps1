@@ -51,7 +51,7 @@ Describe 'license-mit convention' {
 	}
 
 	It 'requires the copyright-holder setting' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange an empty initialized repository.
@@ -66,7 +66,7 @@ Describe 'license-mit convention' {
 	}
 
 	It 'creates LICENSE when it is missing' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange an empty initialized repository.
@@ -92,7 +92,7 @@ Describe 'license-mit convention' {
 	}
 
 	It 'replaces an existing LICENSE when it differs' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a repository with a committed non-template license.
@@ -125,7 +125,7 @@ Describe 'license-mit convention' {
 	}
 
 	It 'is idempotent after the first successful application' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a repository after a successful first convention run.

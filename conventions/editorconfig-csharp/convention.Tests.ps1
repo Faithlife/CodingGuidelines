@@ -11,7 +11,7 @@ Describe 'editorconfig-csharp convention' {
 	}
 
 	It 'creates .editorconfig with the shared C# section' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange an isolated repository with the C# editorconfig convention enabled.
@@ -46,7 +46,7 @@ conventions:
 	}
 
 	It 'runs Copilot with the packaged instructions when it changes .editorconfig' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange an isolated repository and capture the packaged Copilot instructions.
@@ -73,7 +73,7 @@ conventions:
 	}
 
 	It 'commits .editorconfig changes with the packaged commit message' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange an isolated repository with the C# editorconfig convention enabled.

@@ -41,7 +41,7 @@ Describe 'config-text-section convention' {
 
 	It 'creates a repository-root-relative file with a managed section and is idempotent' {
 		# Set up an empty repository for managed section creation.
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Run the convention and capture the created target path.
@@ -67,7 +67,7 @@ Describe 'config-text-section convention' {
 
 	It 'runs Copilot with configured agent instructions when the file changes' {
 		# Set up an empty repository and expected Copilot instructions.
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			$targetPath = Join-Path $testDirectory '.editorconfig'
@@ -110,7 +110,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 
 	It 'does not run Copilot when the file is already compliant' {
 		# Set up a repository that already contains the managed section.
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			$targetPath = Join-Path $testDirectory '.editorconfig'
@@ -143,7 +143,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 
 	It 'restores the configured managed section after Copilot edits it' {
 		# Set up a repository and a target path that Copilot will mutate.
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			$targetPath = Join-Path $testDirectory '.editorconfig'
@@ -178,7 +178,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 
 	It 'does not run Copilot when agent instructions are missing, null, empty, or whitespace' {
 		# Set up reusable state for agent settings cases.
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			$global:CopilotCallCount = 0
@@ -226,7 +226,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 
 	It 'resolves relative paths from the repository root' {
 		# Set up an empty repository for relative path resolution.
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Run the convention with a repository-root-relative path.
@@ -245,7 +245,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 
 	It 'replaces an existing managed section with the same name' {
 		# Set up a repository with an outdated managed section.
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			$targetPath = Join-Path $testDirectory '.editorconfig'
@@ -265,7 +265,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 
 	It 'does not rewrite a correct managed section or surrounding spacing' {
 		# Set up a repository with compliant content and a fixed timestamp.
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			$targetPath = Join-Path $testDirectory '.editorconfig'
@@ -290,7 +290,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 
 	It 'preserves content outside the managed section when replacing it' {
 		# Set up a file with unmanaged content around an outdated section.
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			$targetPath = Join-Path $testDirectory '.editorconfig'
@@ -310,7 +310,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 
 	It 'supports comment suffixes for managed sections' {
 		# Set up an empty repository for HTML-style comments.
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Run the convention with prefix and suffix comment markers.
@@ -328,7 +328,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 
 	It 'fails on duplicate managed sections for the same name' {
 		# Set up a file with two managed sections that share one name.
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			$targetPath = Join-Path $testDirectory '.editorconfig'
@@ -345,7 +345,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 
 	It 'preserves CRLF files when appending a managed section' {
 		# Set up a CRLF file before appending a managed section.
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			$targetPath = Join-Path $testDirectory '.editorconfig'
@@ -365,7 +365,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 
 	It 'requires top-level section settings' {
 		# Set up an empty repository for required-setting validation.
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Assert each missing required setting produces the expected error.

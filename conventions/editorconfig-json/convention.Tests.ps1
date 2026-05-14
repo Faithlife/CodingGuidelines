@@ -11,7 +11,7 @@ Describe 'editorconfig-json convention' {
 	}
 
 	It 'creates .editorconfig with the JSON indentation section' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange an isolated repository with the JSON editorconfig convention enabled.
@@ -42,7 +42,7 @@ conventions:
 	}
 
 	It 'updates the managed JSON section and preserves unrelated content' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a repository with stale managed JSON settings and unrelated content.
@@ -85,7 +85,7 @@ indent_size = 4
 	}
 
 	It 'runs Copilot with the packaged instructions when it changes .editorconfig' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange an isolated repository and capture the packaged Copilot instructions.

@@ -53,7 +53,7 @@ Describe 'gitattributes-lf convention' {
 	}
 
 	It 'creates .gitattributes when it is missing' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange an empty initialized repository.
@@ -80,7 +80,7 @@ Describe 'gitattributes-lf convention' {
 	}
 
 	It 'uses Copilot and removes redundant eol rules from an existing file' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a repository with noncompliant attributes and CRLF content.
@@ -133,7 +133,7 @@ Describe 'gitattributes-lf convention' {
 	}
 
 	It 'does not invoke Copilot when .gitattributes already conforms' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a repository with already-compliant attributes.
@@ -168,7 +168,7 @@ Describe 'gitattributes-lf convention' {
 	}
 
 	It 'is idempotent after the first successful application' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a repository with noncompliant attributes for the first run.

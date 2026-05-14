@@ -11,7 +11,7 @@ Describe 'editorconfig-root convention' {
 	}
 
 	It 'creates .editorconfig with the default root section' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange an isolated repository with the root editorconfig convention enabled.
@@ -45,7 +45,7 @@ conventions:
 	}
 
 	It 'updates the managed root section and preserves unrelated content' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a repository with stale managed root settings and unrelated content.
@@ -87,7 +87,7 @@ trim_trailing_whitespace = false
 	}
 
 	It 'runs Copilot with the packaged instructions when it changes .editorconfig' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange an isolated repository and capture the packaged Copilot instructions.

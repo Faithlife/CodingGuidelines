@@ -2,11 +2,13 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 $helpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'Helpers.ps1'
 . $helpersPath
-
-Set-Utf8NoBomConsoleEncoding
 
 # Resolve the published and target NuGet config paths.
 $sourceNuGetConfigPath = Join-Path $PSScriptRoot 'files' 'nuget.config'

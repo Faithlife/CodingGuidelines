@@ -11,7 +11,7 @@ Describe 'editorconfig-yaml convention' {
 	}
 
 	It 'creates .editorconfig with the YAML indentation section' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange an isolated repository with the YAML editorconfig convention enabled.
@@ -42,7 +42,7 @@ conventions:
 	}
 
 	It 'updates the managed YAML section and preserves unrelated content' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a repository with stale managed YAML settings and unrelated content.
@@ -85,7 +85,7 @@ trim_trailing_whitespace = false
 	}
 
 	It 'commits .editorconfig changes with the packaged commit message' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange an isolated repository with the YAML editorconfig convention enabled.

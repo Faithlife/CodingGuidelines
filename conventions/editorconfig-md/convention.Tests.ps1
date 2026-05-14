@@ -11,7 +11,7 @@ Describe 'editorconfig-md convention' {
 	}
 
 	It 'creates .editorconfig with the Markdown indentation section' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange an isolated repository with the Markdown editorconfig convention enabled.
@@ -42,7 +42,7 @@ conventions:
 	}
 
 	It 'updates the managed Markdown section and preserves unrelated content' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a repository with stale managed Markdown settings and unrelated content.

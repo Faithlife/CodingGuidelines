@@ -45,7 +45,7 @@ Describe 'faithlife-build-library-workflow convention' {
 	}
 
 	It 'creates .github/workflows/build.yaml when it is missing' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange an empty initialized repository.
@@ -69,7 +69,7 @@ Describe 'faithlife-build-library-workflow convention' {
 	}
 
 	It 'updates an existing build workflow to the published file' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a repository with a committed placeholder workflow.
@@ -103,7 +103,7 @@ Describe 'faithlife-build-library-workflow convention' {
 	}
 
 	It 'is idempotent after the first successful application' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a repository after a successful first convention run.
