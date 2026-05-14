@@ -247,23 +247,29 @@ function New-TestCopilotCommand {
 	[System.IO.Directory]::CreateDirectory($commandDirectory) | Out-Null
 
 	$inputPath = Join-Path $commandDirectory 'copilot-input.txt'
+	$argumentsPath = Join-Path $commandDirectory 'copilot-arguments.txt'
+	$copilotHomePath = Join-Path $commandDirectory 'copilot-home.txt'
 
-	# Write a platform-specific command that captures stdin for assertions.
+	# Write a platform-specific command that captures invocation details for assertions.
 	if ($IsWindows) {
 		$commandPath = Join-Path $commandDirectory 'copilot.cmd'
 		$escapedInputPath = $inputPath.Replace('"', '""')
-		Write-Utf8NoBomFile -Path $commandPath -Content "@echo off`r`nmore > `"$escapedInputPath`"`r`nexit /b 0`r`n"
+		$escapedArgumentsPath = $argumentsPath.Replace('"', '""')
+		$escapedCopilotHomePath = $copilotHomePath.Replace('"', '""')
+		Write-Utf8NoBomFile -Path $commandPath -Content "@echo off`r`n> `"$escapedArgumentsPath`" echo(%*`r`n> `"$escapedCopilotHomePath`" echo(%COPILOT_HOME%`r`nmore > `"$escapedInputPath`"`r`nexit /b 0`r`n"
 	}
 	else {
 		$commandPath = Join-Path $commandDirectory 'copilot'
-		Write-Utf8NoBomFile -Path $commandPath -Content "#!/bin/sh`ncat > '$inputPath'`nexit 0`n"
+		Write-Utf8NoBomFile -Path $commandPath -Content "#!/bin/sh`nprintf '%s\n' \"`$*\" > '$argumentsPath'`nprintf '%s\n' \"`$COPILOT_HOME\" > '$copilotHomePath'`ncat > '$inputPath'`nexit 0`n"
 		& chmod +x $commandPath | Out-Null
 	}
 
-	# Return both the command directory and captured input path to the test.
+	# Return the command directory and captured invocation paths to the test.
 	return [pscustomobject]@{
 		CommandDirectory = $commandDirectory
 		InputPath = $inputPath
+		ArgumentsPath = $argumentsPath
+		CopilotHomePath = $copilotHomePath
 	}
 }
 
@@ -275,16 +281,20 @@ function New-TemporaryTestCopilotCommand {
 	# Create a fake Copilot command outside the repository under test.
 	$commandDirectory = New-TemporaryDirectory
 	$inputPath = Join-Path $commandDirectory 'copilot-input.txt'
+	$argumentsPath = Join-Path $commandDirectory 'copilot-arguments.txt'
+	$copilotHomePath = Join-Path $commandDirectory 'copilot-home.txt'
 
 	# Write a platform-specific command that discards stdin for apply tests.
 	if ($IsWindows) {
 		$commandPath = Join-Path $commandDirectory 'copilot.cmd'
 		$escapedInputPath = $inputPath.Replace('"', '""')
-		Write-Utf8NoBomFile -Path $commandPath -Content "@echo off`r`nmore > `"$escapedInputPath`"`r`nexit /b 0`r`n"
+		$escapedArgumentsPath = $argumentsPath.Replace('"', '""')
+		$escapedCopilotHomePath = $copilotHomePath.Replace('"', '""')
+		Write-Utf8NoBomFile -Path $commandPath -Content "@echo off`r`n> `"$escapedArgumentsPath`" echo(%*`r`n> `"$escapedCopilotHomePath`" echo(%COPILOT_HOME%`r`nmore > `"$escapedInputPath`"`r`nexit /b 0`r`n"
 	}
 	else {
 		$commandPath = Join-Path $commandDirectory 'copilot'
-		Write-Utf8NoBomFile -Path $commandPath -Content "#!/bin/sh`ncat > /dev/null`nexit 0`n"
+		Write-Utf8NoBomFile -Path $commandPath -Content "#!/bin/sh`nprintf '%s\n' \"`$*\" > '$argumentsPath'`nprintf '%s\n' \"`$COPILOT_HOME\" > '$copilotHomePath'`ncat > /dev/null`nexit 0`n"
 		& chmod +x $commandPath | Out-Null
 	}
 
@@ -292,5 +302,7 @@ function New-TemporaryTestCopilotCommand {
 	return [pscustomobject]@{
 		CommandDirectory = $commandDirectory
 		InputPath = $inputPath
+		ArgumentsPath = $argumentsPath
+		CopilotHomePath = $copilotHomePath
 	}
 }

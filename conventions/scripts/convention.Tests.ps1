@@ -45,4 +45,39 @@ Describe 'convention script helpers' {
 			}
 		}
 	}
+
+	It 'runs Copilot with COPILOT_HOME instead of deprecated config-dir' {
+		$testDirectory = New-TestDirectory
+		$originalPath = $env:PATH
+		$originalCopilotHome = Get-Item -LiteralPath Env:\COPILOT_HOME -ErrorAction SilentlyContinue
+
+		try {
+			$testCopilot = New-TestCopilotCommand -TestDirectory $testDirectory
+			$env:PATH = "$($testCopilot.CommandDirectory)$([System.IO.Path]::PathSeparator)$originalPath"
+			$env:COPILOT_HOME = 'original-copilot-home'
+
+			Invoke-CopilotWithIsolatedConfig -Instructions "Review these changes.`n"
+
+			# Assert Copilot received the supported settings through args and environment.
+			$capturedArguments = (Get-Content -LiteralPath $testCopilot.ArgumentsPath -Raw).Trim()
+			$capturedCopilotHome = (Get-Content -LiteralPath $testCopilot.CopilotHomePath -Raw).Trim()
+
+			$capturedArguments | Should -Be '--no-ask-user --allow-all-tools --allow-all-paths --model auto'
+			$capturedCopilotHome | Should -Not -Be 'original-copilot-home'
+			[System.String]::IsNullOrWhiteSpace($capturedCopilotHome) | Should -Be $false
+			$env:COPILOT_HOME | Should -Be 'original-copilot-home'
+		}
+		finally {
+			$env:PATH = $originalPath
+
+			if ($null -eq $originalCopilotHome) {
+				Remove-Item -LiteralPath Env:\COPILOT_HOME -ErrorAction SilentlyContinue
+			}
+			else {
+				Set-Item -LiteralPath Env:\COPILOT_HOME -Value $originalCopilotHome.Value
+			}
+
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
 }
