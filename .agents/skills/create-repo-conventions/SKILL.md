@@ -48,13 +48,22 @@ conventions/my-convention/
 
 ## `convention.yml`
 
-Use `convention.yml` when a convention composes other conventions, provides default settings for local pull requests, or both.
+Use `convention.yml` when a convention composes other conventions, provides default commit settings, provides default pull request settings, or any combination of those.
 
-Composition-only conventions must include a `conventions` sequence. Executable conventions that also contain `convention.ps1` may omit `conventions` and include only `pull-request` settings.
+Composition-only conventions must include a `conventions` sequence. Executable conventions that also contain `convention.ps1` may omit `conventions` and include only `commit` or `pull-request` settings.
 
 Example:
 
 ```yaml
+commit:
+  message: Update .NET repository conventions
+
+pull-request:
+  labels:
+    - dependencies
+  auto-merge: true
+  merge-method: squash
+
 conventions:
   - path: ../dotnet-sdk
     settings:
@@ -69,6 +78,14 @@ Guidelines:
 - Keep settings JSON-compatible: objects, arrays, strings, numbers, booleans, or null.
 - Keep settings shallow unless nesting communicates a real domain boundary.
 - Avoid formatting-only churn in generated files unless formatting is the purpose of the convention.
+
+Supported root properties:
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `conventions` | sequence | Child convention references to apply in declaration order. Required when the directory has no `convention.ps1`; optional when the convention is executable. |
+| `commit` | object | Default automatic commit settings for this convention and its child conventions. |
+| `pull-request` | object | Pull request metadata contributed when this convention creates commits. |
 
 ### Child Paths
 
@@ -114,7 +131,34 @@ conventions:
 - Native absolute paths and paths that escape the containing repository are rejected.
 - Use it when file-backed text is clearer than embedding long YAML strings.
 
-### Pull Request Metadata
+### Commit Settings
+
+`convention.yml` can include `commit` settings:
+
+```yaml
+commit:
+  message: Update generated project files
+```
+
+Commit settings control the automatic commit created when `convention.ps1` leaves uncommitted changes and does not create commits itself.
+
+Supported properties:
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `message` | string | Commit message for the automatic commit. Empty or whitespace-only values are treated as unspecified. |
+
+Behavior:
+
+- If no message is configured, RepoConventions uses `Apply convention <name>`.
+- A convention reference's `commit` settings override the convention's own defaults.
+- Composite conventions pass the effective commit message down to child conventions. A child convention's own `commit` settings, or settings on that child reference, can override the inherited message.
+- Commit settings do not affect commits created directly by `convention.ps1`.
+- When adjacent automatic commits in the same run use the same message, RepoConventions amends the previous automatic commit instead of creating a second adjacent commit with the same message.
+
+Use a custom `message` when the convention has a stable, recognizable purpose. Prefer a concise imperative subject, such as `Update .NET SDK version` or `Refresh generated CI files`.
+
+### Pull Request Settings
 
 `convention.yml` can include `pull-request` settings:
 
@@ -126,9 +170,28 @@ pull-request:
   merge-method: squash
 ```
 
-This metadata is applied only when the convention contributes commits to a `--open-pr` run. It is honored whether the convention is stored in the target repository or cloned from a remote repository. Consumers can supplement list values and override scalar values on their own convention reference or top-level configuration.
+Pull request settings describe metadata for the pull request generated from applying conventions. This metadata is applied only when the convention contributes commits. It is honored whether the convention is stored in the target repository or cloned from a remote repository. Consumers can supplement list values and override scalar values on their own convention reference or repository-level configuration.
 
-Supported properties are `labels`, `reviewers`, `assignees`, `draft`, `auto-merge`, and `merge-method`. For complete consumer-side behavior and CLI overrides, see [../../README.md](../../README.md).
+Supported properties:
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `labels` | string sequence | Labels to add to the generated pull request. Missing labels are created automatically. The `repo-conventions` label is always added. |
+| `reviewers` | string sequence | GitHub users or teams to request as reviewers. |
+| `assignees` | string sequence | GitHub users to assign. |
+| `draft` | boolean | When true, create the pull request as a draft. |
+| `auto-merge` | boolean | When true, enable GitHub auto-merge after opening the pull request. |
+| `merge-method` | string | Preferred auto-merge method: `merge`, `squash`, or `rebase`. Defaults to `squash` when auto-merge is enabled and no single method is configured. |
+
+Merge behavior:
+
+- `labels`, `reviewers`, and `assignees` are appended to repository-level and reference-level values, then de-duplicated case-insensitively.
+- `draft`, `auto-merge`, and `merge-method` are scalar settings; reference-level settings override convention defaults.
+- Convention-level pull request metadata is ignored when the convention does not create commits.
+- When auto-merge is enabled, reviewers and assignees are not requested.
+- If multiple contributing conventions request conflicting merge methods and no repository-level or reference-level setting resolves the conflict, RepoConventions falls back to `squash`.
+
+Use convention-level pull request settings for metadata inherent to the convention, such as `dependencies` for dependency update conventions. Leave repository-specific reviewers, assignees, and labels to repository-level configuration unless the convention owns that workflow.
 
 ## `convention.ps1`
 
@@ -150,7 +213,6 @@ Standard header for `convention.ps1`:
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-$PSNativeCommandUseErrorActionPreference = $true
 $utf8 = [System.Text.UTF8Encoding]::new($false)
 [Console]::InputEncoding = $utf8
 [Console]::OutputEncoding = $utf8
@@ -177,7 +239,7 @@ Authoring expectations:
 
 ## Commit and Failure Behavior
 
-- On success, if `convention.ps1` leaves tracked or untracked changes and does not create commits itself, RepoConventions creates `Apply convention <name>`.
+- On success, if `convention.ps1` leaves tracked or untracked changes and does not create commits itself, RepoConventions creates an automatic commit using the effective `commit.message`, or `Apply convention <name>` when no message is configured.
 - If the script creates commits itself, RepoConventions preserves those commits.
 - If the convention leaves no changes or new commits, RepoConventions does not add a commit for that convention.
 - If the script exits with a non-zero code, RepoConventions hard-resets the target repository to the commit before that convention started and stops the run.
