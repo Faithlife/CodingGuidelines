@@ -7,6 +7,7 @@ indent_style = space
 indent_size = tab
 indent_style = tab
 tab_width = 4
+insert_final_newline = true
 csharp_indent_block_contents = true
 csharp_indent_braces = false
 csharp_indent_case_contents = true
