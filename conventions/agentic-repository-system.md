@@ -8,7 +8,7 @@ Setting this up by hand in every repository is slow and inconsistent. This syste
 
 **Tool: [APM](https://github.com/microsoft/apm)** (Agent Package Manager, by Microsoft)
 
-APM is like npm, but for agent configuration. You declare what your agents need in an `apm.yml` file, and `apm install` downloads and wires up everything — skills, prompts, MCP servers, and their transitive dependencies.
+APM is like npm, but for agent configuration. You declare what your agents need in an `apm.yml` file, and `apm install` downloads and wires up everything: skills, prompts, MCP servers, and their transitive dependencies.
 
 A repository's `apm.yml` might look like:
 
@@ -21,9 +21,9 @@ dependencies:
 
 Running `apm install` reads that file, resolves dependencies, and writes:
 
-- `apm.lock.yaml` — pinned versions and integrity hashes (like `package-lock.json`)
-- `.agents/skills/` — the actual skill files agents read
-- target files under `.github/` — e.g. `copilot-instructions.md`
+- `apm.lock.yaml`: pinned versions and integrity hashes (like `package-lock.json`)
+- `.agents/skills/`: the actual skill files agents read
+- target files under `.github/`, e.g. `copilot-instructions.md`
 
 Any developer who clones the repo and runs `apm install` gets the same agent setup.
 
@@ -35,9 +35,9 @@ AgentConfiguration is a shared library of APM packages. Instead of every reposit
 
 Packages are organized by team or by technology:
 
-- `common/web` — Playwright browser automation for web projects
-- `common/dotnet` — .NET development skills
-- `bible-study-tools/...` — team-specific packages
+- `common/web`: Playwright browser automation for web projects
+- `common/dotnet`: .NET development skills
+- `bible-study-tools/...`: team-specific packages
 
 Each package has an `apm.yml` that lists its dependencies. For example, `common/web/apm.yml` depends on `microsoft/playwright-cli/skills/playwright-cli`. Installing the package installs everything it depends on.
 
@@ -47,12 +47,12 @@ Each package has an `apm.yml` that lists its dependencies. For example, `common/
 
 Every repository that uses APM needs the same housekeeping: mark generated files in `.gitattributes`, ignore build artifacts in `.gitignore`, exclude generated files from Prettier. This repo publishes the `conventions/agentic-repo` convention that handles all of it.
 
-`conventions/agentic-repo` does four things in order:
+`conventions/agentic-repo` does the following to prepare a repository for using APM:
 
 1. Adds `.gitattributes` entries marking `apm.lock.yaml` and `.agents/**` as generated.
 2. Adds `.gitignore` entries for `apm_modules/` and `.apm-pin`.
 3. Adds `.prettierignore` entries for `.agents/`, `apm.lock.yaml`, and `apm.yml`.
-4. Runs `apm install --update` to download and install any APM packages. (This last step is the `conventions/apm-install` script — a PowerShell script that calls APM. It skips if no `apm.yml` exists and no packages are configured.)
+4. Runs `apm install --update` to download and install any APM packages. (This last step is the `conventions/apm-install` script, which is a PowerShell script that calls APM. It skips if no `apm.yml` exists and no packages are configured.)
 
 AgentConfiguration packages apply `agentic-repo` automatically, so most repositories don't reference it directly.
 
@@ -79,12 +79,12 @@ When `repo-conventions apply` runs, it:
 
 1. Clones `LogosBible/AgentConfiguration` and finds `common/web/convention.yml`.
 2. That convention.yml applies three CodingGuidelines conventions in order:
-   - `conventions/agentic-repo` — adds `.gitattributes`, `.gitignore`, and `.prettierignore` entries for APM files
-   - `conventions/apm-install` with package `LogosBible/AgentConfiguration/common/web` — runs `apm install`, which reads the package's `apm.yml`, resolves `microsoft/playwright-cli/skills/playwright-cli`, and writes the skill files into `.agents/skills/`
-   - `conventions/gitignore-section` — adds `.playwright-cli/` to `.gitignore` (Playwright's local cache)
+   - `conventions/agentic-repo`: adds `.gitattributes`, `.gitignore`, and `.prettierignore` entries for APM files
+   - `conventions/apm-install` with package `LogosBible/AgentConfiguration/common/web`: runs `apm install`, which reads the package's `apm.yml`, resolves `microsoft/playwright-cli/skills/playwright-cli`, and writes the skill files into `.agents/skills/`
+   - `conventions/gitignore-section`: adds `.playwright-cli/` to `.gitignore` (Playwright's local cache)
 3. RepoConventions commits the changes and can push a branch and open a PR.
 
-The result: the repository has a working agent setup with Playwright skills, correct ignore rules, and a lockfile — from one line in a YAML file.
+The result: the repository has a working agent setup with Playwright skills, correct ignore rules, and a lockfile, all from one line in a YAML file.
 
 ## How to adopt
 
@@ -92,8 +92,8 @@ The result: the repository has a working agent setup with Playwright skills, cor
 
 Install these tools once:
 
-- **[APM](https://microsoft.github.io/apm/getting-started/quick-start/)** — `curl -sSL https://aka.ms/apm-unix | sh` (macOS/Linux) or `irm https://aka.ms/apm-windows | iex` (Windows)
-- **[.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)** — includes `dnx`, which runs .NET tools without a local manifest
+- **[APM](https://microsoft.github.io/apm/getting-started/quick-start/)**: run `curl -sSL https://aka.ms/apm-unix | sh` (macOS/Linux) or `irm https://aka.ms/apm-windows | iex` (Windows)
+- **[.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)**: includes `dnx`, which runs .NET tools without a local manifest
 
 ### Set up a repository
 
