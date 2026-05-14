@@ -35,11 +35,14 @@ AgentConfiguration is a shared library of APM packages. Instead of every reposit
 
 Packages are organized by team or by technology:
 
-- `common/web`: Playwright browser automation for web projects
-- `common/dotnet`: .NET development skills
+- `common/web`: Web development skills, e.g. Playwright browser automation
+- `common/dotnet`: .NET development skills, e.g. `dotnet-inspect`
+- `common/general-coding-instructions`: General coding guidelines for all languages
 - `bible-study-tools/...`: team-specific packages
 
 Each package has an `apm.yml` that lists its dependencies. For example, `common/web/apm.yml` depends on `microsoft/playwright-cli/skills/playwright-cli`. Installing the package installs everything it depends on.
+
+There are packages for working with tools like Graylog and Slack, and packages for workflows like working across repositories.
 
 ## Problem 3: APM-managed repos need boilerplate
 
@@ -113,17 +116,20 @@ dnx repo-conventions add LogosBible/actions/conventions/auto-apply-conventions -
 
 Pick a package from [AgentConfiguration](https://github.com/LogosBible/AgentConfiguration) based on your project:
 
-| Project type | Package                                              | What it installs                             |
-| ------------ | ---------------------------------------------------- | -------------------------------------------- |
-| Web          | `LogosBible/AgentConfiguration/common/web`           | Playwright browser automation                |
-| .NET         | `LogosBible/AgentConfiguration/common/dotnet`        | .NET inspection skills                       |
-| .NET Aspire  | `LogosBible/AgentConfiguration/common/dotnet-aspire` | .NET skills + Playwright + Aspire MCP server |
+| Project type | Package                                                            | What it installs                                                                          |
+| ------------ | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| Web          | `LogosBible/AgentConfiguration/common/web-instructions`            | TypeScript/JavaScript coding style instructions + web development skills (via dependency) |
+| .NET         | `LogosBible/AgentConfiguration/common/dotnet-instructions`         | C# coding style instructions + .NET development skills (via dependency)                   |
+| .NET Aspire  | `LogosBible/AgentConfiguration/common/dotnet-aspire`               | .NET skills + Playwright + Aspire MCP server                                              |
+| Any          | `LogosBible/AgentConfiguration/common/general-coding-instructions` | General coding guidelines for all file types                                              |
 
 ```sh
-dnx repo-conventions add LogosBible/AgentConfiguration/common/web --open-pr
+dnx repo-conventions add LogosBible/AgentConfiguration/common/web-instructions --open-pr
 ```
 
 This applies `agentic-repo` automatically (no need to add it separately), installs the package's APM dependencies, and adds any package-specific ignore rules.
+
+The `web-instructions` and `dotnet-instructions` packages depend on `web` and `dotnet` respectively and on `general-coding-instructions`, so you do not need to add those separately.
 
 ### What to commit
 
