@@ -1,6 +1,6 @@
 # gitignore-section
 
-This [convention](https://github.com/Faithlife/RepoConventions) manages a named section within the repository-root `.gitignore` file.
+Manages a named section within the repository-root `.gitignore` file.
 
 Settings:
 

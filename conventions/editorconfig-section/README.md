@@ -1,6 +1,6 @@
 # editorconfig-section
 
-This [convention](https://github.com/Faithlife/RepoConventions) manages a named section within the repository-root `.editorconfig` file.
+Manages a named section within the repository-root `.editorconfig` file.
 
 Settings:
 

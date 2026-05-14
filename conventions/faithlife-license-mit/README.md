@@ -1,6 +1,8 @@
 # faithlife-license-mit
 
-This [convention](https://github.com/Faithlife/RepoConventions) applies [license-mit](../license-mit/README.md) with `copyright-holder` set to `Faithlife`.
+Applies [license-mit](../license-mit/README.md) with `copyright-holder` set to `Faithlife`.
+
+This convention does not support any settings.
 
 ```yaml
 conventions:

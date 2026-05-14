@@ -1,6 +1,6 @@
 # editorconfig-yaml
 
-This [convention](https://github.com/Faithlife/RepoConventions) ensures the repository-root `.editorconfig` contains the managed YAML section from [files/.editorconfig](files/.editorconfig).
+Ensures the repository-root `.editorconfig` contains the managed YAML section from [files/.editorconfig](files/.editorconfig).
 
 This convention does not support any settings.
 

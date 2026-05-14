@@ -1,6 +1,6 @@
 # copilot-lsp
 
-This [convention](https://github.com/Faithlife/RepoConventions) manages project-scoped GitHub Copilot CLI LSP server definitions in `.github/lsp.json`.
+Manages project-scoped GitHub Copilot CLI LSP server definitions in `.github/lsp.json`.
 
 ## Settings
 

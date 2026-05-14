@@ -1,6 +1,6 @@
 # license-mit
 
-This [convention](https://github.com/Faithlife/RepoConventions) ensures the repository root `LICENSE` file contains the published MIT license from [files/LICENSE](files/LICENSE).
+Ensures the repository-root `LICENSE` file contains the published MIT license from [files/LICENSE](files/LICENSE).
 
 ## Settings
 

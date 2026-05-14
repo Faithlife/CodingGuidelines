@@ -1,6 +1,6 @@
 # nuget-config
 
-This [convention](https://github.com/Faithlife/RepoConventions) creates or replaces a root `nuget.config` from [files/nuget.config](files/nuget.config).
+Creates or replaces the repository-root `nuget.config` from [files/nuget.config](files/nuget.config).
 
 The published `nuget.config` matches the RepoConventions version except that it omits the `protocolVersion` attribute.
 

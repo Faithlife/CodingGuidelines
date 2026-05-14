@@ -1,6 +1,6 @@
 # dotnet-sdk
 
-This [convention](https://github.com/Faithlife/RepoConventions) ensures that the repository has a `global.json` that uses the specified .NET SDK major version or later.
+Ensures the repository has a `global.json` that uses the specified .NET SDK major version or later.
 
 ## Settings
 

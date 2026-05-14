@@ -10,6 +10,7 @@ conventions:
   - path: ../conventions/faithlife-license-mit
   - path: ../conventions/dotnet-sdk10
   - path: ./conventions/update-editorconfig-csharp
+  - path: ./conventions/update-readme-conventions
 
 pull-request:
   reviewers:

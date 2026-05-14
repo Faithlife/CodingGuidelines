@@ -19,3 +19,15 @@
 
 - VS Code terminal notifications may report long-running Pester scripts as waiting for input even when no prompt is present. Inspect the terminal output before sending input; many repo-conventions tests are quiet for 10-20 seconds while child processes run.
 - `conventions/RunAllTests.ps1` covers convention tests under `conventions/` and `.github/conventions/`.
+
+## Convention READMEs
+
+- Every convention directory must have a local `README.md` that documents the consumer-facing contract for that convention.
+- Start with the convention name as the H1, followed by a concise first paragraph that describes what files or repository state the convention manages. The root README conventions table is generated from this paragraph.
+- Do not link to RepoConventions in each convention description; keep those links in broader usage documentation instead.
+- Include a `Settings` section when the convention accepts settings. Document every setting, whether it is required or optional, valid values, defaults, and important validation rules.
+- State explicitly when a convention does not support settings.
+- Document notable behavior: files created or replaced, managed section marker names, generated assets, external tools invoked, commits the script creates itself, and conditions that cause the convention to skip or fail.
+- For composite conventions, list the child conventions or summarize the main effects so consumers do not have to read `convention.yml` to understand the result.
+- Include a minimal YAML usage example with the published path. For settings-based conventions, show a realistic settings example.
+- Keep implementation details out unless they affect consumers, and update the README in the same change as `convention.yml`, `convention.ps1`, packaged files, or tests.

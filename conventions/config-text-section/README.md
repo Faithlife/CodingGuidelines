@@ -1,6 +1,6 @@
 # config-text-section
 
-This [convention](https://github.com/Faithlife/RepoConventions) manages one named text section.
+Manages one named text section in a repository file.
 
 Settings:
 

@@ -1,6 +1,6 @@
 # prettierignore-section
 
-This [convention](https://github.com/Faithlife/RepoConventions) manages a named section within the repository-root `.prettierignore` file when the repository appears to use [Prettier](https://prettier.io).
+Manages a named section within the repository-root `.prettierignore` file when the repository appears to use [Prettier](https://prettier.io).
 
 Settings:
 
