@@ -9,24 +9,6 @@ $OutputEncoding = $utf8
 
 <#
 .SYNOPSIS
-Writes text as UTF-8 without a byte order mark.
-#>
-function Write-Utf8NoBomFile {
-	param(
-		[Parameter(Mandatory = $true)]
-		[string] $Path,
-
-		[Parameter(Mandatory = $true)]
-		[string] $Content
-	)
-
-	# Use an explicit encoder so file writes never add a byte order mark.
-	$utf8NoBom = [System.Text.UTF8Encoding]::new($false)
-	[System.IO.File]::WriteAllText($Path, $Content, $utf8NoBom)
-}
-
-<#
-.SYNOPSIS
 Compares two files byte-for-byte.
 #>
 function Test-FileContentMatches {

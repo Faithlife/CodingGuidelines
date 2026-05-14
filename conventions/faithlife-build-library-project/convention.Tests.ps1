@@ -2,6 +2,10 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 Describe 'faithlife-build-library-project convention' {
 	BeforeAll {
@@ -48,7 +52,7 @@ Global
 EndGlobal
 "@
 
-			Write-Utf8NoBomFile -Path $Path -Content $solutionContent
+			[System.IO.File]::WriteAllText($Path, $solutionContent, $utf8)
 		}
 
 		function script:GetAllGitStatusLines {
@@ -128,8 +132,8 @@ EndGlobal
 			$buildCsPath = Join-Path $buildDirectoryPath 'Build.cs'
 			$buildCsprojPath = Join-Path $buildDirectoryPath 'Build.csproj'
 			New-Item -ItemType Directory -Path $buildDirectoryPath -Force | Out-Null
-			Write-Utf8NoBomFile -Path $buildCsPath -Content "existing build cs`n"
-			Write-Utf8NoBomFile -Path $buildCsprojPath -Content "existing build csproj`n"
+			[System.IO.File]::WriteAllText($buildCsPath, "existing build cs`n", $utf8)
+			[System.IO.File]::WriteAllText($buildCsprojPath, "existing build csproj`n", $utf8)
 
 			Push-Location $testDirectory
 			try {
@@ -165,7 +169,7 @@ EndGlobal
 			$buildCsPath = Join-Path $testDirectory 'tools/Build/Build.cs'
 			New-Item -ItemType Directory -Path (Split-Path -Parent $buildCsPath) -Force | Out-Null
 			SetSolutionFileContent -Path $solutionPath
-			Write-Utf8NoBomFile -Path $buildCsPath -Content (Get-Content -LiteralPath $expectedBuildCsPath -Raw)
+			[System.IO.File]::WriteAllText($buildCsPath, (Get-Content -LiteralPath $expectedBuildCsPath -Raw), $utf8)
 
 			Push-Location $testDirectory
 			try {

@@ -2,6 +2,10 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 Describe 'license-mit convention' {
 	BeforeAll {
@@ -98,7 +102,7 @@ Describe 'license-mit convention' {
 			# Arrange a repository with a committed non-template license.
 			Initialize-TestRepository -Path $testDirectory
 			$licensePath = Join-Path $testDirectory 'LICENSE'
-			Write-Utf8NoBomFile -Path $licensePath -Content "Old license text`n"
+			[System.IO.File]::WriteAllText($licensePath, "Old license text`n", $utf8)
 
 			Push-Location $testDirectory
 			try {

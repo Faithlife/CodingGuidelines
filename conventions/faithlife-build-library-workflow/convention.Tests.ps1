@@ -2,6 +2,10 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 Describe 'faithlife-build-library-workflow convention' {
 	BeforeAll {
@@ -76,7 +80,7 @@ Describe 'faithlife-build-library-workflow convention' {
 			Initialize-TestRepository -Path $testDirectory
 			$workflowPath = Join-Path $testDirectory '.github/workflows/build.yaml'
 			New-Item -ItemType Directory -Path (Split-Path -Parent $workflowPath) -Force | Out-Null
-			Write-Utf8NoBomFile -Path $workflowPath -Content "name: Placeholder`n"
+			[System.IO.File]::WriteAllText($workflowPath, "name: Placeholder`n", $utf8)
 
 			Push-Location $testDirectory
 			try {

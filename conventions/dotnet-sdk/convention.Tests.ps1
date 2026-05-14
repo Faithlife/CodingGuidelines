@@ -2,6 +2,10 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 # Define the Pester suite for the dotnet-sdk convention.
 Describe 'dotnet-sdk convention' {
@@ -35,7 +39,7 @@ Describe 'dotnet-sdk convention' {
 							rollForward = 'latestFeature'
 						}
 					} | ConvertTo-Json -Depth 3
-					Write-Utf8NoBomFile -Path $globalJsonPath -Content $globalJson
+					[System.IO.File]::WriteAllText($globalJsonPath, $globalJson, $utf8)
 				}
 
 				return Invoke-ConventionScript -ScriptPath $script:conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath
@@ -92,14 +96,14 @@ Describe 'dotnet-sdk convention' {
 
 		# Stub Copilot to create a conforming global.json.
 		function global:copilot {
-			Write-Utf8NoBomFile -Path (Join-Path (Get-Location) 'global.json') -Content @'
+			[System.IO.File]::WriteAllText((Join-Path (Get-Location) 'global.json'), @'
 {
   "sdk": {
     "version": "10.0.100",
     "rollForward": "latestFeature"
   }
 }
-'@
+'@, $utf8)
 		}
 
 		# Run the convention and capture its output.

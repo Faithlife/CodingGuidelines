@@ -132,5 +132,5 @@ if ((Test-Path -LiteralPath $destinationPath -PathType Leaf) -and (Get-Content -
 # Ensure the output directory exists before writing the generated file.
 $destinationDirectory = Split-Path -Parent $destinationPath
 [System.IO.Directory]::CreateDirectory($destinationDirectory) | Out-Null
-Write-Utf8NoBomFile -Path $destinationPath -Content $newContent
+[System.IO.File]::WriteAllText($destinationPath, $newContent, $utf8)
 Write-Host "Updated conventions/editorconfig-csharp/files/.editorconfig."

@@ -123,13 +123,8 @@ function GetConfigTextSectionSettings {
 	return $configTextSectionSettings
 }
 
-# Require and read the convention input settings.
-if ($args.Count -eq 0) {
-	throw 'The input path argument is required.'
-}
-
-$inputPath = $args[0]
-$settings = Read-ConventionSettings -InputPath $inputPath
+# Read the convention input settings.
+$settings = Read-ConventionSettings -InputPath $args[0]
 
 # Leave repositories without Prettier usage unchanged.
 if (-not (TestPrettierUsage)) {

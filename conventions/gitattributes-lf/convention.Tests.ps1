@@ -2,6 +2,10 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 Describe 'gitattributes-lf convention' {
 	BeforeAll {
@@ -88,7 +92,7 @@ Describe 'gitattributes-lf convention' {
 			$gitattributesPath = Join-Path $testDirectory '.gitattributes'
 			$scriptPath = Join-Path $testDirectory 'script.ps1'
 			$notesPath = Join-Path $testDirectory 'notes.txt'
-			Write-Utf8NoBomFile -Path $gitattributesPath -Content "* -text`n*.ps1 text eol=crlf`n*.png binary`n"
+			[System.IO.File]::WriteAllText($gitattributesPath, "* -text`n*.ps1 text eol=crlf`n*.png binary`n", $utf8)
 			[System.IO.File]::WriteAllText($scriptPath, "Write-Host 'test'`r`n", [System.Text.UTF8Encoding]::new($false))
 			[System.IO.File]::WriteAllText($notesPath, "line one`r`nline two`r`n", [System.Text.UTF8Encoding]::new($false))
 
@@ -100,7 +104,7 @@ Describe 'gitattributes-lf convention' {
 				function global:copilot {
 					# Simulate Copilot rewriting attributes to the compliant shape.
 					$global:CopilotCallCount++
-					Write-Utf8NoBomFile -Path $gitattributesPath -Content "* text=auto eol=lf`n*.png binary`n"
+					[System.IO.File]::WriteAllText($gitattributesPath, "* text=auto eol=lf`n*.png binary`n", $utf8)
 				}
 
 				# Apply the convention while the Copilot stub is in scope.
@@ -140,7 +144,7 @@ Describe 'gitattributes-lf convention' {
 			Initialize-TestRepository -Path $testDirectory
 			$gitattributesPath = Join-Path $testDirectory '.gitattributes'
 			$expectedContent = "* text=auto eol=lf`n*.ps1 text eol=crlf`n*.png binary`n"
-			Write-Utf8NoBomFile -Path $gitattributesPath -Content $expectedContent
+			[System.IO.File]::WriteAllText($gitattributesPath, $expectedContent, $utf8)
 
 			Push-Location $testDirectory
 			try {
@@ -174,7 +178,7 @@ Describe 'gitattributes-lf convention' {
 			# Arrange a repository with noncompliant attributes for the first run.
 			Initialize-TestRepository -Path $testDirectory
 			$gitattributesPath = Join-Path $testDirectory '.gitattributes'
-			Write-Utf8NoBomFile -Path $gitattributesPath -Content "* -text`n"
+			[System.IO.File]::WriteAllText($gitattributesPath, "* -text`n", $utf8)
 
 			Push-Location $testDirectory
 			try {
@@ -184,7 +188,7 @@ Describe 'gitattributes-lf convention' {
 				function global:copilot {
 					# Simulate Copilot rewriting attributes to the compliant shape.
 					$global:CopilotCallCount++
-					Write-Utf8NoBomFile -Path $gitattributesPath -Content "* text=auto eol=lf`n"
+					[System.IO.File]::WriteAllText($gitattributesPath, "* text=auto eol=lf`n", $utf8)
 				}
 
 				# Apply the convention twice in the same repository.

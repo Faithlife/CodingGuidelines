@@ -524,7 +524,7 @@ function Invoke-ConfigTextSection {
 		[System.IO.Directory]::CreateDirectory($targetDirectory) | Out-Null
 	}
 
-	Write-Utf8NoBomFile -Path $targetPath -Content $newContent
+	[System.IO.File]::WriteAllText($targetPath, $newContent, $utf8)
 
 	# Let Copilot make follow-up fixes when agent instructions are configured.
 	if ($null -ne $configuredAgent -and -not [string]::IsNullOrWhiteSpace($configuredAgent.Instructions)) {
@@ -544,7 +544,7 @@ function Invoke-ConfigTextSection {
 		$reconciledSectionResult = Set-ConfigTextSectionText -Content $copilotContent -Section $configuredSection -LineEnding $copilotLineEnding -TargetPath $targetPath
 
 		if ($reconciledSectionResult.Updated) {
-			Write-Utf8NoBomFile -Path $targetPath -Content $reconciledSectionResult.Content
+			[System.IO.File]::WriteAllText($targetPath, $reconciledSectionResult.Content, $utf8)
 		}
 	}
 

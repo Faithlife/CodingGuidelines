@@ -122,7 +122,7 @@ function SetCompliantGitattributes {
 
 	if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
 		Write-Host "Creating '$displayPath' with LF normalization enabled."
-		Write-Utf8NoBomFile -Path $Path -Content ($requiredRule + "`n")
+		[System.IO.File]::WriteAllText($Path, ($requiredRule + "`n"), $utf8)
 		return
 	}
 
@@ -179,7 +179,7 @@ if (-not ($ignoreRevsLines -contains $renormalizeCommitId)) {
 }
 
 # Write and commit the updated blame-ignore list.
-Write-Utf8NoBomFile -Path $gitBlameIgnoreRevsPath -Content (($ignoreRevsLines -join "`n") + "`n")
+[System.IO.File]::WriteAllText($gitBlameIgnoreRevsPath, (($ignoreRevsLines -join "`n") + "`n"), $utf8)
 InvokeGit -Arguments @('add', '.git-blame-ignore-revs') -FailureMessage "Failed to stage '$(Format-RepositoryRelativePath -Path $gitBlameIgnoreRevsPath)'."
 $ignoreRevsCommitId = NewCommitFromStagedChanges -Message 'Ignore CRLF to LF for git blame'
 

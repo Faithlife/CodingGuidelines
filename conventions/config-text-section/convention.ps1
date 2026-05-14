@@ -11,12 +11,6 @@ $OutputEncoding = $utf8
 $configTextSectionPath = Join-Path $PSScriptRoot '..' 'scripts' 'ConfigTextSection.ps1'
 . $configTextSectionPath
 
-# Require the convention input path before reading settings.
-if ($args.Count -eq 0) {
-	throw 'The input path argument is required.'
-}
-
 # Apply the configured text section to the target repository.
-$inputPath = $args[0]
-$settings = Read-ConventionSettings -InputPath $inputPath
+$settings = Read-ConventionSettings -InputPath $args[0]
 Invoke-ConfigTextSection -Settings $settings

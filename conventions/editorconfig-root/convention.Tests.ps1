@@ -2,6 +2,10 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 Describe 'editorconfig-root convention' {
 	BeforeAll {
@@ -17,10 +21,10 @@ Describe 'editorconfig-root convention' {
 			# Arrange an isolated repository with the root editorconfig convention enabled.
 			Copy-TestConventionAssets -TestDirectory $testDirectory
 			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
 conventions:
 - path: ../conventions/editorconfig-root
-"@
+"@, $utf8)
 			Initialize-TestRepository -Path $testDirectory
 
 			# Apply the convention under test.
@@ -51,11 +55,11 @@ conventions:
 			# Arrange a repository with stale managed root settings and unrelated content.
 			Copy-TestConventionAssets -TestDirectory $testDirectory
 			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
 conventions:
 - path: ../conventions/editorconfig-root
-"@
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.editorconfig') -Content @"
+"@, $utf8)
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.editorconfig'), @"
 # DO NOT EDIT: root convention
 root = true
 
@@ -65,7 +69,7 @@ charset = latin1
 
 [*.md]
 trim_trailing_whitespace = false
-"@
+"@, $utf8)
 			Initialize-TestRepository -Path $testDirectory
 
 			# Apply the convention under test.
@@ -94,10 +98,10 @@ trim_trailing_whitespace = false
 			Copy-TestConventionAssets -TestDirectory $testDirectory
 			$testCopilot = New-TestCopilotCommand -TestDirectory $testDirectory
 			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
 conventions:
 - path: ../conventions/editorconfig-root
-"@
+"@, $utf8)
 			Initialize-TestRepository -Path $testDirectory
 			$expectedInstructions = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-root/agent-instructions.md') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
 

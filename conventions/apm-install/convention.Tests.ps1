@@ -2,6 +2,10 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 # Define the Pester suite for the apm-install convention.
 Describe 'apm-install convention' {
@@ -77,16 +81,17 @@ exit 0
 		}
 	}
 
-	It 'ignores the input path and runs apm install --update --target agent-skills' {
+	It 'runs apm install --update --target copilot' {
 		# Set up a repository with apm.yml and a fake argument capture file.
 		$testDirectory = New-TemporaryDirectory
 		$toolDirectory = New-TemporaryDirectory
 		$argumentsPath = Join-Path $toolDirectory 'apm-arguments.txt'
+		$inputPath = New-ConventionInputFile -Settings @{}
 		$originalPath = $env:PATH
 
 		try {
 			# Arrange a fake apm command that records its argument list.
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory 'apm.yml') -Content "packages: []`n"
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'apm.yml'), "packages: []`n", $utf8)
 			Initialize-TestRepository -Path $testDirectory
 			NewFakeApmCommand -ToolDirectory $toolDirectory -WindowsScript @'
 @echo off
@@ -103,19 +108,20 @@ exit 0
 			$env:PATH = $toolDirectory + [System.IO.Path]::PathSeparator + $originalPath
 
 			# Run the convention and assert it invokes apm with the default arguments.
-			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath (Join-Path $testDirectory 'missing-input.json') } | Should -Not -Throw
-			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install --update --target agent-skills'
+			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
+			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install --update --target copilot'
 		}
 		finally {
 			# Restore process state and remove temporary files.
 			$env:PATH = $originalPath
 			Remove-Item Env:APM_ARGUMENTS_PATH -ErrorAction SilentlyContinue
+			Remove-Item -LiteralPath $inputPath -Force
 			Remove-Item -LiteralPath $toolDirectory -Recurse -Force
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
 		}
 	}
 
-	It 'passes configured packages to apm install --update --target agent-skills' {
+	It 'passes configured packages to apm install --update --target copilot' {
 		# Set up convention input that includes configured apm packages.
 		$testDirectory = New-TemporaryDirectory
 		$toolDirectory = Join-Path $testDirectory 'tools'
@@ -147,7 +153,7 @@ exit 0
 
 			# Run the convention and assert configured packages are appended.
 			{ & $conventionScriptPath $inputPath } | Should -Not -Throw
-			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install --update --target agent-skills richlander/dotnet-inspect/skills/dotnet-inspect microsoft/playwright-cli/skills/playwright-cli'
+			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install --update --target copilot richlander/dotnet-inspect/skills/dotnet-inspect microsoft/playwright-cli/skills/playwright-cli'
 		}
 		finally {
 			# Restore process state and remove temporary files.
@@ -163,13 +169,14 @@ exit 0
 		$testDirectory = New-TemporaryDirectory
 		$toolDirectory = New-TemporaryDirectory
 		$lockFilePath = Join-Path $testDirectory 'apm.lock.yaml'
+		$inputPath = New-ConventionInputFile -Settings @{}
 		$originalPath = $env:PATH
 		$originalLockContent = "packages:`n  sample: 1.0.0`n"
 
 		try {
 			# Arrange committed apm files and a fake command that modifies the lock file.
-			Write-Utf8NoBomFile -Path $lockFilePath -Content $originalLockContent
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory 'apm.yml') -Content "packages: []`n"
+			[System.IO.File]::WriteAllText($lockFilePath, $originalLockContent, $utf8)
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'apm.yml'), "packages: []`n", $utf8)
 			Initialize-TestRepository -Path $testDirectory
 
 			NewFakeApmCommand -ToolDirectory $toolDirectory -WindowsScript @'
@@ -185,13 +192,14 @@ exit 0
 			$env:PATH = $toolDirectory + [System.IO.Path]::PathSeparator + $originalPath
 
 			# Run the convention and assert the lock-only change is reverted.
-			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory } | Should -Not -Throw
+			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
 			(Get-Content -LiteralPath $lockFilePath -Raw) | Should -Be $originalLockContent
 			(Get-GitStatusLines -TestDirectory $testDirectory) | Should -BeNullOrEmpty
 		}
 		finally {
 			# Restore process state and remove temporary repositories.
 			$env:PATH = $originalPath
+			Remove-Item -LiteralPath $inputPath -Force
 			Remove-Item -LiteralPath $toolDirectory -Recurse -Force
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
 		}
@@ -203,13 +211,14 @@ exit 0
 		$toolDirectory = New-TemporaryDirectory
 		$lockFilePath = Join-Path $testDirectory 'apm.lock.yaml'
 		$packageFilePath = Join-Path $testDirectory 'package.json'
+		$inputPath = New-ConventionInputFile -Settings @{}
 		$originalPath = $env:PATH
 
 		try {
 			# Arrange committed files and a fake command that modifies both files.
-			Write-Utf8NoBomFile -Path $lockFilePath -Content "packages:`n  sample: 1.0.0`n"
-			Write-Utf8NoBomFile -Path $packageFilePath -Content "{}`n"
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory 'apm.yml') -Content "packages: []`n"
+			[System.IO.File]::WriteAllText($lockFilePath, "packages:`n  sample: 1.0.0`n", $utf8)
+			[System.IO.File]::WriteAllText($packageFilePath, "{}`n", $utf8)
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'apm.yml'), "packages: []`n", $utf8)
 			Initialize-TestRepository -Path $testDirectory
 
 			NewFakeApmCommand -ToolDirectory $toolDirectory -WindowsScript @'
@@ -227,13 +236,14 @@ exit 0
 			$env:PATH = $toolDirectory + [System.IO.Path]::PathSeparator + $originalPath
 
 			# Run the convention and assert it preserves meaningful apm changes.
-			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory } | Should -Not -Throw
+			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
 			(Get-Content -LiteralPath $lockFilePath -Raw) | Should -Match 'updated: true'
 			Get-GitStatusLines -TestDirectory $testDirectory | Should -Be @(' M apm.lock.yaml', ' M package.json')
 		}
 		finally {
 			# Restore process state and remove temporary repositories.
 			$env:PATH = $originalPath
+			Remove-Item -LiteralPath $inputPath -Force
 			Remove-Item -LiteralPath $toolDirectory -Recurse -Force
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
 		}

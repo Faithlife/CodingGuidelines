@@ -2,6 +2,10 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 # Define the Pester suite for the config-text-section convention.
 Describe 'config-text-section convention' {
@@ -114,7 +118,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 
 		try {
 			$targetPath = Join-Path $testDirectory '.editorconfig'
-			Write-Utf8NoBomFile -Path $targetPath -Content "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n"
+			[System.IO.File]::WriteAllText($targetPath, "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n", $utf8)
 			$global:CopilotCallCount = 0
 
 			# Stub Copilot so any unexpected invocation is observable.
@@ -152,7 +156,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 			# Stub Copilot to corrupt the managed section after the convention writes it.
 			function global:copilot {
 				$global:CopilotCallCount++
-				Write-Utf8NoBomFile -Path $targetPath -Content "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = latin1`n# END DO NOT EDIT`n"
+				[System.IO.File]::WriteAllText($targetPath, "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = latin1`n# END DO NOT EDIT`n", $utf8)
 			}
 
 			# Run the convention with agent instructions configured.
@@ -249,7 +253,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 
 		try {
 			$targetPath = Join-Path $testDirectory '.editorconfig'
-			Write-Utf8NoBomFile -Path $targetPath -Content "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = latin1`n# END DO NOT EDIT`n"
+			[System.IO.File]::WriteAllText($targetPath, "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = latin1`n# END DO NOT EDIT`n", $utf8)
 
 			# Run the convention with replacement section text.
 			InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = '/.editorconfig'; name = 'general-editorconfig'; text = "[*]`ncharset = utf-8`nend_of_line = lf"; 'comment-prefix' = '#' }
@@ -271,7 +275,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 			$targetPath = Join-Path $testDirectory '.editorconfig'
 			$expectedContent = "root = true`n`n# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n`n[*.cs]`nindent_style = space`n"
 			$expectedWriteTime = [datetime]::SpecifyKind([datetime]::Parse('2001-02-03T04:05:06Z'), [System.DateTimeKind]::Utc)
-			Write-Utf8NoBomFile -Path $targetPath -Content $expectedContent
+			[System.IO.File]::WriteAllText($targetPath, $expectedContent, $utf8)
 			[System.IO.File]::SetLastWriteTimeUtc($targetPath, $expectedWriteTime)
 
 			# Run the convention against the already-compliant file.
@@ -294,7 +298,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 
 		try {
 			$targetPath = Join-Path $testDirectory '.editorconfig'
-			Write-Utf8NoBomFile -Path $targetPath -Content "root = true`n`n# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = latin1`n# END DO NOT EDIT`n`n[*.cs]`nindent_style = space`n"
+			[System.IO.File]::WriteAllText($targetPath, "root = true`n`n# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = latin1`n# END DO NOT EDIT`n`n[*.cs]`nindent_style = space`n", $utf8)
 
 			# Run the convention to replace only the managed section.
 			InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = '/.editorconfig'; name = 'general-editorconfig'; text = "[*]`ncharset = utf-8"; 'comment-prefix' = '#' }
@@ -332,7 +336,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 
 		try {
 			$targetPath = Join-Path $testDirectory '.editorconfig'
-			Write-Utf8NoBomFile -Path $targetPath -Content "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n`n# DO NOT EDIT: general-editorconfig convention`n[*]`nindent_style = space`n# END DO NOT EDIT`n"
+			[System.IO.File]::WriteAllText($targetPath, "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n`n# DO NOT EDIT: general-editorconfig convention`n[*]`nindent_style = space`n# END DO NOT EDIT`n", $utf8)
 
 			# Assert duplicate managed sections are rejected.
 			{ InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = '/.editorconfig'; name = 'general-editorconfig'; text = '[*]'; 'comment-prefix' = '#' } } | Should -Throw "Found multiple managed sections named 'general-editorconfig' in '$targetPath'."
@@ -349,7 +353,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 
 		try {
 			$targetPath = Join-Path $testDirectory '.editorconfig'
-			Write-Utf8NoBomFile -Path $targetPath -Content "root = true`r`n"
+			[System.IO.File]::WriteAllText($targetPath, "root = true`r`n", $utf8)
 
 			# Run the convention against the CRLF file.
 			InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = '/.editorconfig'; name = 'general-editorconfig'; text = "[*]`ncharset = utf-8"; 'comment-prefix' = '#' }

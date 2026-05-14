@@ -2,6 +2,10 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 # Define the Pester suite for the dotnet-slnx convention.
 Describe 'dotnet-slnx convention' {
@@ -40,7 +44,7 @@ Global
 EndGlobal
 "@
 
-			Write-Utf8NoBomFile -Path $Path -Content $solutionContent
+			[System.IO.File]::WriteAllText($Path, $solutionContent, $utf8)
 		}
 	}
 
@@ -83,7 +87,7 @@ EndGlobal
 
 		try {
 			$dotSettingsPath = Join-Path $testDirectory 'Orphan.sln.DotSettings'
-			Write-Utf8NoBomFile -Path $dotSettingsPath -Content 'orphan'
+			[System.IO.File]::WriteAllText($dotSettingsPath, 'orphan', $utf8)
 
 			# Run the convention with no solution migration to pair with the file.
 			InvokeDotnetSlnxConvention -TestDirectory $testDirectory
@@ -107,9 +111,9 @@ EndGlobal
 			$dotSettingsPath = Join-Path $testDirectory 'Conflict.sln.DotSettings'
 			$slnxDotSettingsPath = Join-Path $testDirectory 'Conflict.slnx.DotSettings'
 
-			Write-Utf8NoBomFile -Path $slnxPath -Content '<Solution />'
-			Write-Utf8NoBomFile -Path $dotSettingsPath -Content 'source'
-			Write-Utf8NoBomFile -Path $slnxDotSettingsPath -Content 'destination'
+			[System.IO.File]::WriteAllText($slnxPath, '<Solution />', $utf8)
+			[System.IO.File]::WriteAllText($dotSettingsPath, 'source', $utf8)
+			[System.IO.File]::WriteAllText($slnxDotSettingsPath, 'destination', $utf8)
 
 			$message = $null
 

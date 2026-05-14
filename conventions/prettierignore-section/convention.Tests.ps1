@@ -2,6 +2,10 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 Describe 'prettierignore-section convention' {
 	BeforeAll {
@@ -62,7 +66,7 @@ Describe 'prettierignore-section convention' {
 		try {
 			# Arrange an existing prettierignore file.
 			$prettierignorePath = Join-Path $testDirectory '.prettierignore'
-			Write-Utf8NoBomFile -Path $prettierignorePath -Content "existing-entry/`n"
+			[System.IO.File]::WriteAllText($prettierignorePath, "existing-entry/`n", $utf8)
 
 			# Apply the convention once and assert it appends the managed section.
 			$output = InvokePrettierignoreSectionConvention -TestDirectory $testDirectory -Settings (GetDefaultSettings)
@@ -86,7 +90,7 @@ Describe 'prettierignore-section convention' {
 
 		try {
 			# Arrange a Prettier config marker file.
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.prettierrc') -Content "{}"
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.prettierrc'), "{}", $utf8)
 
 			# Apply the convention after Prettier detection succeeds.
 			InvokePrettierignoreSectionConvention -TestDirectory $testDirectory -Settings (GetDefaultSettings) | Out-Null
@@ -104,7 +108,7 @@ Describe 'prettierignore-section convention' {
 
 		try {
 			# Arrange a JavaScript Prettier config marker file.
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory 'prettier.config.js') -Content "module.exports = {};`n"
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'prettier.config.js'), "module.exports = {};`n", $utf8)
 
 			# Apply the convention after Prettier detection succeeds.
 			InvokePrettierignoreSectionConvention -TestDirectory $testDirectory -Settings (GetDefaultSettings) | Out-Null
@@ -122,7 +126,7 @@ Describe 'prettierignore-section convention' {
 
 		try {
 			# Arrange a package manifest with top-level Prettier settings.
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory 'package.json') -Content '{"prettier":{"singleQuote":true}}'
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'package.json'), '{"prettier":{"singleQuote":true}}', $utf8)
 
 			# Apply the convention after Prettier detection succeeds.
 			InvokePrettierignoreSectionConvention -TestDirectory $testDirectory -Settings (GetDefaultSettings) | Out-Null
@@ -140,7 +144,7 @@ Describe 'prettierignore-section convention' {
 
 		try {
 			# Arrange a package manifest with a Prettier dev dependency.
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory 'package.json') -Content '{"devDependencies":{"prettier":"^3.0.0"}}'
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'package.json'), '{"devDependencies":{"prettier":"^3.0.0"}}', $utf8)
 
 			# Apply the convention after Prettier detection succeeds.
 			InvokePrettierignoreSectionConvention -TestDirectory $testDirectory -Settings (GetDefaultSettings) | Out-Null
@@ -158,7 +162,7 @@ Describe 'prettierignore-section convention' {
 
 		try {
 			# Arrange a lockfile-only transitive Prettier reference.
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory 'package-lock.json') -Content '{"packages":{"node_modules/prettier":{"version":"3.0.0"}}}'
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'package-lock.json'), '{"packages":{"node_modules/prettier":{"version":"3.0.0"}}}', $utf8)
 
 			# Apply the convention where direct Prettier detection should fail.
 			$output = InvokePrettierignoreSectionConvention -TestDirectory $testDirectory -Settings (GetDefaultSettings)
@@ -177,7 +181,7 @@ Describe 'prettierignore-section convention' {
 
 		try {
 			# Arrange a malformed package manifest.
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory 'package.json') -Content '{'
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'package.json'), '{', $utf8)
 
 			# Assert malformed JSON is reported during Prettier detection.
 			{ InvokePrettierignoreSectionConvention -TestDirectory $testDirectory -Settings (GetDefaultSettings) } | Should -Throw "Failed to parse 'package.json' while detecting Prettier."
@@ -192,7 +196,7 @@ Describe 'prettierignore-section convention' {
 
 		try {
 			# Arrange a Prettier config marker file.
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.prettierrc') -Content "{}"
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.prettierrc'), "{}", $utf8)
 
 			# Apply the convention with custom section settings.
 			InvokePrettierignoreSectionConvention -TestDirectory $testDirectory -Settings @{ name = 'custom'; text = "tmp/`ncache/" } | Out-Null

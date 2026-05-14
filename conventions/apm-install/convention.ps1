@@ -9,16 +9,11 @@ $OutputEncoding = $utf8
 
 # Collect optional package settings from the convention input.
 $packages = @()
+$conventionInput = Get-Content -LiteralPath $args[0] -Raw | ConvertFrom-Json -AsHashtable
+$settings = $conventionInput.settings
 
-if ($args.Count -gt 0 -and (Test-Path -LiteralPath $args[0])) {
-	$conventionInput = Get-Content -LiteralPath $args[0] -Raw | ConvertFrom-Json
-	$packagesProperty = if ($null -ne $conventionInput.settings) {
-		$conventionInput.settings.PSObject.Properties['packages']
-	}
-
-	if ($null -ne $packagesProperty -and $null -ne $packagesProperty.Value) {
-		[string[]] $packages = @($conventionInput.settings.packages)
-	}
+if ($null -ne $settings -and $settings.ContainsKey('packages') -and $null -ne $settings.packages) {
+	[string[]] $packages = @($settings.packages)
 }
 
 # Skip when neither an apm manifest nor explicit packages are available.

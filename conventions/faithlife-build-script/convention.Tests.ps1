@@ -2,6 +2,10 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 Describe 'faithlife-build-script convention' {
 	BeforeAll {
@@ -84,7 +88,7 @@ Describe 'faithlife-build-script convention' {
 			# Arrange a repository with a committed placeholder build script.
 			Initialize-TestRepository -Path $testDirectory
 			$buildScriptPath = Join-Path $testDirectory 'build.ps1'
-			Write-Utf8NoBomFile -Path $buildScriptPath -Content "Write-Host 'placeholder'`n"
+			[System.IO.File]::WriteAllText($buildScriptPath, "Write-Host 'placeholder'`n", $utf8)
 
 			Push-Location $testDirectory
 			try {

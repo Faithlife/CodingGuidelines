@@ -78,7 +78,7 @@ Describe 'update-editorconfig-csharp convention' {
 				'indent_size = 4'
 				'```'
 			) -join "`n") + "`n"
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory 'sections' 'csharp' 'editorconfig.md') -Content $markdownContent
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'sections' 'csharp' 'editorconfig.md'), $markdownContent, $utf8)
 			Initialize-TestRepository -Path $testDirectory
 
 			# Run the convention against the isolated repository.

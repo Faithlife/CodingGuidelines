@@ -2,6 +2,10 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 Describe 'editorconfig-section convention' {
 	BeforeAll {
@@ -17,7 +21,7 @@ Describe 'editorconfig-section convention' {
 			# Arrange an isolated repository with a configured editorconfig section.
 			Copy-TestConventionAssets -TestDirectory $testDirectory
 			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
 conventions:
 - path: ../conventions/editorconfig-section
   settings:
@@ -26,7 +30,7 @@ conventions:
       [*.txt]
       indent_style = space
       trim_trailing_whitespace = false
-"@
+"@, $utf8)
 			Initialize-TestRepository -Path $testDirectory
 
 			# Apply the convention under test.
@@ -57,7 +61,7 @@ conventions:
 			Copy-TestConventionAssets -TestDirectory $testDirectory
 			$testCopilot = New-TestCopilotCommand -TestDirectory $testDirectory
 			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
 conventions:
 - path: ../conventions/editorconfig-section
   settings:
@@ -69,7 +73,7 @@ conventions:
       instructions: |
         Validate editorconfig changes.
         Leave fixes unstaged.
-"@
+"@, $utf8)
 			Initialize-TestRepository -Path $testDirectory
 
 			# Apply the convention with a test Copilot command directory.
@@ -91,7 +95,7 @@ conventions:
 			# Arrange an isolated repository with a configured commit message.
 			Copy-TestConventionAssets -TestDirectory $testDirectory
 			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content '{"conventions":[{"path":"../conventions/editorconfig-section","commit":{"message":"Add editorconfig"},"settings":{"name":"files","text":"[*.md]\ntrim_trailing_whitespace = false\n"}}]}'
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), '{"conventions":[{"path":"../conventions/editorconfig-section","commit":{"message":"Add editorconfig"},"settings":{"name":"files","text":"[*.md]\ntrim_trailing_whitespace = false\n"}}]}', $utf8)
 			Initialize-TestRepository -Path $testDirectory
 			$initialHead = Get-CommitId -TestDirectory $testDirectory
 

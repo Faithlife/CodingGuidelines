@@ -2,6 +2,10 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 Describe 'editorconfig-yaml convention' {
 	BeforeAll {
@@ -17,10 +21,10 @@ Describe 'editorconfig-yaml convention' {
 			# Arrange an isolated repository with the YAML editorconfig convention enabled.
 			Copy-TestConventionAssets -TestDirectory $testDirectory
 			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
 conventions:
 - path: ../conventions/editorconfig-yaml
-"@
+"@, $utf8)
 			Initialize-TestRepository -Path $testDirectory
 
 			# Apply the convention under test.
@@ -48,11 +52,11 @@ conventions:
 			# Arrange a repository with stale managed YAML settings and unrelated content.
 			Copy-TestConventionAssets -TestDirectory $testDirectory
 			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
 conventions:
 - path: ../conventions/editorconfig-yaml
-"@
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.editorconfig') -Content @"
+"@, $utf8)
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.editorconfig'), @"
 root = true
 
 # DO NOT EDIT: yaml convention
@@ -63,7 +67,7 @@ indent_size = 8
 
 [*.md]
 trim_trailing_whitespace = false
-"@
+"@, $utf8)
 			Initialize-TestRepository -Path $testDirectory
 
 			# Apply the convention under test.
@@ -91,10 +95,10 @@ trim_trailing_whitespace = false
 			# Arrange an isolated repository with the YAML editorconfig convention enabled.
 			Copy-TestConventionAssets -TestDirectory $testDirectory
 			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
 conventions:
 - path: ../conventions/editorconfig-yaml
-"@
+"@, $utf8)
 			Initialize-TestRepository -Path $testDirectory
 			$initialHead = Get-CommitId -TestDirectory $testDirectory
 

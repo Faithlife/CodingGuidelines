@@ -2,6 +2,10 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 Describe 'editorconfig-json convention' {
 	BeforeAll {
@@ -17,10 +21,10 @@ Describe 'editorconfig-json convention' {
 			# Arrange an isolated repository with the JSON editorconfig convention enabled.
 			Copy-TestConventionAssets -TestDirectory $testDirectory
 			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
 conventions:
 - path: ../conventions/editorconfig-json
-"@
+"@, $utf8)
 			Initialize-TestRepository -Path $testDirectory
 
 			# Apply the convention under test.
@@ -48,11 +52,11 @@ conventions:
 			# Arrange a repository with stale managed JSON settings and unrelated content.
 			Copy-TestConventionAssets -TestDirectory $testDirectory
 			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
 conventions:
 - path: ../conventions/editorconfig-json
-"@
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.editorconfig') -Content @"
+"@, $utf8)
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.editorconfig'), @"
 root = true
 
 # DO NOT EDIT: json convention
@@ -63,7 +67,7 @@ indent_size = 8
 
 [*.ps1]
 indent_size = 4
-"@
+"@, $utf8)
 			Initialize-TestRepository -Path $testDirectory
 
 			# Apply the convention under test.
@@ -92,10 +96,10 @@ indent_size = 4
 			Copy-TestConventionAssets -TestDirectory $testDirectory
 			$testCopilot = New-TestCopilotCommand -TestDirectory $testDirectory
 			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
 conventions:
 - path: ../conventions/editorconfig-json
-"@
+"@, $utf8)
 			Initialize-TestRepository -Path $testDirectory
 			$expectedInstructions = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-json/agent-instructions.md') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
 

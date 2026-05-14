@@ -70,13 +70,8 @@ function GetGlobalJsonSdkStatus {
 	}
 }
 
-# Require and read the convention input settings.
-if ($args.Count -eq 0) {
-	throw 'The input path argument is required.'
-}
-
-$inputPath = $args[0]
-$settings = Read-ConventionSettings -InputPath $inputPath
+# Read the convention input settings.
+$settings = Read-ConventionSettings -InputPath $args[0]
 
 if ($null -eq $settings -or -not $settings.ContainsKey('version')) {
 	throw "The 'version' setting is required."

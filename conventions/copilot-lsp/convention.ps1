@@ -179,14 +179,8 @@ function ConvertToIndentedJson {
 	return $rootJsonObject.ToJsonString($options)
 }
 
-# Require the convention input path before reading settings.
-if ($args.Count -eq 0) {
-	throw 'The input path argument is required.'
-}
-
 # Read and validate the desired server configuration.
-$inputPath = $args[0]
-$inputRoot = ReadJsonObjectFile -Path $inputPath -Description 'The convention input file'
+$inputRoot = ReadJsonObjectFile -Path $args[0] -Description 'The convention input file'
 $settings = GetRequiredJsonObjectProperty -Object $inputRoot -PropertyName 'settings' -Description "The 'settings' property"
 $desiredServers = GetRequiredJsonObjectProperty -Object $settings -PropertyName 'servers' -Description "The 'servers' setting"
 
@@ -222,7 +216,7 @@ if (-not [string]::IsNullOrWhiteSpace($lspConfigDirectory)) {
 
 # Write the updated configuration and report whether it was created.
 $content = (ConvertToIndentedJson -JsonObject $rootObject) + "`n"
-Write-Utf8NoBomFile -Path $lspConfigPath -Content $content
+[System.IO.File]::WriteAllText($lspConfigPath, $content, $utf8)
 
 if ($fileExisted) {
 	Write-Host "Updated '$lspConfigDisplayPath' with the configured Copilot LSP servers."

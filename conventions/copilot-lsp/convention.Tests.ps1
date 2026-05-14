@@ -2,6 +2,10 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 # Define the Pester suite for the copilot-lsp convention.
 Describe 'copilot-lsp convention' {
@@ -89,7 +93,7 @@ Describe 'copilot-lsp convention' {
 			Initialize-TestRepository -Path $testDirectory
 			$lspConfigPath = Join-Path $testDirectory '.github' 'lsp.json'
 			[System.IO.Directory]::CreateDirectory((Split-Path -Parent $lspConfigPath)) | Out-Null
-			Write-Utf8NoBomFile -Path $lspConfigPath -Content @'
+			[System.IO.File]::WriteAllText($lspConfigPath, @'
 {
   "lspServers": {
     "python": {
@@ -112,7 +116,7 @@ Describe 'copilot-lsp convention' {
   },
   "otherSetting": true
 }
-'@
+'@, $utf8)
 
 			# Commit the existing config so later status checks show only convention changes.
 			Push-Location $testDirectory
@@ -172,7 +176,7 @@ Describe 'copilot-lsp convention' {
 			Initialize-TestRepository -Path $testDirectory
 			$lspConfigPath = Join-Path $testDirectory '.github' 'lsp.json'
 			[System.IO.Directory]::CreateDirectory((Split-Path -Parent $lspConfigPath)) | Out-Null
-			Write-Utf8NoBomFile -Path $lspConfigPath -Content @'
+			[System.IO.File]::WriteAllText($lspConfigPath, @'
 {
   "lspServers": {
     "python": {
@@ -204,7 +208,7 @@ Describe 'copilot-lsp convention' {
     }
   }
 }
-'@
+'@, $utf8)
 
 			# Commit the matching config so status checks can verify idempotency.
 			Push-Location $testDirectory

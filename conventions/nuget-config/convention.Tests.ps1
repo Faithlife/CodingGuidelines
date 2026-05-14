@@ -2,6 +2,10 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 Describe 'nuget-config convention' {
 	BeforeAll {
@@ -64,7 +68,7 @@ Describe 'nuget-config convention' {
 			Initialize-TestRepository -Path $testDirectory
 			$originalNuGetConfigPath = Join-Path $testDirectory 'NuGet.Config'
 			$expectedContent = Get-Content -LiteralPath $expectedNuGetConfigPath -Raw
-			Write-Utf8NoBomFile -Path $originalNuGetConfigPath -Content $expectedContent
+			[System.IO.File]::WriteAllText($originalNuGetConfigPath, $expectedContent, $utf8)
 
 			Push-Location $testDirectory
 			try {
@@ -106,7 +110,7 @@ Describe 'nuget-config convention' {
   </packageSources>
 </configuration>
 "@
-			Write-Utf8NoBomFile -Path $nuGetConfigPath -Content $existingContent
+			[System.IO.File]::WriteAllText($nuGetConfigPath, $existingContent, $utf8)
 
 			Push-Location $testDirectory
 			try {

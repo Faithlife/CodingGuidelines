@@ -40,7 +40,7 @@ function New-ConventionInputFile {
 	}
 
 	# Write the input with the same encoding conventions as published files.
-	Write-Utf8NoBomFile -Path $inputPath -Content $content
+	[System.IO.File]::WriteAllText($inputPath, $content, $utf8)
 	return $inputPath
 }
 
@@ -95,7 +95,7 @@ function Initialize-TestRepository {
 		& git config core.autocrlf false
 
 		# Create a baseline commit so tests can inspect later convention changes.
-		Write-Utf8NoBomFile -Path (Join-Path $Path 'README.md') -Content "# Test`n"
+		[System.IO.File]::WriteAllText((Join-Path $Path 'README.md'), "# Test`n", $utf8)
 		& git add -A
 		& git commit -m 'Initial' | Out-Null
 	}
@@ -253,11 +253,18 @@ function New-TestCopilotCommand {
 		$escapedInputPath = $inputPath.Replace('"', '""')
 		$escapedArgumentsPath = $argumentsPath.Replace('"', '""')
 		$escapedCopilotHomePath = $copilotHomePath.Replace('"', '""')
-		Write-Utf8NoBomFile -Path $commandPath -Content "@echo off`r`n> `"$escapedArgumentsPath`" echo(%*`r`n> `"$escapedCopilotHomePath`" echo(%COPILOT_HOME%`r`nmore > `"$escapedInputPath`"`r`nexit /b 0`r`n"
+		[System.IO.File]::WriteAllText($commandPath, "@echo off`r`n> `"$escapedArgumentsPath`" echo(%*`r`n> `"$escapedCopilotHomePath`" echo(%COPILOT_HOME%`r`nmore > `"$escapedInputPath`"`r`nexit /b 0`r`n", $utf8)
 	}
 	else {
 		$commandPath = Join-Path $commandDirectory 'copilot'
-		Write-Utf8NoBomFile -Path $commandPath -Content "#!/bin/sh`nprintf '%s\n' \"`$*\" > '$argumentsPath'`nprintf '%s\n' \"`$COPILOT_HOME\" > '$copilotHomePath'`ncat > '$inputPath'`nexit 0`n"
+		$commandContent = @'
+#!/bin/sh
+printf '%s\n' "$*" > '{0}'
+printf '%s\n' "$COPILOT_HOME" > '{1}'
+cat > '{2}'
+exit 0
+'@ -f $argumentsPath, $copilotHomePath, $inputPath
+		[System.IO.File]::WriteAllText($commandPath, $commandContent, $utf8)
 		& chmod +x $commandPath | Out-Null
 	}
 
@@ -287,11 +294,18 @@ function New-TemporaryTestCopilotCommand {
 		$escapedInputPath = $inputPath.Replace('"', '""')
 		$escapedArgumentsPath = $argumentsPath.Replace('"', '""')
 		$escapedCopilotHomePath = $copilotHomePath.Replace('"', '""')
-		Write-Utf8NoBomFile -Path $commandPath -Content "@echo off`r`n> `"$escapedArgumentsPath`" echo(%*`r`n> `"$escapedCopilotHomePath`" echo(%COPILOT_HOME%`r`nmore > `"$escapedInputPath`"`r`nexit /b 0`r`n"
+		[System.IO.File]::WriteAllText($commandPath, "@echo off`r`n> `"$escapedArgumentsPath`" echo(%*`r`n> `"$escapedCopilotHomePath`" echo(%COPILOT_HOME%`r`nmore > `"$escapedInputPath`"`r`nexit /b 0`r`n", $utf8)
 	}
 	else {
 		$commandPath = Join-Path $commandDirectory 'copilot'
-		Write-Utf8NoBomFile -Path $commandPath -Content "#!/bin/sh`nprintf '%s\n' \"`$*\" > '$argumentsPath'`nprintf '%s\n' \"`$COPILOT_HOME\" > '$copilotHomePath'`ncat > /dev/null`nexit 0`n"
+		$commandContent = @'
+#!/bin/sh
+printf '%s\n' "$*" > '{0}'
+printf '%s\n' "$COPILOT_HOME" > '{1}'
+cat > /dev/null
+exit 0
+'@ -f $argumentsPath, $copilotHomePath
+		[System.IO.File]::WriteAllText($commandPath, $commandContent, $utf8)
 		& chmod +x $commandPath | Out-Null
 	}
 
