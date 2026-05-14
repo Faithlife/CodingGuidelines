@@ -60,9 +60,11 @@ AgentConfiguration packages apply `agentic-repo` automatically, so most reposito
 
 **Tool: [RepoConventions](https://github.com/Faithlife/RepoConventions)**
 
-RepoConventions applies a set of conventions to a repository, commits the changes, and optionally opens a pull request. It reads `.github/conventions.yml` to know what conventions to apply.
+A convention is a script or set of scripts that enforces a standard in a repository, e.g. "this repo must have these `.gitignore` entries", "this repo must have this workflow file." The script checks the current state and makes whatever edits are needed.
 
-A convention can be a YAML file that composes other conventions, or a PowerShell script that makes arbitrary changes. Conventions can live in any GitHub repository.
+RepoConventions runs the scripts listed in `.github/conventions.yml`, commits any changes, and optionally opens a PR. Because conventions are idempotent, running them again later picks up upstream changes.
+
+[template-updater](https://github.com/LogosBible/template-updater) runs this nightly. Its "Apply ALL Repo Conventions" workflow runs daily on every repository whose `.github/conventions.yml` starts with the marker line `# applied automatically by https://github.com/LogosBible/template-updater (DO NOT REMOVE THIS LINE)`. That marker is added automatically by the `auto-apply-conventions` convention.
 
 ## How they chain together
 
