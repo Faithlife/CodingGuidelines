@@ -98,22 +98,19 @@ Install these tools once:
 - **[APM](https://microsoft.github.io/apm/getting-started/quick-start/)**: run `curl -sSL https://aka.ms/apm-unix | sh` (macOS/Linux) or `irm https://aka.ms/apm-windows | iex` (Windows)
 - **[.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)**: includes `dnx`, which runs .NET tools without a local manifest
 
+The pattern for all project types is the same: `apm install` first (populates `apm.yml`), then `repo-conventions add`, one commit, then `repo-conventions apply` (which auto-commits the boilerplate changes it makes).
+
 ### Web project
 
 ```sh
+apm install --update --target copilot LogosBible/AgentConfiguration/common/web-instructions
 dnx repo-conventions add LogosBible/AgentConfiguration/common/web
 dnx repo-conventions add LogosBible/actions/conventions/auto-apply-conventions
-git add .github/conventions.yml && git commit -m "Add conventions"
-dnx repo-conventions apply
-apm install --update --target copilot LogosBible/AgentConfiguration/common/web-instructions
 git add -A && git commit -m "Add agent configuration"
+dnx repo-conventions apply
 ```
 
-The `repo-conventions` commands set up repo boilerplate and install Playwright skills (`apply` requires a clean working tree, so the commit is needed first). The `apm install` command adds TypeScript/JavaScript coding style instructions.
-
 ### .NET project
-
-Run `apm install` first to populate `apm.yml`, then commit everything together before applying conventions:
 
 ```sh
 apm install --update --target copilot LogosBible/AgentConfiguration/common/dotnet-instructions
@@ -123,17 +120,14 @@ git add -A && git commit -m "Add agent configuration"
 dnx repo-conventions apply
 ```
 
-`repo-conventions apply` sets up the ignore rules and re-runs `apm install --update` (which refreshes the packages already in `apm.yml`).
-
 ### Web + .NET project
 
 ```sh
+apm install --update --target copilot LogosBible/AgentConfiguration/common/web-instructions LogosBible/AgentConfiguration/common/dotnet-instructions
 dnx repo-conventions add LogosBible/AgentConfiguration/common/web
 dnx repo-conventions add LogosBible/actions/conventions/auto-apply-conventions
-git add .github/conventions.yml && git commit -m "Add conventions"
-dnx repo-conventions apply
-apm install --update --target copilot LogosBible/AgentConfiguration/common/web-instructions LogosBible/AgentConfiguration/common/dotnet-instructions
 git add -A && git commit -m "Add agent configuration"
+dnx repo-conventions apply
 ```
 
 The `-instructions` packages pull in their dependencies (`web`, `dotnet`, `general-coding-instructions`) automatically.
