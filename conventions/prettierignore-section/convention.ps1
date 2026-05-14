@@ -110,7 +110,7 @@ function GetConfigTextSectionSettings {
 		return $configTextSectionSettings
 	}
 
-	foreach ($settingName in @('name', 'text', 'agent', 'commit')) {
+	foreach ($settingName in @('name', 'text', 'agent')) {
 		if ($Settings.ContainsKey($settingName)) {
 			$configTextSectionSettings[$settingName] = $Settings[$settingName]
 		}

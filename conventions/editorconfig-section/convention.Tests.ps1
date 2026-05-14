@@ -84,24 +84,14 @@ conventions:
 		}
 	}
 
-	It 'forwards commit settings when it changes .editorconfig' {
+	It 'uses native commit settings when it changes .editorconfig' {
 		$testDirectory = New-TestDirectory
 
 		try {
 			# Arrange an isolated repository with a configured commit message.
 			Copy-TestConventionAssets -TestDirectory $testDirectory
 			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
-conventions:
-- path: ../conventions/editorconfig-section
-  settings:
-    name: files
-    text: |
-      [*.md]
-      trim_trailing_whitespace = false
-    commit:
-      message: Add editorconfig
-"@
+			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content '{"conventions":[{"path":"../conventions/editorconfig-section","commit":{"message":"Add editorconfig"},"settings":{"name":"files","text":"[*.md]\ntrim_trailing_whitespace = false\n"}}]}'
 			Initialize-TestRepository -Path $testDirectory
 			$initialHead = Get-CommitId -TestDirectory $testDirectory
 

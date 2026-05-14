@@ -1,3 +1,6 @@
+commit:
+  message: "Update root editorconfig settings"
+
 conventions:
   - path: ../editorconfig-section
     settings:
@@ -11,5 +14,3 @@ conventions:
         trim_trailing_whitespace = true
       agent:
         instructions: ${{ readText("agent-instructions.md") }}
-      commit:
-        message: "Update root editorconfig settings"

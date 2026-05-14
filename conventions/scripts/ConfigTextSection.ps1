@@ -48,48 +48,6 @@ function Get-ConfigTextSectionAgent {
 	}
 }
 
-function Get-ConfigTextSectionCommitMessage {
-	param(
-		[AllowNull()]
-		[object] $MessageSetting
-	)
-
-	# Treat a missing commit message setting as no automatic commit.
-	if ($null -eq $MessageSetting) {
-		return $null
-	}
-
-	# Reject non-string commit messages before blank messages are ignored.
-	if ($MessageSetting -isnot [string]) {
-		throw "The 'commit.message' setting must be a string."
-	}
-
-	# Ignore blank commit messages so callers can skip committing cleanly.
-	if ([string]::IsNullOrWhiteSpace($MessageSetting)) {
-		return $null
-	}
-
-	return $MessageSetting
-}
-
-function Get-ConfigTextSectionCommit {
-	param(
-		[Parameter(Mandatory = $true)]
-		[object] $CommitSetting
-	)
-
-	if ($CommitSetting -isnot [System.Collections.IDictionary]) {
-		throw "The 'commit' setting must be an object."
-	}
-
-	# Parse optional commit settings into a normalized object shape.
-	$message = if ($CommitSetting.Contains('message')) { Get-ConfigTextSectionCommitMessage -MessageSetting $CommitSetting.message } else { $null }
-
-	return [pscustomobject]@{
-		Message = $message
-	}
-}
-
 function Get-ConfigTextSectionName {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -514,58 +472,6 @@ function Set-ConfigTextSectionText {
 	}
 }
 
-function Invoke-ConfigTextSectionGit {
-	param(
-		[Parameter(Mandatory = $true)]
-		[string[]] $Arguments,
-
-		[switch] $CaptureOutput,
-
-		[string] $FailureMessage = 'Git command failed.'
-	)
-
-	# Run git either for captured output or for status-only side effects.
-	if ($CaptureOutput) {
-		[string[]] $output = @(& git @Arguments)
-	}
-	else {
-		& git @Arguments | Out-Null
-	}
-
-	# Surface git failures with convention-specific messages.
-	if ($LASTEXITCODE -ne 0) {
-		throw $FailureMessage
-	}
-
-	# Return captured lines only for callers that requested them.
-	if ($CaptureOutput) {
-		return $output
-	}
-}
-
-function Test-ConfigTextSectionGitHasWorkingTreeChanges {
-	# Inspect all tracked and untracked changes before deciding to commit.
-	[string[]] $statusLines = @(Invoke-ConfigTextSectionGit -Arguments @('status', '--short', '--untracked-files=all') -CaptureOutput -FailureMessage 'Failed to inspect git status.')
-	return $statusLines.Count -gt 0
-}
-
-function Invoke-ConfigTextSectionCommit {
-	param(
-		[Parameter(Mandatory = $true)]
-		[string] $Message
-	)
-
-	# Skip commit creation when the convention left the working tree clean.
-	if (-not (Test-ConfigTextSectionGitHasWorkingTreeChanges)) {
-		return $false
-	}
-
-	# Stage every convention-created change and commit it with the configured message.
-	Invoke-ConfigTextSectionGit -Arguments @('add', '-A') -FailureMessage 'Failed to stage convention changes.'
-	Invoke-ConfigTextSectionGit -Arguments @('commit', '-m', $Message) -FailureMessage "Failed to create commit '$Message'."
-	return $true
-}
-
 function Invoke-ConfigTextSection {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -581,7 +487,6 @@ function Invoke-ConfigTextSection {
 	$targetPath = Get-RepositoryPath -PathSetting $Settings.path
 	$targetDisplayPath = Format-RepositoryRelativePath -Path $targetPath
 	$configuredAgent = if ($Settings.ContainsKey('agent')) { Get-ConfigTextSectionAgent -AgentSetting $Settings.agent } else { $null }
-	$configuredCommit = if ($Settings.ContainsKey('commit')) { Get-ConfigTextSectionCommit -CommitSetting $Settings.commit } else { $null }
 	$configuredSection = Get-ConfigTextSection -Settings $Settings
 
 	# Managed sections can update files, but not directory paths.
@@ -636,13 +541,6 @@ function Invoke-ConfigTextSection {
 
 		if ($reconciledSectionResult.Updated) {
 			Write-Utf8NoBomFile -Path $targetPath -Content $reconciledSectionResult.Content
-		}
-	}
-
-	# Create the configured commit only after all file and agent work is done.
-	if ($null -ne $configuredCommit -and -not [string]::IsNullOrWhiteSpace($configuredCommit.Message)) {
-		if (Invoke-ConfigTextSectionCommit -Message $configuredCommit.Message) {
-			Write-Host "Committed convention changes with message '$($configuredCommit.Message)'."
 		}
 	}
 

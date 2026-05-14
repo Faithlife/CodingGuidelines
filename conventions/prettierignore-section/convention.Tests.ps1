@@ -205,40 +205,4 @@ Describe 'prettierignore-section convention' {
 		}
 	}
 
-	It 'passes through commit settings to config text section logic' {
-		$testDirectory = New-TestDirectory
-
-		try {
-			# Arrange a repository with a committed Prettier package manifest.
-			Initialize-TestRepository -Path $testDirectory
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory 'package.json') -Content '{"devDependencies":{"prettier":"^3.0.0"}}'
-
-			Push-Location $testDirectory
-			try {
-				& git add -A
-				& git commit -m 'Add package manifest' | Out-Null
-			}
-			finally {
-				Pop-Location
-			}
-
-			$headBeforeRun = Get-CommitId -TestDirectory $testDirectory
-
-			# Apply the convention with commit settings.
-			$output = InvokePrettierignoreSectionConvention -TestDirectory $testDirectory -Settings @{
-				name = 'build-output'
-				text = "coverage/`ndist/"
-				commit = @{ message = 'Update prettierignore' }
-			}
-
-			# Assert the configured commit was created and reported.
-			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should -Be $headBeforeRun
-			(@(Get-CommitSubjects -TestDirectory $testDirectory -Count 1))[0] | Should -Be 'Update prettierignore'
-			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0
-			(@($output | ForEach-Object { $_.ToString() }) -contains "Committed convention changes with message 'Update prettierignore'.") | Should -Be $true
-		}
-		finally {
-			Remove-Item -LiteralPath $testDirectory -Recurse -Force
-		}
-	}
 }
