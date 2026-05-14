@@ -1,6 +1,6 @@
 # Agent Instructions
 
-**PowerShell Scripts**
+## PowerShell Scripts
 
 - In PowerShell scripts, DO NOT use hyphens in function names local to a script, but DO use hyphens and approved PowerShell verbs in functions in a script that are designed to be used by other scripts.
 - Convention scripts are invoked with `$args[0]` set to a valid convention input JSON path. Do not check `$args.Count`, validate `$args[0]`, or assign `$args[0]` to a local variable just to pass it once.
@@ -9,13 +9,13 @@
 - Don't nest `Join-Path` calls, i.e. use `Join-Path A B C`, not `Join-Path (Join-Path A B) C`.
 - Each paragraph of PowerShell code should have a one-line descriptive comment.
 
-**Pester**
+## Pester
 
 - Only run one Pester test script at a time.
 - When running `Invoke-Pester`, do not use `-Output`. Just use `Invoke-Pester -Path <script>`.
 - `Invoke-Pester` can report failed tests while the PowerShell command itself exits with code 0. Read the Pester summary, not just the terminal exit code, unless the repo-specific runner converts failures into a non-zero exit.
 
-**Test Running**
+## Test Running
 
 - VS Code terminal notifications may report long-running Pester scripts as waiting for input even when no prompt is present. Inspect the terminal output before sending input; many repo-conventions tests are quiet for 10-20 seconds while child processes run.
 - `conventions/RunAllTests.ps1` covers convention tests under `conventions/` and `.github/conventions/`.
