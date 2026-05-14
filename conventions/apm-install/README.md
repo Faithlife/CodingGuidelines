@@ -1,6 +1,8 @@
 # apm-install
 
-This convention uses `apm` to install any specified packages and updating any existing packages.
+This convention uses `apm` to install any specified packages and update any existing packages.
+
+`copilot` is the only target currently supported.
 
 Install and update:
 
