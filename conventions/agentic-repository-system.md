@@ -98,20 +98,6 @@ Install these tools once:
 - **[APM](https://microsoft.github.io/apm/getting-started/quick-start/)**: run `curl -sSL https://aka.ms/apm-unix | sh` (macOS/Linux) or `irm https://aka.ms/apm-windows | iex` (Windows)
 - **[.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)**: includes `dnx`, which runs .NET tools without a local manifest
 
-### Set up a repository
-
-Apply the `agentic-repo` convention to get standard APM ignore rules and run `apm install`:
-
-```sh
-dnx repo-conventions add Faithlife/CodingGuidelines/conventions/agentic-repo --open-pr
-```
-
-To also get nightly convention updates via template-updater:
-
-```sh
-dnx repo-conventions add LogosBible/actions/conventions/auto-apply-conventions --open-pr
-```
-
 ### Add an AgentConfiguration package
 
 Pick a package from [AgentConfiguration](https://github.com/LogosBible/AgentConfiguration) based on your project:
@@ -127,9 +113,23 @@ Pick a package from [AgentConfiguration](https://github.com/LogosBible/AgentConf
 dnx repo-conventions add LogosBible/AgentConfiguration/common/web-instructions --open-pr
 ```
 
-This applies `agentic-repo` automatically (no need to add it separately), installs the package's APM dependencies, and adds any package-specific ignore rules.
+This applies `agentic-repo` automatically, installs the package's APM dependencies, and adds any package-specific ignore rules. For a repo that uses both web and .NET, add both packages.
 
 The `web-instructions` and `dotnet-instructions` packages depend on `web` and `dotnet` respectively and on `general-coding-instructions`, so you do not need to add those separately.
+
+### Set up a repository without an AgentConfiguration package
+
+If your project doesn't fit any of the AgentConfiguration packages, apply `agentic-repo` directly to get the standard APM ignore rules and run `apm install`:
+
+```sh
+dnx repo-conventions add Faithlife/CodingGuidelines/conventions/agentic-repo --open-pr
+```
+
+To also get nightly convention updates via template-updater:
+
+```sh
+dnx repo-conventions add LogosBible/actions/conventions/auto-apply-conventions --open-pr
+```
 
 ### What to commit
 
