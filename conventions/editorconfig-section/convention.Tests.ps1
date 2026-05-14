@@ -5,6 +5,7 @@ $ErrorActionPreference = 'Stop'
 
 Describe 'editorconfig-section convention' {
 	BeforeAll {
+		# Load shared test helpers for temporary repositories and convention execution.
 		$script:testHelpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'TestHelpers.ps1'
 		. $script:testHelpersPath
 	}
@@ -13,6 +14,7 @@ Describe 'editorconfig-section convention' {
 		$testDirectory = New-TestDirectory
 
 		try {
+			# Arrange an isolated repository with a configured editorconfig section.
 			Copy-TestConventionAssets -TestDirectory $testDirectory
 			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
 			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
@@ -27,11 +29,14 @@ conventions:
 "@
 			Initialize-TestRepository -Path $testDirectory
 
+			# Apply the convention under test.
 			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
 
+			# Read the generated editorconfig for assertions.
 			$editorConfigPath = Join-Path $testDirectory '.editorconfig'
 			$content = Get-Content -LiteralPath $editorConfigPath -Raw
 
+			# Assert the configured managed section was written exactly.
 			(Test-Path -LiteralPath $editorConfigPath) | Should -Be $true
 			$content | Should -Match "(?m)^# DO NOT EDIT: files convention\r?$"
 			$content | Should -Match "(?m)^\[\*\.txt\]\r?$"
@@ -48,6 +53,7 @@ conventions:
 		$testDirectory = New-TestDirectory
 
 		try {
+			# Arrange an isolated repository with inline agent instructions.
 			Copy-TestConventionAssets -TestDirectory $testDirectory
 			$testCopilot = New-TestCopilotCommand -TestDirectory $testDirectory
 			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
@@ -66,8 +72,10 @@ conventions:
 "@
 			Initialize-TestRepository -Path $testDirectory
 
+			# Apply the convention with a test Copilot command directory.
 			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory -CopilotCommandDirectory $testCopilot.CommandDirectory } | Should -Not -Throw
 
+			# Assert Copilot received the configured instructions exactly.
 			(Test-Path -LiteralPath $testCopilot.InputPath) | Should -Be $true
 			(((Get-Content -LiteralPath $testCopilot.InputPath -Raw) -replace "`r`n", "`n").TrimEnd("`n")) | Should -Be "Validate editorconfig changes.`nLeave fixes unstaged."
 		}
@@ -80,6 +88,7 @@ conventions:
 		$testDirectory = New-TestDirectory
 
 		try {
+			# Arrange an isolated repository with a configured commit message.
 			Copy-TestConventionAssets -TestDirectory $testDirectory
 			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
 			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
@@ -96,8 +105,10 @@ conventions:
 			Initialize-TestRepository -Path $testDirectory
 			$initialHead = Get-CommitId -TestDirectory $testDirectory
 
+			# Apply the convention and allow it to create the configured commit.
 			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
 
+			# Assert the configured commit message and clean working tree.
 			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should -Be $initialHead
 			(@(Get-CommitSubjects -TestDirectory $testDirectory -Count 1))[0] | Should -Be 'Add editorconfig'
 			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0

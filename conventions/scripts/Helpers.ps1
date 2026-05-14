@@ -13,6 +13,7 @@ function Write-Utf8NoBomFile {
 		[string] $Content
 	)
 
+	# Use an explicit encoder so file writes never add a byte order mark.
 	$utf8NoBom = [System.Text.UTF8Encoding]::new($false)
 	[System.IO.File]::WriteAllText($Path, $Content, $utf8NoBom)
 }
@@ -30,17 +31,21 @@ function Test-FileContentMatches {
 		[string] $ActualPath
 	)
 
+	# Missing destinations cannot match the expected published file.
 	if (-not (Test-Path -LiteralPath $ActualPath -PathType Leaf)) {
 		return $false
 	}
 
+	# Compare raw bytes so line endings and encodings are part of the result.
 	[byte[]] $expectedBytes = [System.IO.File]::ReadAllBytes($ExpectedPath)
 	[byte[]] $actualBytes = [System.IO.File]::ReadAllBytes($ActualPath)
 
+	# Differing lengths are enough to prove the files are different.
 	if ($expectedBytes.Length -ne $actualBytes.Length) {
 		return $false
 	}
 
+	# Walk each byte to find the first content mismatch.
 	for ($index = 0; $index -lt $expectedBytes.Length; $index++) {
 		if ($expectedBytes[$index] -ne $actualBytes[$index]) {
 			return $false
@@ -63,9 +68,11 @@ function Copy-FileIfDifferent {
 		[string] $DestinationPath
 	)
 
+	# Remember whether the destination existed so the result can classify the change.
 	$hadDestination = Test-Path -LiteralPath $DestinationPath -PathType Leaf
 	$contentMatched = Test-FileContentMatches -ExpectedPath $SourcePath -ActualPath $DestinationPath
 
+	# Return a no-op result when the published file already matches byte-for-byte.
 	if ($contentMatched) {
 		return [pscustomobject]@{
 			Changed = $false
@@ -76,12 +83,14 @@ function Copy-FileIfDifferent {
 
 	$destinationDirectory = Split-Path -Parent $DestinationPath
 
+	# Create parent directories for published files nested below the repository root.
 	if (-not [string]::IsNullOrWhiteSpace($destinationDirectory)) {
 		New-Item -ItemType Directory -Path $destinationDirectory -Force | Out-Null
 	}
 
 	Copy-Item -LiteralPath $SourcePath -Destination $DestinationPath -Force
 
+	# Report both the generic change flag and whether this was create or update.
 	return [pscustomobject]@{
 		Changed = $true
 		Created = -not $hadDestination
@@ -100,14 +109,17 @@ function Get-LineEnding {
 		[string] $Content
 	)
 
+	# Prefer CRLF when the file already contains it anywhere.
 	if ($Content.Contains("`r`n")) {
 		return "`r`n"
 	}
 
+	# Preserve LF-only files as LF.
 	if ($Content.Contains("`n")) {
 		return "`n"
 	}
 
+	# Default empty or single-line files to LF.
 	return "`n"
 }
 
@@ -121,6 +133,7 @@ function Read-ConventionSettings {
 		[string] $InputPath
 	)
 
+	# RepoConventions inputs wrap convention-specific values under settings.
 	return (Get-Content -LiteralPath $InputPath -Raw | ConvertFrom-Json -AsHashtable).settings
 }
 
@@ -134,14 +147,17 @@ function Get-RepositoryPath {
 		[string] $PathSetting
 	)
 
+	# Require a concrete repository-relative path value.
 	if ([string]::IsNullOrWhiteSpace($PathSetting)) {
 		throw "The 'path' setting must be a non-empty string."
 	}
 
+	# Allow repo-rooted slash paths but reject drive-qualified absolute paths.
 	if ([System.IO.Path]::IsPathRooted($PathSetting) -and -not ($PathSetting.StartsWith('/', [System.StringComparison]::Ordinal) -or $PathSetting.StartsWith('\\', [System.StringComparison]::Ordinal))) {
 		throw "The 'path' setting must be relative or start with '/'."
 	}
 
+	# Normalize slash styles before resolving against the current repository root.
 	$repositoryRoot = [System.IO.Path]::GetFullPath((Get-Location).Path)
 	$pathText = $PathSetting.Replace('/', [System.IO.Path]::DirectorySeparatorChar).Replace('\\', [System.IO.Path]::DirectorySeparatorChar)
 	$relativePath = if ($PathSetting.StartsWith('/', [System.StringComparison]::Ordinal) -or $PathSetting.StartsWith('\\', [System.StringComparison]::Ordinal)) {
@@ -164,14 +180,17 @@ function Format-RepositoryRelativePath {
 		[string] $Path
 	)
 
+	# Resolve both roots before calculating a stable relative display path.
 	$repositoryRoot = [System.IO.Path]::GetFullPath((Get-Location).Path)
 	$fullPath = [System.IO.Path]::GetFullPath($Path)
 	$relativePath = [System.IO.Path]::GetRelativePath($repositoryRoot, $fullPath)
 
+	# Preserve the repository root as a concise dot path.
 	if ($relativePath -eq '.') {
 		return '.'
 	}
 
+	# Use forward slashes in messages regardless of platform separators.
 	return $relativePath.Replace('\', '/')
 }
 
@@ -180,6 +199,7 @@ function Format-RepositoryRelativePath {
 Creates a unique temporary directory and returns its full path.
 #>
 function New-TemporaryDirectory {
+	# Create an isolated temp directory name without reusing an existing path.
 	$path = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString('N'))
 	[System.IO.Directory]::CreateDirectory($path) | Out-Null
 	return $path
@@ -190,6 +210,7 @@ function New-TemporaryDirectory {
 Sets console encodings to UTF-8 without a byte order mark.
 #>
 function Set-Utf8NoBomConsoleEncoding {
+	# Apply the same no-BOM UTF-8 encoding to console and native pipeline streams.
 	[System.Text.Encoding] $utf8 = [System.Text.UTF8Encoding]::new($false)
 	[Console]::InputEncoding = $utf8
 	[Console]::OutputEncoding = $utf8
@@ -206,15 +227,18 @@ function Invoke-CopilotWithIsolatedConfig {
 		[string] $Instructions
 	)
 
+	# Fail early if the Copilot CLI is not available for this convention run.
 	Get-Command -Name copilot -ErrorAction Stop | Out-Null
 
 	# Use an isolated Copilot config directory so convention runs do not depend on or mutate the user's setup.
 	$copilotConfigDirectory = New-TemporaryDirectory
 
 	try {
+		# Pipe instructions to Copilot with convention-safe tool and path permissions.
 		$Instructions | & copilot --config-dir $copilotConfigDirectory --no-ask-user --allow-all-tools --allow-all-paths --model auto
 	}
 	finally {
+		# Always remove the temporary Copilot configuration after the run.
 		Remove-Item -LiteralPath $copilotConfigDirectory -Recurse -Force
 	}
 }

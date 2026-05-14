@@ -5,12 +5,14 @@ $ErrorActionPreference = 'Stop'
 
 Describe 'nuget-config convention' {
 	BeforeAll {
+		# Cache convention paths and load shared test helpers.
 		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
 		$script:expectedNuGetConfigPath = Join-Path $PSScriptRoot 'files' 'nuget.config'
 		$script:testHelpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'TestHelpers.ps1'
 		. $script:testHelpersPath
 
 		function script:InvokeNuGetConfigConvention {
+			# Invoke the convention script from inside the test repository.
 			param(
 				[Parameter(Mandatory = $true)]
 				[string] $TestDirectory
@@ -33,12 +35,15 @@ Describe 'nuget-config convention' {
 		$testDirectory = New-TestDirectory
 
 		try {
+			# Arrange an empty initialized repository.
 			Initialize-TestRepository -Path $testDirectory
 
+			# Apply the convention and collect the created NuGet config state.
 			$output = InvokeNuGetConfigConvention -TestDirectory $testDirectory
 			$nuGetConfigPath = Join-Path $testDirectory 'nuget.config'
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
+			# Assert the published NuGet config was created and reported.
 			(Test-Path -LiteralPath $nuGetConfigPath) | Should -Be $true
 			(Get-Content -LiteralPath $nuGetConfigPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedNuGetConfigPath -Raw)
 			((Get-Content -LiteralPath $nuGetConfigPath -Raw) -match 'protocolVersion=') | Should -Be $false
@@ -55,6 +60,7 @@ Describe 'nuget-config convention' {
 		$testDirectory = New-TestDirectory
 
 		try {
+			# Arrange a repository with a committed differently-cased NuGet config.
 			Initialize-TestRepository -Path $testDirectory
 			$originalNuGetConfigPath = Join-Path $testDirectory 'NuGet.Config'
 			$expectedContent = Get-Content -LiteralPath $expectedNuGetConfigPath -Raw
@@ -69,10 +75,12 @@ Describe 'nuget-config convention' {
 				Pop-Location
 			}
 
+			# Apply the convention and collect matching config filenames.
 			$output = InvokeNuGetConfigConvention -TestDirectory $testDirectory
 			$nuGetConfigPath = Join-Path $testDirectory 'nuget.config'
 			$nuGetConfigNames = @(Get-ChildItem -LiteralPath $testDirectory -File | Where-Object { $_.Name -ieq 'nuget.config' } | Select-Object -ExpandProperty Name)
 
+			# Assert the file uses the lowercase canonical name and unchanged content.
 			$nuGetConfigNames.Count | Should -Be 1
 			$nuGetConfigNames[0] | Should -Be 'nuget.config'
 			(Get-Content -LiteralPath $nuGetConfigPath -Raw) | Should -Be $expectedContent
@@ -87,6 +95,7 @@ Describe 'nuget-config convention' {
 		$testDirectory = New-TestDirectory
 
 		try {
+			# Arrange a repository with a committed divergent NuGet config.
 			Initialize-TestRepository -Path $testDirectory
 			$nuGetConfigPath = Join-Path $testDirectory 'nuget.config'
 			$existingContent = @"
@@ -108,9 +117,11 @@ Describe 'nuget-config convention' {
 				Pop-Location
 			}
 
+			# Apply the convention and collect the modified config state.
 			$output = InvokeNuGetConfigConvention -TestDirectory $testDirectory
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
+			# Assert the config was replaced with the published file.
 			(Get-Content -LiteralPath $nuGetConfigPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedNuGetConfigPath -Raw)
 			$status.Count | Should -Be 1
 			$status[0] | Should -Match '^ M nuget\.config$'
@@ -125,6 +136,7 @@ Describe 'nuget-config convention' {
 		$testDirectory = New-TestDirectory
 
 		try {
+			# Arrange a repository after a successful first convention run.
 			Initialize-TestRepository -Path $testDirectory
 
 			InvokeNuGetConfigConvention -TestDirectory $testDirectory | Out-Null
@@ -139,10 +151,12 @@ Describe 'nuget-config convention' {
 				Pop-Location
 			}
 
+			# Apply the convention a second time and capture repository state.
 			$output = InvokeNuGetConfigConvention -TestDirectory $testDirectory
 			$headAfterSecondRun = Get-CommitId -TestDirectory $testDirectory
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
+			# Assert the second run reported no content changes.
 			$headAfterSecondRun | Should -Be $headAfterFirstRun
 			$status.Count | Should -Be 0
 			$nuGetConfigPath = Join-Path $testDirectory 'nuget.config'

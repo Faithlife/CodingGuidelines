@@ -3,6 +3,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+# Collect optional package settings from the convention input.
 $packages = @()
 
 if ($args.Count -gt 0 -and (Test-Path -LiteralPath $args[0])) {
@@ -16,19 +17,23 @@ if ($args.Count -gt 0 -and (Test-Path -LiteralPath $args[0])) {
 	}
 }
 
+# Skip when neither an apm manifest nor explicit packages are available.
 if ($packages.Count -eq 0 -and -not (Test-Path -LiteralPath 'apm.yml')) {
 	Write-Host 'Skipping apm install because apm.yml is absent and no packages were configured.'
 	return
 }
 
+# Build the apm install command for the agent-skills target.
 $apmArguments = @('install', '--update', '--target', 'agent-skills')
 
 if ($packages.Count -gt 0) {
 	$apmArguments += $packages
 }
 
+# Verify apm is available before invoking it.
 Get-Command -Name apm -ErrorAction Stop | Out-Null
 
+# Run apm and fail the convention if installation fails.
 Write-Host ('Running apm ' + ($apmArguments -join ' ') + '.')
 & apm @apmArguments
 
@@ -36,6 +41,7 @@ if ($LASTEXITCODE -ne 0) {
 	throw 'apm install failed.'
 }
 
+# Inspect the working tree for changes left by apm.
 [string[]] $changedPaths = @(
 	& git status --porcelain=v1 --untracked-files=all |
 		Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
@@ -46,6 +52,7 @@ if ($LASTEXITCODE -ne 0) {
 	throw 'git status failed.'
 }
 
+# Drop lockfile-only churn so no-op runs stay clean.
 if ($changedPaths.Count -eq 1 -and $changedPaths[0] -eq 'apm.lock.yaml') {
 	Write-Host 'Reverting apm.lock.yaml because it is the only changed file.'
 	& git restore --source=HEAD --staged --worktree -- 'apm.lock.yaml'

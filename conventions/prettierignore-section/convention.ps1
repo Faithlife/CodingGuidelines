@@ -3,9 +3,11 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+# Load the shared config text section implementation.
 $configTextSectionPath = Join-Path $PSScriptRoot '..' 'scripts' 'ConfigTextSection.ps1'
 . $configTextSectionPath
 
+# List Prettier configuration file names that signal Prettier usage.
 $prettierConfigFileNames = @(
 	'.prettierrc',
 	'.prettierrc.json',
@@ -26,6 +28,7 @@ $prettierConfigFileNames = @(
 	'prettier.config.mts'
 )
 
+# Detect whether the repository contains a standalone Prettier config.
 function TestPrettierConfigFile {
 	foreach ($configFileName in $prettierConfigFileNames) {
 		if (Test-Path -LiteralPath (Join-Path (Get-Location).Path $configFileName) -PathType Leaf) {
@@ -36,6 +39,7 @@ function TestPrettierConfigFile {
 	return $false
 }
 
+# Detect Prettier settings or dependencies in package.json.
 function TestPackageJsonPrettier {
 	$packageJsonPath = Join-Path (Get-Location).Path 'package.json'
 
@@ -73,6 +77,7 @@ function TestPackageJsonPrettier {
 	return $false
 }
 
+# Determine whether the repository appears to use Prettier.
 function TestPrettierUsage {
 	if (Test-Path -LiteralPath (Join-Path (Get-Location).Path '.prettierignore') -PathType Leaf) {
 		return $true
@@ -89,6 +94,7 @@ function TestPrettierUsage {
 	return $false
 }
 
+# Map this convention's settings into the config-text-section convention.
 function GetConfigTextSectionSettings {
 	param(
 		[AllowNull()]
@@ -113,6 +119,7 @@ function GetConfigTextSectionSettings {
 	return $configTextSectionSettings
 }
 
+# Require and read the convention input settings.
 if ($args.Count -eq 0) {
 	throw 'The input path argument is required.'
 }
@@ -120,9 +127,11 @@ if ($args.Count -eq 0) {
 $inputPath = $args[0]
 $settings = Read-ConventionSettings -InputPath $inputPath
 
+# Leave repositories without Prettier usage unchanged.
 if (-not (TestPrettierUsage)) {
 	Write-Host "Prettier was not detected; leaving '.prettierignore' unchanged."
 	return
 }
 
+# Apply the configured .prettierignore section.
 Invoke-ConfigTextSection -Settings (GetConfigTextSectionSettings -Settings $settings)

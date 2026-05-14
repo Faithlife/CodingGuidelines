@@ -12,6 +12,7 @@ $requiredRule = '* text=auto eol=lf'
 $gitattributesPath = Join-Path -Path (Get-Location) -ChildPath '.gitattributes'
 $gitattributesDisplayPath = Format-RepositoryRelativePath -Path $gitattributesPath
 
+# Run git with consistent failure handling and optional output capture.
 function InvokeGit {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -38,6 +39,7 @@ function InvokeGit {
 	}
 }
 
+# Detect whether the Git index currently contains staged changes.
 function TestGitHasStagedChanges {
 	[string[]] $stagedLines = @(InvokeGit -Arguments @('diff', '--cached', '--name-only') -CaptureOutput -FailureMessage 'Failed to inspect staged git changes.')
 	return $stagedLines.Count -gt 0
@@ -59,12 +61,14 @@ function NewCommitFromStagedChanges {
 	return $headLines[0]
 }
 
+# Refresh the index and working tree after attributes change.
 function ResetWorkingTreeAfterAttributeChange {
 	Write-Host 'Refreshing the working tree after line-ending normalization.'
 	InvokeGit -Arguments @('rm', '--cached', '-r', '.') -FailureMessage 'Failed to clear the Git index after renormalization.'
 	InvokeGit -Arguments @('reset', '--hard') -FailureMessage 'Failed to restore the working tree after renormalization.'
 }
 
+# Check whether .gitattributes starts with the required LF rule.
 function TestConformingGitattributes {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -79,6 +83,7 @@ function TestConformingGitattributes {
 	return $lines.Count -gt 0 -and $lines[0] -eq $requiredRule
 }
 
+# Ask Copilot to repair a nonconforming .gitattributes file.
 function InvokeCopilotForGitattributesRepair {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -104,6 +109,7 @@ When you are done, make sure `.gitattributes` exists and starts with `* text=aut
 	Invoke-CopilotWithIsolatedConfig -Instructions $copilotInstructions
 }
 
+# Create or repair .gitattributes so the required rule is first.
 function SetCompliantGitattributes {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -130,8 +136,10 @@ function SetCompliantGitattributes {
 	}
 }
 
+# Ensure git is available before making attribute commits.
 Get-Command -Name git -ErrorAction Stop | Out-Null
 
+# Bring .gitattributes into compliance before renormalizing files.
 SetCompliantGitattributes -Path $gitattributesPath
 
 # Commit the attribute change first so the later renormalization commit contains only file content rewrites.
@@ -154,17 +162,21 @@ if ($null -eq $renormalizeCommitId) {
 	return
 }
 
+# Record the renormalization commit so future blame can ignore it.
 $gitBlameIgnoreRevsPath = Join-Path -Path (Get-Location) -ChildPath '.git-blame-ignore-revs'
 $ignoreRevsLines = @()
 
+# Preserve any existing ignore-revs entries.
 if (Test-Path -LiteralPath $gitBlameIgnoreRevsPath -PathType Leaf) {
 	$ignoreRevsLines = @(Get-Content -LiteralPath $gitBlameIgnoreRevsPath | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
 }
 
+# Add the new renormalization commit when it is not already listed.
 if (-not ($ignoreRevsLines -contains $renormalizeCommitId)) {
 	$ignoreRevsLines += $renormalizeCommitId
 }
 
+# Write and commit the updated blame-ignore list.
 Write-Utf8NoBomFile -Path $gitBlameIgnoreRevsPath -Content (($ignoreRevsLines -join "`n") + "`n")
 InvokeGit -Arguments @('add', '.git-blame-ignore-revs') -FailureMessage "Failed to stage '$(Format-RepositoryRelativePath -Path $gitBlameIgnoreRevsPath)'."
 $ignoreRevsCommitId = NewCommitFromStagedChanges -Message 'Ignore CRLF to LF for git blame'
@@ -173,4 +185,5 @@ if ($null -eq $ignoreRevsCommitId) {
 	throw 'Expected a git blame ignore commit after renormalizing line endings.'
 }
 
+# Restore the working tree after the final convention-created commit.
 ResetWorkingTreeAfterAttributeChange

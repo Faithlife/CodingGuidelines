@@ -12,14 +12,17 @@ function Get-ConfigTextSectionAgentInstructions {
 		[object] $InstructionsSetting
 	)
 
+	# Treat a missing instructions setting as no agent instructions.
 	if ($null -eq $InstructionsSetting) {
 		return $null
 	}
 
+	# Reject non-string instruction values before trimming semantics are applied.
 	if ($InstructionsSetting -isnot [string]) {
 		throw "The 'agent.instructions' setting must be a string."
 	}
 
+	# Ignore blank instruction text so callers can test for configured content.
 	if ([string]::IsNullOrWhiteSpace($InstructionsSetting)) {
 		return $null
 	}
@@ -37,6 +40,7 @@ function Get-ConfigTextSectionAgent {
 		throw "The 'agent' setting must be an object."
 	}
 
+	# Parse optional agent instructions into a normalized object shape.
 	$instructions = if ($AgentSetting.Contains('instructions')) { Get-ConfigTextSectionAgentInstructions -InstructionsSetting $AgentSetting.instructions } else { $null }
 
 	return [pscustomobject]@{
@@ -50,14 +54,17 @@ function Get-ConfigTextSectionCommitMessage {
 		[object] $MessageSetting
 	)
 
+	# Treat a missing commit message setting as no automatic commit.
 	if ($null -eq $MessageSetting) {
 		return $null
 	}
 
+	# Reject non-string commit messages before blank messages are ignored.
 	if ($MessageSetting -isnot [string]) {
 		throw "The 'commit.message' setting must be a string."
 	}
 
+	# Ignore blank commit messages so callers can skip committing cleanly.
 	if ([string]::IsNullOrWhiteSpace($MessageSetting)) {
 		return $null
 	}
@@ -75,6 +82,7 @@ function Get-ConfigTextSectionCommit {
 		throw "The 'commit' setting must be an object."
 	}
 
+	# Parse optional commit settings into a normalized object shape.
 	$message = if ($CommitSetting.Contains('message')) { Get-ConfigTextSectionCommitMessage -MessageSetting $CommitSetting.message } else { $null }
 
 	return [pscustomobject]@{
@@ -88,10 +96,12 @@ function Get-ConfigTextSectionName {
 		[object] $NameSetting
 	)
 
+	# Require a non-empty section name for marker matching and messages.
 	if ($NameSetting -isnot [string] -or [string]::IsNullOrWhiteSpace($NameSetting)) {
 		throw "The 'name' setting must be a non-empty string."
 	}
 
+	# Keep marker names on one line so section boundaries stay parseable.
 	if ($NameSetting.Contains("`r") -or $NameSetting.Contains("`n")) {
 		throw "The 'name' setting must be a single line."
 	}
@@ -105,10 +115,12 @@ function Get-ConfigTextSectionCommentPrefix {
 		[object] $CommentPrefixSetting
 	)
 
+	# Require a usable prefix for both opening and closing marker comments.
 	if ($CommentPrefixSetting -isnot [string] -or [string]::IsNullOrWhiteSpace($CommentPrefixSetting)) {
 		throw "The 'comment-prefix' setting must be a non-empty string."
 	}
 
+	# Keep the prefix single-line so generated marker comments are unambiguous.
 	if ($CommentPrefixSetting.Contains("`r") -or $CommentPrefixSetting.Contains("`n")) {
 		throw "The 'comment-prefix' setting must be a single line."
 	}
@@ -122,14 +134,17 @@ function Get-ConfigTextSectionCommentSuffix {
 		[object] $CommentSuffixSetting
 	)
 
+	# Default to no suffix when the convention does not configure one.
 	if ($null -eq $CommentSuffixSetting) {
 		return ''
 	}
 
+	# Reject non-string suffix values before validating marker shape.
 	if ($CommentSuffixSetting -isnot [string]) {
 		throw "The 'comment-suffix' setting must be a string."
 	}
 
+	# Keep the suffix single-line so generated marker comments are unambiguous.
 	if ($CommentSuffixSetting.Contains("`r") -or $CommentSuffixSetting.Contains("`n")) {
 		throw "The 'comment-suffix' setting must be a single line."
 	}
@@ -144,10 +159,12 @@ function Get-ConfigTextSectionMarkerCommentSuffixText {
 		[string] $CommentSuffix
 	)
 
+	# Leave marker text unchanged when no suffix was configured.
 	if ([string]::IsNullOrEmpty($CommentSuffix)) {
 		return ''
 	}
 
+	# Separate a configured suffix from marker words with exactly one space.
 	return ' ' + $CommentSuffix.TrimStart()
 }
 
@@ -164,14 +181,17 @@ function Get-ConfigTextSectionText {
 		[string] $CommentSuffix
 	)
 
+	# Managed section text must be a literal string body.
 	if ($TextSetting -isnot [string]) {
 		throw "The 'text' setting must be a string."
 	}
 
+	# Build marker patterns using the configured comment delimiters.
 	$openingPattern = '^' + [System.Text.RegularExpressions.Regex]::Escape($CommentPrefix) + ' DO NOT EDIT: .+ convention' + [System.Text.RegularExpressions.Regex]::Escape($CommentSuffix) + '$'
 	$closingLine = "$CommentPrefix END DO NOT EDIT$CommentSuffix"
 	$textLines = ($TextSetting -replace "`r`n", "`n" -replace "`r", "`n") -split "`n", 0, 'SimpleMatch'
 
+	# Reject embedded managed markers so generated sections cannot nest.
 	foreach ($line in $textLines) {
 		if ($line -eq $closingLine -or $line -match $openingPattern) {
 			throw "The 'text' setting must not contain managed section marker lines."
@@ -187,6 +207,7 @@ function Get-ConfigTextSection {
 		[System.Collections.IDictionary] $Settings
 	)
 
+	# Require the settings that define marker identity, content, and syntax.
 	if (-not $Settings.Contains('name')) {
 		throw "The 'name' setting is required."
 	}
@@ -199,11 +220,13 @@ function Get-ConfigTextSection {
 		throw "The 'comment-prefix' setting is required."
 	}
 
+	# Normalize and validate each configured section field before use.
 	$commentPrefix = Get-ConfigTextSectionCommentPrefix -CommentPrefixSetting $Settings['comment-prefix']
 	$commentSuffix = Get-ConfigTextSectionMarkerCommentSuffixText -CommentSuffix (Get-ConfigTextSectionCommentSuffix -CommentSuffixSetting $Settings['comment-suffix'])
 	$name = Get-ConfigTextSectionName -NameSetting $Settings.name
 	$text = Get-ConfigTextSectionText -TextSetting $Settings.text -CommentPrefix $commentPrefix -CommentSuffix $commentSuffix
 
+	# Return only normalized values that downstream writers need.
 	return [pscustomobject]@{
 		Name = $name
 		Text = $text
@@ -219,19 +242,23 @@ function Get-ConfigTextSectionLineRecords {
 		[string] $Content
 	)
 
+	# Track text spans so section replacements can preserve surrounding content.
 	$lineRecords = [System.Collections.Generic.List[object]]::new()
 	$position = 0
 
+	# Walk the content manually to preserve exact line-break lengths and indexes.
 	while ($position -lt $Content.Length) {
 		$lineStart = $position
 		$lineBreakLength = 0
 
+		# Advance to the next CR or LF without allocating intermediate lines.
 		while ($position -lt $Content.Length -and $Content[$position] -ne "`r" -and $Content[$position] -ne "`n") {
 			$position++
 		}
 
 		$lineText = $Content.Substring($lineStart, $position - $lineStart)
 
+		# Include the original CRLF, CR, or LF bytes in the recorded span.
 		if ($position -lt $Content.Length) {
 			if ($Content[$position] -eq "`r" -and ($position + 1) -lt $Content.Length -and $Content[$position + 1] -eq "`n") {
 				$lineBreakLength = 2
@@ -243,6 +270,7 @@ function Get-ConfigTextSectionLineRecords {
 			$position += $lineBreakLength
 		}
 
+		# Store the line text and absolute replacement indexes for later parsing.
 		$lineRecords.Add([pscustomobject]@{
 			Text = $lineText
 			StartIndex = $lineStart
@@ -270,17 +298,21 @@ function Get-ConfigTextSectionRecords {
 		[string] $TargetPath
 	)
 
+	# Match markers for the configured comment syntax in the target file.
 	$openingPattern = '^' + [System.Text.RegularExpressions.Regex]::Escape($CommentPrefix) + ' DO NOT EDIT: (?<Name>.+) convention' + [System.Text.RegularExpressions.Regex]::Escape($CommentSuffix) + '$'
 	$closingLine = "$CommentPrefix END DO NOT EDIT$CommentSuffix"
 	$blocks = [System.Collections.Generic.List[object]]::new()
 	$currentBlock = $null
 
+	# Walk line records so each discovered block keeps exact content indexes.
 	foreach ($line in Get-ConfigTextSectionLineRecords -Content $Content) {
 		if ($null -ne $currentBlock) {
+			# A new opening marker before a close means the previous section is broken.
 			if ($line.Text -match $openingPattern) {
 				throw "Found an unterminated managed section before '$($line.Text)' in '$TargetPath'."
 			}
 
+			# Close the active block at the end of the closing marker line.
 			if ($line.Text -eq $closingLine) {
 				$blocks.Add([pscustomobject]@{
 					Name = $currentBlock.Name
@@ -294,12 +326,14 @@ function Get-ConfigTextSectionRecords {
 			continue
 		}
 
+		# A closing marker without an active block cannot be reconciled safely.
 		if ($line.Text -eq $closingLine) {
 			throw "Found an unexpected '$closingLine' marker in '$TargetPath'."
 		}
 
 		$match = [System.Text.RegularExpressions.Regex]::Match($line.Text, $openingPattern)
 
+		# Start tracking a managed block when an opening marker is found.
 		if ($match.Success) {
 			$currentBlock = [pscustomobject]@{
 				Name = $match.Groups['Name'].Value
@@ -308,6 +342,7 @@ function Get-ConfigTextSectionRecords {
 		}
 	}
 
+	# Refuse to update files with an opening marker that was never closed.
 	if ($null -ne $currentBlock) {
 		throw "Found an unterminated managed section for '$($currentBlock.Name)' in '$TargetPath'."
 	}
@@ -325,6 +360,7 @@ function ConvertTo-ConfigTextSectionLineEndings {
 		[string] $LineEnding
 	)
 
+	# Normalize all input newline forms to the target file's line ending.
 	return ($Text -replace "`r`n", "`n" -replace "`r", "`n").Replace("`n", $LineEnding)
 }
 
@@ -335,6 +371,7 @@ function Get-ConfigTextSectionTrailingLineEndingText {
 		[string] $Text
 	)
 
+	# Preserve the exact trailing newline sequence from an existing block.
 	if ($Text.EndsWith("`r`n", [System.StringComparison]::Ordinal)) {
 		return "`r`n"
 	}
@@ -370,13 +407,16 @@ function New-ConfigTextSectionText {
 		[string] $LineEnding
 	)
 
+	# Normalize the body before wrapping it in managed section markers.
 	$normalizedText = ConvertTo-ConfigTextSectionLineEndings -Text $Text -LineEnding $LineEnding
 	$blockText = "$CommentPrefix DO NOT EDIT: $Name convention$CommentSuffix$LineEnding$normalizedText"
 
+	# Ensure the closing marker starts on its own line.
 	if (-not $normalizedText.EndsWith($LineEnding, [System.StringComparison]::Ordinal)) {
 		$blockText += $LineEnding
 	}
 
+	# Append the closing marker without forcing an extra newline.
 	$blockText += "$CommentPrefix END DO NOT EDIT$CommentSuffix"
 	return $blockText
 }
@@ -391,18 +431,22 @@ function Add-ConfigTextSectionSeparator {
 		[string] $LineEnding
 	)
 
+	# Empty files need no spacer before the managed section.
 	if ([string]::IsNullOrEmpty($Content)) {
 		return $Content
 	}
 
+	# Keep an existing blank line before appending a new managed section.
 	if ($Content.EndsWith($LineEnding + $LineEnding, [System.StringComparison]::Ordinal)) {
 		return $Content
 	}
 
+	# Add one extra newline when the file already ends with a single newline.
 	if ($Content.EndsWith($LineEnding, [System.StringComparison]::Ordinal)) {
 		return $Content + $LineEnding
 	}
 
+	# Add a blank-line separator when existing content lacks a trailing newline.
 	return $Content + $LineEnding + $LineEnding
 }
 
@@ -422,19 +466,23 @@ function Set-ConfigTextSectionText {
 		[string] $TargetPath
 	)
 
+	# Build the desired managed block and locate matching blocks in current content.
 	$managedSection = New-ConfigTextSectionText -Name $Section.Name -Text $Section.Text -CommentPrefix $Section.CommentPrefix -CommentSuffix $Section.CommentSuffix -LineEnding $LineEnding
 	$blocks = Get-ConfigTextSectionRecords -Content $Content -CommentPrefix $Section.CommentPrefix -CommentSuffix $Section.CommentSuffix -TargetPath $TargetPath
 	$namedBlocks = @($blocks | Where-Object { $_.Name -eq $Section.Name })
 
+	# Refuse ambiguous updates when more than one block has the same name.
 	if ($namedBlocks.Count -gt 1) {
 		throw "Found multiple managed sections named '$($Section.Name)' in '$TargetPath'."
 	}
 
+	# Replace an existing block while preserving its trailing newline style.
 	if ($namedBlocks.Count -eq 1) {
 		$block = $namedBlocks[0]
 		$currentBlockText = $Content.Substring($block.StartIndex, $block.EndIndex - $block.StartIndex)
 		$replacementBlockText = $managedSection + (Get-ConfigTextSectionTrailingLineEndingText -Text $currentBlockText)
 
+		# Report no update when the managed block already matches exactly.
 		if ($replacementBlockText -ceq $currentBlockText) {
 			return [pscustomobject]@{
 				Content = $Content
@@ -442,6 +490,7 @@ function Set-ConfigTextSectionText {
 			}
 		}
 
+		# Splice the replacement into the original content using recorded indexes.
 		$newContent = $Content.Substring(0, $block.StartIndex) + $replacementBlockText + $Content.Substring($block.EndIndex)
 
 		return [pscustomobject]@{
@@ -450,9 +499,11 @@ function Set-ConfigTextSectionText {
 		}
 	}
 
+	# Append a new managed block when no existing block with this name exists.
 	$newContent = Add-ConfigTextSectionSeparator -Content $Content -LineEnding $LineEnding
 	$newContent += $managedSection
 
+	# End newly written files with the selected line ending.
 	if (-not $newContent.EndsWith($LineEnding, [System.StringComparison]::Ordinal)) {
 		$newContent += $LineEnding
 	}
@@ -473,6 +524,7 @@ function Invoke-ConfigTextSectionGit {
 		[string] $FailureMessage = 'Git command failed.'
 	)
 
+	# Run git either for captured output or for status-only side effects.
 	if ($CaptureOutput) {
 		[string[]] $output = @(& git @Arguments)
 	}
@@ -480,16 +532,19 @@ function Invoke-ConfigTextSectionGit {
 		& git @Arguments | Out-Null
 	}
 
+	# Surface git failures with convention-specific messages.
 	if ($LASTEXITCODE -ne 0) {
 		throw $FailureMessage
 	}
 
+	# Return captured lines only for callers that requested them.
 	if ($CaptureOutput) {
 		return $output
 	}
 }
 
 function Test-ConfigTextSectionGitHasWorkingTreeChanges {
+	# Inspect all tracked and untracked changes before deciding to commit.
 	[string[]] $statusLines = @(Invoke-ConfigTextSectionGit -Arguments @('status', '--short', '--untracked-files=all') -CaptureOutput -FailureMessage 'Failed to inspect git status.')
 	return $statusLines.Count -gt 0
 }
@@ -500,10 +555,12 @@ function Invoke-ConfigTextSectionCommit {
 		[string] $Message
 	)
 
+	# Skip commit creation when the convention left the working tree clean.
 	if (-not (Test-ConfigTextSectionGitHasWorkingTreeChanges)) {
 		return $false
 	}
 
+	# Stage every convention-created change and commit it with the configured message.
 	Invoke-ConfigTextSectionGit -Arguments @('add', '-A') -FailureMessage 'Failed to stage convention changes.'
 	Invoke-ConfigTextSectionGit -Arguments @('commit', '-m', $Message) -FailureMessage "Failed to create commit '$Message'."
 	return $true
@@ -515,20 +572,24 @@ function Invoke-ConfigTextSection {
 		[System.Collections.IDictionary] $Settings
 	)
 
+	# Require a target path before resolving any other configured behavior.
 	if ($null -eq $Settings -or -not $Settings.ContainsKey('path')) {
 		throw "The 'path' setting is required."
 	}
 
+	# Resolve display paths and optional behaviors from the convention settings.
 	$targetPath = Get-RepositoryPath -PathSetting $Settings.path
 	$targetDisplayPath = Format-RepositoryRelativePath -Path $targetPath
 	$configuredAgent = if ($Settings.ContainsKey('agent')) { Get-ConfigTextSectionAgent -AgentSetting $Settings.agent } else { $null }
 	$configuredCommit = if ($Settings.ContainsKey('commit')) { Get-ConfigTextSectionCommit -CommitSetting $Settings.commit } else { $null }
 	$configuredSection = Get-ConfigTextSection -Settings $Settings
 
+	# Managed sections can update files, but not directory paths.
 	if (Test-Path -LiteralPath $targetPath -PathType Container) {
 		throw "The target path '$targetDisplayPath' is a directory."
 	}
 
+	# Read existing content and reuse its line ending where possible.
 	$existingContent = ''
 	$lineEnding = "`n"
 
@@ -537,9 +598,11 @@ function Invoke-ConfigTextSection {
 		$lineEnding = Get-LineEnding -Content $existingContent
 	}
 
+	# Compute the desired target content before touching the file system.
 	$sectionResult = Set-ConfigTextSectionText -Content $existingContent -Section $configuredSection -LineEnding $lineEnding -TargetPath $targetPath
 	$newContent = $sectionResult.Content
 
+	# Avoid rewriting files that already contain the desired managed section.
 	if ($newContent -ceq $existingContent) {
 		Write-Host "'$targetDisplayPath' already contains the '$($configuredSection.Name)' section."
 		return
@@ -547,16 +610,19 @@ function Invoke-ConfigTextSection {
 
 	$targetDirectory = [System.IO.Path]::GetDirectoryName($targetPath)
 
+	# Create the target directory just before the first write.
 	if (-not [string]::IsNullOrEmpty($targetDirectory)) {
 		[System.IO.Directory]::CreateDirectory($targetDirectory) | Out-Null
 	}
 
 	Write-Utf8NoBomFile -Path $targetPath -Content $newContent
 
+	# Let Copilot make follow-up fixes when agent instructions are configured.
 	if ($null -ne $configuredAgent -and -not [string]::IsNullOrWhiteSpace($configuredAgent.Instructions)) {
 		Write-Host "'$targetDisplayPath' changed; starting Copilot with configured agent instructions."
 		Invoke-CopilotWithIsolatedConfig -Instructions $configuredAgent.Instructions
 
+		# Re-read after Copilot so the managed section can be restored if needed.
 		$copilotContent = ''
 		$copilotLineEnding = $lineEnding
 
@@ -565,6 +631,7 @@ function Invoke-ConfigTextSection {
 			$copilotLineEnding = Get-LineEnding -Content $copilotContent
 		}
 
+		# Reconcile only the managed section, preserving any other Copilot edits.
 		$reconciledSectionResult = Set-ConfigTextSectionText -Content $copilotContent -Section $configuredSection -LineEnding $copilotLineEnding -TargetPath $targetPath
 
 		if ($reconciledSectionResult.Updated) {
@@ -572,6 +639,7 @@ function Invoke-ConfigTextSection {
 		}
 	}
 
+	# Create the configured commit only after all file and agent work is done.
 	if ($null -ne $configuredCommit -and -not [string]::IsNullOrWhiteSpace($configuredCommit.Message)) {
 		if (Invoke-ConfigTextSectionCommit -Message $configuredCommit.Message) {
 			Write-Host "Committed convention changes with message '$($configuredCommit.Message)'."

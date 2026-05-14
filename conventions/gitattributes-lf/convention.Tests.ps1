@@ -5,11 +5,13 @@ $ErrorActionPreference = 'Stop'
 
 Describe 'gitattributes-lf convention' {
 	BeforeAll {
+		# Cache convention paths and load shared test helpers.
 		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
 		$script:testHelpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'TestHelpers.ps1'
 		. $script:testHelpersPath
 
 		function script:InvokeGitattributesLfConvention {
+			# Invoke the convention script with an empty settings file.
 			param(
 				[Parameter(Mandatory = $true)]
 				[string] $TestDirectory
@@ -26,6 +28,7 @@ Describe 'gitattributes-lf convention' {
 		}
 
 		function script:InvokeGitattributesLfConventionWithoutInput {
+			# Invoke the convention script without an input file.
 			param(
 				[Parameter(Mandatory = $true)]
 				[string] $TestDirectory
@@ -36,6 +39,7 @@ Describe 'gitattributes-lf convention' {
 	}
 
 	BeforeEach {
+		# Stub Copilot so tests can assert whether it was invoked.
 		$global:CopilotCallCount = 0
 
 		function global:copilot {
@@ -44,6 +48,7 @@ Describe 'gitattributes-lf convention' {
 	}
 
 	AfterEach {
+		# Remove the global Copilot stub after each scenario.
 		Remove-Item Function:\global:copilot -ErrorAction SilentlyContinue
 	}
 
@@ -51,13 +56,16 @@ Describe 'gitattributes-lf convention' {
 		$testDirectory = New-TestDirectory
 
 		try {
+			# Arrange an empty initialized repository.
 			Initialize-TestRepository -Path $testDirectory
 			$initialHead = Get-CommitId -TestDirectory $testDirectory
 
+			# Apply the convention and collect commit and status state.
 			$output = InvokeGitattributesLfConvention -TestDirectory $testDirectory
 			$commitSubjects = @(Get-CommitSubjects -TestDirectory $testDirectory -Count 2)
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
+			# Assert LF attributes were created, committed, and did not invoke Copilot.
 			(Test-Path -LiteralPath (Join-Path $testDirectory '.gitattributes')) | Should -Be $true
 			((Get-Content -LiteralPath (Join-Path $testDirectory '.gitattributes') -Raw).TrimEnd("`r", "`n")) | Should -Be '* text=auto eol=lf'
 			$global:CopilotCallCount | Should -Be 0
@@ -75,6 +83,7 @@ Describe 'gitattributes-lf convention' {
 		$testDirectory = New-TestDirectory
 
 		try {
+			# Arrange a repository with noncompliant attributes and CRLF content.
 			Initialize-TestRepository -Path $testDirectory
 			$gitattributesPath = Join-Path $testDirectory '.gitattributes'
 			$scriptPath = Join-Path $testDirectory 'script.ps1'
@@ -89,16 +98,19 @@ Describe 'gitattributes-lf convention' {
 				& git commit -m 'Add gitattributes' | Out-Null
 
 				function global:copilot {
+					# Simulate Copilot rewriting attributes to the compliant shape.
 					$global:CopilotCallCount++
 					Write-Utf8NoBomFile -Path $gitattributesPath -Content "* text=auto eol=lf`n*.png binary`n"
 				}
 
+				# Apply the convention while the Copilot stub is in scope.
 				$output = InvokeGitattributesLfConvention -TestDirectory $testDirectory
 			}
 			finally {
 				Pop-Location
 			}
 
+			# Assert Copilot was used and the final repository history is correct.
 			$global:CopilotCallCount | Should -Be 1
 			(Get-Content -LiteralPath $gitattributesPath -Raw) | Should -Match "^\* text=auto eol=lf\n"
 			(Get-Content -LiteralPath $gitattributesPath -Raw) | Should -Match "\.png binary"
@@ -124,6 +136,7 @@ Describe 'gitattributes-lf convention' {
 		$testDirectory = New-TestDirectory
 
 		try {
+			# Arrange a repository with already-compliant attributes.
 			Initialize-TestRepository -Path $testDirectory
 			$gitattributesPath = Join-Path $testDirectory '.gitattributes'
 			$expectedContent = "* text=auto eol=lf`n*.ps1 text eol=crlf`n*.png binary`n"
@@ -140,8 +153,10 @@ Describe 'gitattributes-lf convention' {
 
 			$beforeHead = Get-CommitId -TestDirectory $testDirectory
 
+			# Apply the convention to the compliant repository.
 			$output = InvokeGitattributesLfConvention -TestDirectory $testDirectory
 
+			# Assert no Copilot call or commit occurred.
 			$global:CopilotCallCount | Should -Be 0
 			(Get-Content -LiteralPath $gitattributesPath -Raw) | Should -Be $expectedContent
 			$output[0].ToString() | Should -Be "'.gitattributes' already starts with '* text=auto eol=lf'."
@@ -156,6 +171,7 @@ Describe 'gitattributes-lf convention' {
 		$testDirectory = New-TestDirectory
 
 		try {
+			# Arrange a repository with noncompliant attributes for the first run.
 			Initialize-TestRepository -Path $testDirectory
 			$gitattributesPath = Join-Path $testDirectory '.gitattributes'
 			Write-Utf8NoBomFile -Path $gitattributesPath -Content "* -text`n"
@@ -166,10 +182,12 @@ Describe 'gitattributes-lf convention' {
 				& git commit -m 'Add noncompliant gitattributes' | Out-Null
 
 				function global:copilot {
+					# Simulate Copilot rewriting attributes to the compliant shape.
 					$global:CopilotCallCount++
 					Write-Utf8NoBomFile -Path $gitattributesPath -Content "* text=auto eol=lf`n"
 				}
 
+				# Apply the convention twice in the same repository.
 				InvokeGitattributesLfConvention -TestDirectory $testDirectory | Out-Null
 				$headAfterFirstRun = & git rev-parse HEAD
 				InvokeGitattributesLfConvention -TestDirectory $testDirectory | Out-Null
@@ -180,6 +198,7 @@ Describe 'gitattributes-lf convention' {
 				Pop-Location
 			}
 
+			# Assert only the first run changed the repository.
 			$global:CopilotCallCount | Should -Be 1
 			$headAfterSecondRun | Should -Be $headAfterFirstRun
 			$status.Count | Should -Be 0

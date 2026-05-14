@@ -3,12 +3,15 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+# Define the Pester suite for the copilot-lsp convention.
 Describe 'copilot-lsp convention' {
 	BeforeAll {
+		# Load the convention script and shared test helpers.
 		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
 		$script:testHelpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'TestHelpers.ps1'
 		. $script:testHelpersPath
 
+		# Invoke the convention with temporary JSON input for each scenario.
 		function script:InvokeCopilotLspConvention {
 			param(
 				[Parameter(Mandatory = $true)]
@@ -28,6 +31,7 @@ Describe 'copilot-lsp convention' {
 			}
 		}
 
+		# Read the LSP config as a hashtable for stable assertions.
 		function script:ReadLspConfig {
 			param(
 				[Parameter(Mandatory = $true)]
@@ -37,6 +41,7 @@ Describe 'copilot-lsp convention' {
 			return Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json -AsHashtable
 		}
 
+		# Flatten convention output for regex assertions.
 		function script:GetOutputText {
 			param(
 				[Parameter(Mandatory = $true)]
@@ -48,16 +53,19 @@ Describe 'copilot-lsp convention' {
 	}
 
 	It 'creates .github/lsp.json when it is missing' {
+		# Set up an empty repository with no existing LSP config.
 		$testDirectory = New-TestDirectory
 
 		try {
 			Initialize-TestRepository -Path $testDirectory
 
+			# Run the convention with a configured Python server.
 			$output = InvokeCopilotLspConvention -TestDirectory $testDirectory -Settings @{ servers = [ordered]@{ python = [ordered]@{ command = 'pyright-langserver'; args = @('--stdio'); fileExtensions = [ordered]@{ '.py' = 'python'; '.pyi' = 'python' } } } }
 			$lspConfigPath = Join-Path $testDirectory '.github' 'lsp.json'
 			$config = ReadLspConfig -Path $lspConfigPath
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
+			# Assert the new config contains the requested server and output.
 			(Test-Path -LiteralPath $lspConfigPath) | Should -Be $true
 			$config.lspServers.python.command | Should -Be 'pyright-langserver'
 			$config.lspServers.python.args | Should -Be @('--stdio')
@@ -68,11 +76,13 @@ Describe 'copilot-lsp convention' {
 			(GetOutputText -Output $output) | Should -Match "Created '\.github/lsp\.json' with the configured Copilot LSP servers\."
 		}
 		finally {
+			# Remove the isolated repository after the test completes.
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
 		}
 	}
 
 	It 'adds and replaces named servers without merging them or affecting other servers' {
+		# Set up a repository with existing LSP servers and unrelated settings.
 		$testDirectory = New-TestDirectory
 
 		try {
@@ -104,6 +114,7 @@ Describe 'copilot-lsp convention' {
 }
 '@
 
+			# Commit the existing config so later status checks show only convention changes.
 			Push-Location $testDirectory
 			try {
 				& git add -A
@@ -113,6 +124,7 @@ Describe 'copilot-lsp convention' {
 				Pop-Location
 			}
 
+			# Run the convention with replacement and added servers.
 			$output = InvokeCopilotLspConvention -TestDirectory $testDirectory -Settings @{ servers = [ordered]@{
 				python = [ordered]@{
 					command = 'pyright-langserver'
@@ -134,6 +146,7 @@ Describe 'copilot-lsp convention' {
 			$config = ReadLspConfig -Path $lspConfigPath
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
+			# Assert named servers are replaced wholesale and others are preserved.
 			$config.lspServers.python.command | Should -Be 'pyright-langserver'
 			$config.lspServers.python.args | Should -Be @('--stdio')
 			$config.lspServers.python.fileExtensions.'.pyw' | Should -Be 'python'
@@ -146,11 +159,13 @@ Describe 'copilot-lsp convention' {
 			(GetOutputText -Output $output) | Should -Match "Updated '\.github/lsp\.json' with the configured Copilot LSP servers\."
 		}
 		finally {
+			# Remove the isolated repository after the test completes.
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
 		}
 	}
 
 	It 'does nothing when the configured servers already match exactly' {
+		# Set up a repository whose LSP config already matches the settings.
 		$testDirectory = New-TestDirectory
 
 		try {
@@ -191,6 +206,7 @@ Describe 'copilot-lsp convention' {
 }
 '@
 
+			# Commit the matching config so status checks can verify idempotency.
 			Push-Location $testDirectory
 			try {
 				& git add -A
@@ -200,6 +216,7 @@ Describe 'copilot-lsp convention' {
 				Pop-Location
 			}
 
+			# Run the convention with the same configured servers.
 			$output = InvokeCopilotLspConvention -TestDirectory $testDirectory -Settings @{ servers = [ordered]@{
 				python = [ordered]@{
 					command = 'pyright-langserver'
@@ -220,10 +237,12 @@ Describe 'copilot-lsp convention' {
 			} }
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
+			# Assert the convention reports compliance and leaves git clean.
 			$status.Count | Should -Be 0
 			(GetOutputText -Output $output) | Should -Match "'\.github/lsp\.json' already contains the configured Copilot LSP servers\."
 		}
 		finally {
+			# Remove the isolated repository after the test completes.
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
 		}
 	}

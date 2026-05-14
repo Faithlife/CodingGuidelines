@@ -8,6 +8,7 @@ $helpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'Helpers.ps1'
 
 Set-Utf8NoBomConsoleEncoding
 
+# Read a JSON file and require an object root.
 function ReadJsonObjectFile {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -37,6 +38,7 @@ function ReadJsonObjectFile {
 	return , $jsonObject
 }
 
+# Return a required object-valued property from a JSON object.
 function GetRequiredJsonObjectProperty {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -71,6 +73,7 @@ function GetRequiredJsonObjectProperty {
 	return , $jsonObject
 }
 
+# Validate server names before writing them into lsp.json.
 function TestValidServerName {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -80,6 +83,7 @@ function TestValidServerName {
 	return $ServerName -cmatch '^[A-Za-z0-9_-]+$'
 }
 
+# Validate the desired server map and each server definition.
 function ValidateDesiredServers {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -105,6 +109,7 @@ function ValidateDesiredServers {
 	}
 }
 
+# Merge configured servers into the LSP configuration object.
 function EnsureLspServers {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -130,12 +135,14 @@ function EnsureLspServers {
 	$null = $rootJsonObject.TryGetPropertyValue('lspServers', [ref] $lspServersNode)
 	$lspServers = $lspServersNode -as [System.Text.Json.Nodes.JsonObject]
 
+	# Create the lspServers container when the config does not have one.
 	if ($null -eq $lspServers) {
 		$lspServers = [System.Text.Json.Nodes.JsonObject]::new()
 		$rootJsonObject['lspServers'] = $lspServers
 		$changed = $true
 	}
 
+	# Add or replace configured server definitions when they differ.
 	foreach ($serverEntry in $desiredServersObject) {
 		$serverName = $serverEntry.Key
 		$desiredDefinition = $serverEntry.Value
@@ -151,6 +158,7 @@ function EnsureLspServers {
 	return $changed
 }
 
+# Serialize JSON with indentation for stable file output.
 function ConvertToIndentedJson {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -169,10 +177,12 @@ function ConvertToIndentedJson {
 	return $rootJsonObject.ToJsonString($options)
 }
 
+# Require the convention input path before reading settings.
 if ($args.Count -eq 0) {
 	throw 'The input path argument is required.'
 }
 
+# Read and validate the desired server configuration.
 $inputPath = $args[0]
 $inputRoot = ReadJsonObjectFile -Path $inputPath -Description 'The convention input file'
 $settings = GetRequiredJsonObjectProperty -Object $inputRoot -PropertyName 'settings' -Description "The 'settings' property"
@@ -180,10 +190,12 @@ $desiredServers = GetRequiredJsonObjectProperty -Object $settings -PropertyName 
 
 ValidateDesiredServers -Servers $desiredServers
 
+# Locate the repository's Copilot LSP configuration file.
 $lspConfigPath = Get-RepositoryPath -PathSetting '/.github/lsp.json'
 $lspConfigDisplayPath = Format-RepositoryRelativePath -Path $lspConfigPath
 $fileExisted = Test-Path -LiteralPath $lspConfigPath -PathType Leaf
 
+# Read the existing configuration or start with an empty object.
 $rootObject = if ($fileExisted) {
 	ReadJsonObjectFile -Path $lspConfigPath -Description "'$lspConfigDisplayPath'"
 }
@@ -193,17 +205,20 @@ else {
 
 $changed = EnsureLspServers -RootObject $rootObject -DesiredServers $desiredServers
 
+# Stop when the file already contains the configured servers.
 if (-not $changed) {
 	Write-Host "'$lspConfigDisplayPath' already contains the configured Copilot LSP servers."
 	return
 }
 
+# Ensure the destination directory exists before writing lsp.json.
 $lspConfigDirectory = Split-Path -Parent $lspConfigPath
 
 if (-not [string]::IsNullOrWhiteSpace($lspConfigDirectory)) {
 	[System.IO.Directory]::CreateDirectory($lspConfigDirectory) | Out-Null
 }
 
+# Write the updated configuration and report whether it was created.
 $content = (ConvertToIndentedJson -JsonObject $rootObject) + "`n"
 Write-Utf8NoBomFile -Path $lspConfigPath -Content $content
 

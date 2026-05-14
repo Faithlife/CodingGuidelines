@@ -5,12 +5,14 @@ $ErrorActionPreference = 'Stop'
 
 Describe 'faithlife-build-script convention' {
 	BeforeAll {
+		# Cache convention paths and load shared test helpers.
 		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
 		$script:expectedBuildScriptPath = Join-Path $PSScriptRoot 'files' 'build.ps1'
 		$script:testHelpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'TestHelpers.ps1'
 		. $script:testHelpersPath
 
 		function script:InvokeFaithlifeBuildScriptConvention {
+			# Invoke the convention script with an empty settings file.
 			param(
 				[Parameter(Mandatory = $true)]
 				[string] $TestDirectory
@@ -27,6 +29,7 @@ Describe 'faithlife-build-script convention' {
 		}
 
 		function script:GetBuildScriptIndexMode {
+			# Read the tracked git mode for build.ps1 from the index.
 			param(
 				[Parameter(Mandatory = $true)]
 				[string] $TestDirectory
@@ -52,12 +55,15 @@ Describe 'faithlife-build-script convention' {
 		$testDirectory = New-TestDirectory
 
 		try {
+			# Arrange an empty initialized repository.
 			Initialize-TestRepository -Path $testDirectory
 
+			# Apply the convention and collect the generated build script state.
 			$output = InvokeFaithlifeBuildScriptConvention -TestDirectory $testDirectory
 			$buildScriptPath = Join-Path $testDirectory 'build.ps1'
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
+			# Assert the published build script was created with executable git mode.
 			(Test-Path -LiteralPath $buildScriptPath) | Should -Be $true
 			(Get-Content -LiteralPath $buildScriptPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedBuildScriptPath -Raw)
 			(GetBuildScriptIndexMode -TestDirectory $testDirectory) | Should -Be '100755'
@@ -75,6 +81,7 @@ Describe 'faithlife-build-script convention' {
 		$testDirectory = New-TestDirectory
 
 		try {
+			# Arrange a repository with a committed placeholder build script.
 			Initialize-TestRepository -Path $testDirectory
 			$buildScriptPath = Join-Path $testDirectory 'build.ps1'
 			Write-Utf8NoBomFile -Path $buildScriptPath -Content "Write-Host 'placeholder'`n"
@@ -88,9 +95,11 @@ Describe 'faithlife-build-script convention' {
 				Pop-Location
 			}
 
+			# Apply the convention and collect the modified build script state.
 			$output = InvokeFaithlifeBuildScriptConvention -TestDirectory $testDirectory
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
+			# Assert the script content and git mode were updated.
 			(Get-Content -LiteralPath $buildScriptPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedBuildScriptPath -Raw)
 			(GetBuildScriptIndexMode -TestDirectory $testDirectory) | Should -Be '100755'
 			$status.Count | Should -Be 1
@@ -107,6 +116,7 @@ Describe 'faithlife-build-script convention' {
 		$testDirectory = New-TestDirectory
 
 		try {
+			# Arrange a repository after a successful first convention run.
 			Initialize-TestRepository -Path $testDirectory
 
 			InvokeFaithlifeBuildScriptConvention -TestDirectory $testDirectory | Out-Null
@@ -120,10 +130,12 @@ Describe 'faithlife-build-script convention' {
 				Pop-Location
 			}
 
+			# Apply the convention a second time and capture repository state.
 			$output = InvokeFaithlifeBuildScriptConvention -TestDirectory $testDirectory
 			$headAfterSecondRun = Get-CommitId -TestDirectory $testDirectory
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
+			# Assert the second run made no staged changes and reported idempotence.
 			$headAfterSecondRun | Should -Be $headAfterFirstRun
 			# On Linux/Mac, git tracks file mode and the working tree file may remain at mode
 			# 100644 while the index is 100755; only assert that nothing is staged.

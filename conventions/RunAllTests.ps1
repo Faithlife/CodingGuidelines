@@ -7,15 +7,18 @@ if ((Get-Module -ListAvailable Pester | Sort-Object Version -Descending | Select
 	throw "Pester 5 is required to run these tests. Currently using $((Get-Module Pester).Version)."
 }
 
+# Load shared helpers and normalize test output encoding.
 $helpersPath = Join-Path $PSScriptRoot 'scripts' 'Helpers.ps1'
 . $helpersPath
 
 Set-Utf8NoBomConsoleEncoding
 
+# Return the conventions directory used as the primary test root.
 function GetConventionsRoot {
 	return [System.IO.Path]::GetFullPath($PSScriptRoot)
 }
 
+# Discover convention test scripts in published and GitHub-local convention roots.
 function GetTestScriptPaths {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -39,6 +42,7 @@ function GetTestScriptPaths {
 		Sort-Object FullName)
 }
 
+# Return paths relative to the repository root for concise output.
 function GetRelativeDisplayPath {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -51,16 +55,20 @@ function GetRelativeDisplayPath {
 	return [System.IO.Path]::GetRelativePath($RootPath, $ChildPath)
 }
 
+# Resolve the repository and discover test scripts before running them.
 $repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $conventionsRoot = GetConventionsRoot
 $testScriptPaths = GetTestScriptPaths -RepositoryRoot $repositoryRoot -ConventionsRoot $conventionsRoot
 
+# Fail clearly when no convention tests were discovered.
 if ($testScriptPaths.Count -eq 0) {
 	throw "No convention test scripts were found under '$conventionsRoot'."
 }
 
+# Track failing scripts so the final output summarizes all failures.
 $failedScriptPaths = [System.Collections.Generic.List[string]]::new()
 
+# Run each Pester script independently and record failures.
 foreach ($testScriptPath in $testScriptPaths) {
 	$displayPath = GetRelativeDisplayPath -RootPath $repositoryRoot -ChildPath $testScriptPath.FullName
 	Write-Host "Running $displayPath"
@@ -72,6 +80,7 @@ foreach ($testScriptPath in $testScriptPaths) {
 	}
 }
 
+# Emit the failing scripts and fail the aggregate run.
 if ($failedScriptPaths.Count -gt 0) {
 	Write-Host ''
 	Write-Host 'Failing test scripts:'
@@ -83,5 +92,6 @@ if ($failedScriptPaths.Count -gt 0) {
 	exit 1
 }
 
+# Report aggregate success after every script passes.
 Write-Host ''
 Write-Host "All $($testScriptPaths.Count) convention test scripts passed."

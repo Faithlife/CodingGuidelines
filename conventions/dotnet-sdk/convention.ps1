@@ -8,12 +8,14 @@ $helpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'Helpers.ps1'
 
 Set-Utf8NoBomConsoleEncoding
 
+# Evaluate whether global.json satisfies the requested SDK major version.
 function GetGlobalJsonSdkStatus {
 	param(
 		[string] $GlobalJsonPath,
 		[int] $MajorVersion
 	)
 
+	# Treat a missing global.json as nonconforming.
 	if (-not (Test-Path -LiteralPath $GlobalJsonPath -PathType Leaf)) {
 		return [pscustomobject]@{
 			Conforms = $false
@@ -21,6 +23,7 @@ function GetGlobalJsonSdkStatus {
 		}
 	}
 
+	# Read sdk.version and report malformed JSON as nonconforming.
 	try {
 		$sdkVersion = (Get-Content -LiteralPath $GlobalJsonPath -Raw | ConvertFrom-Json -AsHashtable).sdk.version
 	}
@@ -31,6 +34,7 @@ function GetGlobalJsonSdkStatus {
 		}
 	}
 
+	# Require sdk.version to be a string before parsing it.
 	if ($sdkVersion -isnot [string]) {
 		return [pscustomobject]@{
 			Conforms = $false
@@ -38,6 +42,7 @@ function GetGlobalJsonSdkStatus {
 		}
 	}
 
+	# Parse the major version from a three-part SDK version.
 	$versionMatch = [System.Text.RegularExpressions.Regex]::Match($sdkVersion, '^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)')
 
 	if (-not $versionMatch.Success) {
@@ -49,6 +54,7 @@ function GetGlobalJsonSdkStatus {
 
 	$currentMajorVersion = [int] $versionMatch.Groups['major'].Value
 
+	# Accept any SDK major version that meets or exceeds the requirement.
 	if ($currentMajorVersion -lt $MajorVersion) {
 		return [pscustomobject]@{
 			Conforms = $false
@@ -62,6 +68,7 @@ function GetGlobalJsonSdkStatus {
 	}
 }
 
+# Require and read the convention input settings.
 if ($args.Count -eq 0) {
 	throw 'The input path argument is required.'
 }
@@ -75,6 +82,7 @@ if ($null -eq $settings -or -not $settings.ContainsKey('version')) {
 
 $versionSetting = $settings.version
 
+# Parse the required SDK major version from the convention settings.
 if ($versionSetting -is [byte] -or
 	$versionSetting -is [short] -or
 	$versionSetting -is [int] -or
@@ -92,6 +100,7 @@ else {
 	throw "The 'version' setting must be an integer or a string that parses to an integer."
 }
 
+# Validate the resolved major version before inspecting global.json.
 if ($majorVersion -le 0) {
 	throw "The 'version' setting must be a positive integer."
 }
@@ -101,6 +110,7 @@ $globalJsonDisplayPath = Format-RepositoryRelativePath -Path $globalJsonPath
 
 Write-Host "Checking $globalJsonDisplayPath for .NET SDK major version $majorVersion."
 
+# Check the current global.json status and exit when compliant.
 $globalJsonStatus = GetGlobalJsonSdkStatus -GlobalJsonPath $globalJsonPath -MajorVersion $majorVersion
 Write-Host $globalJsonStatus.Message
 
@@ -110,6 +120,7 @@ if ($globalJsonStatus.Conforms) {
 }
 
 $sdkVersion = "$majorVersion.0.100"
+# Ask Copilot to make only global.json conform to the required SDK.
 $copilotInstructions = @"
 Update the repository in the current directory so that `global.json` conforms to the required .NET SDK configuration.
 
@@ -138,6 +149,7 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 Write-Host 'global.json does not conform; starting Copilot to update it.'
 Invoke-CopilotWithIsolatedConfig -Instructions $copilotInstructions
 
+# Verify Copilot produced a conforming global.json.
 $globalJsonStatus = GetGlobalJsonSdkStatus -GlobalJsonPath $globalJsonPath -MajorVersion $majorVersion
 Write-Host $globalJsonStatus.Message
 
