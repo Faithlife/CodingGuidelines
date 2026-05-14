@@ -327,6 +327,8 @@ dotnet_diagnostic.IDE0391.severity = suggestion
 
 We prefer to use the `async` keyword for cleaner code, even when it is less efficient than returning `Task.FromResult` or `Task.CompletedTask`.
 
+Also, `async` preserves the expected semantics of a `Task`-returning method (i.e., the `Task` contains the exception and throws it when awaited) if the synchronous implementation throws.
+
 ## [Style: Formatting Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/ide0055)
 
 ```editorconfig
