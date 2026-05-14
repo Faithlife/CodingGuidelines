@@ -55,9 +55,9 @@ Every repository that uses APM needs the same housekeeping: mark generated files
 1. Adds `.gitattributes` entries marking `apm.lock.yaml` and `.agents/**` as generated.
 2. Adds `.gitignore` entries for `apm_modules/` and `.apm-pin`.
 3. Adds `.prettierignore` entries for `.agents/`, `apm.lock.yaml`, and `apm.yml`.
-4. Runs `apm install --update` to download and install any APM packages. (This last step is the `conventions/apm-install` script, which is a PowerShell script that calls APM. It skips if no `apm.yml` exists and no packages are configured.)
+4. Runs `apm install --update` on the existing `apm.yml` if present (via the `conventions/apm-install` convention).
 
-AgentConfiguration packages apply `agentic-repo` automatically, so most repositories don't reference it directly.
+Other conventions can also chain `apm-install` with explicit packages to install them as part of a convention run (e.g. `common/web` in AgentConfiguration).
 
 ## Problem 4: Rolling out changes across many repos
 
@@ -98,38 +98,51 @@ Install these tools once:
 - **[APM](https://microsoft.github.io/apm/getting-started/quick-start/)**: run `curl -sSL https://aka.ms/apm-unix | sh` (macOS/Linux) or `irm https://aka.ms/apm-windows | iex` (Windows)
 - **[.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)**: includes `dnx`, which runs .NET tools without a local manifest
 
-### Add an AgentConfiguration package
-
-Pick a package from [AgentConfiguration](https://github.com/LogosBible/AgentConfiguration) based on your project:
-
-| Project type | Package                                                            | What it installs                                                                          |
-| ------------ | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
-| Web          | `LogosBible/AgentConfiguration/common/web-instructions`            | TypeScript/JavaScript coding style instructions + web development skills (via dependency) |
-| .NET         | `LogosBible/AgentConfiguration/common/dotnet-instructions`         | C# coding style instructions + .NET development skills (via dependency)                   |
-| .NET Aspire  | `LogosBible/AgentConfiguration/common/dotnet-aspire`               | .NET skills + Playwright + Aspire MCP server                                              |
-| Any          | `LogosBible/AgentConfiguration/common/general-coding-instructions` | General coding guidelines for all file types                                              |
+### Web project
 
 ```sh
-dnx repo-conventions add LogosBible/AgentConfiguration/common/web-instructions --open-pr
+dnx repo-conventions add LogosBible/AgentConfiguration/common/web
+dnx repo-conventions add LogosBible/actions/conventions/auto-apply-conventions
+git add .github/conventions.yml && git commit -m "Add conventions"
+dnx repo-conventions apply
+apm install --update --target copilot LogosBible/AgentConfiguration/common/web-instructions
+git add -A && git commit -m "Add agent configuration"
 ```
 
-This applies `agentic-repo` automatically, installs the package's APM dependencies, and adds any package-specific ignore rules. For a repo that uses both web and .NET, add both packages.
+The `repo-conventions` commands set up repo boilerplate and install Playwright skills (`apply` requires a clean working tree, so the commit is needed first). The `apm install` command adds TypeScript/JavaScript coding style instructions.
 
-The `web-instructions` and `dotnet-instructions` packages depend on `web` and `dotnet` respectively and on `general-coding-instructions`, so you do not need to add those separately.
+### .NET project
 
-### Set up a repository without an AgentConfiguration package
-
-If your project doesn't fit any of the AgentConfiguration packages, apply `agentic-repo` directly to get the standard APM ignore rules and run `apm install`:
+Run `apm install` first to populate `apm.yml`, then commit everything together before applying conventions:
 
 ```sh
-dnx repo-conventions add Faithlife/CodingGuidelines/conventions/agentic-repo --open-pr
+apm install --update --target copilot LogosBible/AgentConfiguration/common/dotnet-instructions
+dnx repo-conventions add Faithlife/CodingGuidelines/conventions/agentic-repo
+dnx repo-conventions add LogosBible/actions/conventions/auto-apply-conventions
+git add -A && git commit -m "Add agent configuration"
+dnx repo-conventions apply
 ```
 
-To also get nightly convention updates via template-updater:
+`repo-conventions apply` sets up the ignore rules and re-runs `apm install --update` (which refreshes the packages already in `apm.yml`).
+
+### Web + .NET project
 
 ```sh
-dnx repo-conventions add LogosBible/actions/conventions/auto-apply-conventions --open-pr
+dnx repo-conventions add LogosBible/AgentConfiguration/common/web
+dnx repo-conventions add LogosBible/actions/conventions/auto-apply-conventions
+git add .github/conventions.yml && git commit -m "Add conventions"
+dnx repo-conventions apply
+apm install --update --target copilot LogosBible/AgentConfiguration/common/web-instructions LogosBible/AgentConfiguration/common/dotnet-instructions
+git add -A && git commit -m "Add agent configuration"
 ```
+
+The `-instructions` packages pull in their dependencies (`web`, `dotnet`, `general-coding-instructions`) automatically.
+
+### How it works
+
+`repo-conventions add` applies **conventions** (directories with `convention.yml`) that handle repo setup. `apm install` installs **APM packages** (directories with `apm.yml`) that provide agent skills and prompts. `common/web` is both a convention and an APM package; most other packages are APM-only.
+
+Other APM packages are available for [Graylog, Slack, OpsGenie, multi-repo workflows, and more](https://github.com/LogosBible/AgentConfiguration). Install with `apm install --update --target copilot LogosBible/AgentConfiguration/common/<package>`.
 
 ### What to commit
 
