@@ -23,8 +23,8 @@ if ($packages.Count -eq 0 -and -not (Test-Path -LiteralPath 'apm.yml')) {
 	return
 }
 
-# Build the apm install command for the agent-skills target.
-$apmArguments = @('install', '--update', '--target', 'agent-skills')
+# Build the apm install command for the copilot target.
+$apmArguments = @('install', '--update', '--target', 'copilot')
 
 if ($packages.Count -gt 0) {
 	$apmArguments += $packages
