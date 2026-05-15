@@ -53,13 +53,12 @@ conventions:
 		}
 	}
 
-	It 'forwards agent instructions when it changes .editorconfig' {
+	It 'removes redundant unmanaged rules after writing the managed section' {
 		$testDirectory = New-TemporaryDirectory
 
 		try {
-			# Arrange an isolated repository with inline agent instructions.
+			# Arrange an isolated repository with unmanaged rules duplicated by the managed section.
 			Copy-TestConventionAssets -TestDirectory $testDirectory
-			$testCopilot = New-TestCopilotCommand -TestDirectory $testDirectory
 			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
 			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
 conventions:
@@ -69,19 +68,121 @@ conventions:
     text: |
       [*.md]
       trim_trailing_whitespace = false
-    agent:
-      instructions: |
-        Validate editorconfig changes.
-        Leave fixes unstaged.
+"@, $utf8)
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.editorconfig'), @"
+[*.md]
+trim_trailing_whitespace = false
+
+[*.txt]
+indent_size = 2
 "@, $utf8)
 			Initialize-TestRepository -Path $testDirectory
 
-			# Apply the convention with a test Copilot command directory.
-			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory -CopilotCommandDirectory $testCopilot.CommandDirectory } | Should -Not -Throw
+			# Apply the convention under test.
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
 
-			# Assert Copilot received the configured instructions exactly.
-			(Test-Path -LiteralPath $testCopilot.InputPath) | Should -Be $true
-			(((Get-Content -LiteralPath $testCopilot.InputPath -Raw) -replace "`r`n", "`n").TrimEnd("`n")) | Should -Be "Validate editorconfig changes.`nLeave fixes unstaged."
+			# Assert the duplicate unmanaged Markdown section was removed but unrelated content remained.
+			$content = Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw
+			([regex]::Matches($content, '(?m)^trim_trailing_whitespace = false\r?$')).Count | Should -Be 1
+			$content | Should -Not -Match '(?m)^\[\*\.md\]\r?$\ntrim_trailing_whitespace = false\r?$\n\r?$\n\[\*\.txt\]'
+			$content | Should -Match "(?m)^\[\*\.txt\]\r?$"
+			$content | Should -Match "(?m)^indent_size = 2\r?$"
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'does not remove redundant rules inside other managed sections' {
+		$testDirectory = New-TemporaryDirectory
+
+		try {
+			# Arrange an isolated repository with another managed section that overlaps the configured rules.
+			Copy-TestConventionAssets -TestDirectory $testDirectory
+			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
+conventions:
+- path: ../conventions/editorconfig-section
+  settings:
+    name: files
+    text: |
+      [*.md]
+      trim_trailing_whitespace = false
+"@, $utf8)
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.editorconfig'), @"
+# DO NOT EDIT: other convention
+[*.md]
+trim_trailing_whitespace = false
+# END DO NOT EDIT
+"@, $utf8)
+			Initialize-TestRepository -Path $testDirectory
+
+			# Apply the convention under test.
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
+
+			# Assert the preexisting managed section remains intact.
+			$content = Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw
+			$content | Should -Match "(?s)# DO NOT EDIT: other convention\r?\n\[\*\.md\]\r?\ntrim_trailing_whitespace = false\r?\n# END DO NOT EDIT"
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'normalizes root section placement and root-wide redundant rules' {
+		$testDirectory = New-TemporaryDirectory
+
+		try {
+			# Arrange an isolated repository with root settings duplicated outside the managed section.
+			Copy-TestConventionAssets -TestDirectory $testDirectory
+			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
+conventions:
+- path: ../conventions/editorconfig-section
+  settings:
+    name: root
+    text: |
+      root = true
+
+      [*]
+      charset = utf-8
+      end_of_line = lf
+      trim_trailing_whitespace = true
+"@, $utf8)
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.editorconfig'), @"
+[*.md]
+trim_trailing_whitespace = false
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+trim_trailing_whitespace = true
+indent_size = 2
+indent_style = space
+tab_width = 2
+insert_final_newline = true
+"@, $utf8)
+			Initialize-TestRepository -Path $testDirectory
+
+			# Apply the convention under test twice to verify cleanup idempotency.
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
+			$content = Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
+
+			# Assert root is first, unmanaged root-wide rules were removed, and unrelated content remains.
+			(Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw) | Should -Be $content
+			$content.StartsWith("# DO NOT EDIT: root convention`n", [System.StringComparison]::Ordinal) | Should -Be $true
+			([regex]::Matches($content, '(?m)^root = true\r?$')).Count | Should -Be 1
+			([regex]::Matches($content, '(?m)^\[\*\]\r?$')).Count | Should -Be 1
+			$content | Should -Not -Match '(?m)^indent_size = 2\r?$'
+			$content | Should -Not -Match '(?m)^indent_style = space\r?$'
+			$content | Should -Not -Match '(?m)^tab_width = 2\r?$'
+			$content | Should -Not -Match '(?m)^insert_final_newline = true\r?$'
+			$content | Should -Match "(?m)^\[\*\.md\]\r?$"
+			$content | Should -Match "(?m)^trim_trailing_whitespace = false\r?$"
+			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

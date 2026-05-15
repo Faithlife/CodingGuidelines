@@ -36,13 +36,6 @@ Describe 'config-text-section convention' {
 		}
 	}
 
-	AfterEach {
-		# Clear global Copilot stubs and counters between tests.
-		Remove-Item Function:\global:copilot -ErrorAction SilentlyContinue
-		Remove-Variable -Name CopilotCallCount -Scope Global -ErrorAction SilentlyContinue
-		Remove-Variable -Name CopilotInstructions -Scope Global -ErrorAction SilentlyContinue
-	}
-
 	It 'creates a repository-root-relative file with a managed section and is idempotent' {
 		# Set up an empty repository for managed section creation.
 		$testDirectory = New-TemporaryDirectory
@@ -69,97 +62,18 @@ Describe 'config-text-section convention' {
 		}
 	}
 
-	It 'runs Copilot with configured agent instructions when the file changes' {
-		# Set up an empty repository and expected Copilot instructions.
+	It 'ignores obsolete agent settings' {
+		# Set up an empty repository and a Copilot function that must not be called.
 		$testDirectory = New-TemporaryDirectory
 
 		try {
 			$targetPath = Join-Path $testDirectory '.editorconfig'
-			$expectedInstructions = @'
-Make sure the code still builds successfully, e.g. by running `./build.ps1 build` or `dotnet build`.
-If the code doesn't build successfully, read the error messages, read the affected files, and fix the issues by editing the code.
-DO NOT suppress warnings by adding `<NoWarn>` properties or `#pragma warning` directives.
-If you make changes, build the code again and keep fixing issues until it builds successfully.
-DO NOT commit any changes to the git repository. Leave your changes unstaged.
-'@
-			$global:CopilotCallCount = 0
-			$global:CopilotInstructions = ''
 
-			# Stub Copilot to capture the instructions piped into it.
 			function global:copilot {
-				$global:CopilotCallCount++
-				$global:CopilotInstructions = (@($input) -join '')
+				throw 'Copilot should not run.'
 			}
 
-			# Run the convention with agent instructions configured.
-			$output = InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{
-				path = '.editorconfig'
-				name = 'general-editorconfig'
-				text = "[*]`ncharset = utf-8"
-				'comment-prefix' = '#'
-				agent = @{ instructions = $expectedInstructions }
-			}
-
-			# Assert Copilot ran once with the expected instruction text.
-			(Test-Path -LiteralPath $targetPath) | Should -Be $true
-			$global:CopilotCallCount | Should -Be 1
-			$global:CopilotInstructions | Should -Be $expectedInstructions
-			(@($output | ForEach-Object { $_.ToString() }) -contains "'.editorconfig' changed; starting Copilot with configured agent instructions.") | Should -Be $true
-		}
-		finally {
-			# Remove the isolated repository after the test completes.
-			Remove-Item -LiteralPath $testDirectory -Recurse -Force
-		}
-	}
-
-	It 'does not run Copilot when the file is already compliant' {
-		# Set up a repository that already contains the managed section.
-		$testDirectory = New-TemporaryDirectory
-
-		try {
-			$targetPath = Join-Path $testDirectory '.editorconfig'
-			[System.IO.File]::WriteAllText($targetPath, "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n", $utf8)
-			$global:CopilotCallCount = 0
-
-			# Stub Copilot so any unexpected invocation is observable.
-			function global:copilot {
-				$global:CopilotCallCount++
-			}
-
-			# Run the convention with agent instructions against compliant content.
-			$output = InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{
-				path = '.editorconfig'
-				name = 'general-editorconfig'
-				text = "[*]`ncharset = utf-8"
-				'comment-prefix' = '#'
-				agent = @{ instructions = 'Build the code.' }
-			}
-
-			# Assert Copilot was skipped and the output reports compliance.
-			$global:CopilotCallCount | Should -Be 0
-			$output[-1].ToString() | Should -Be "'.editorconfig' already contains the 'general-editorconfig' section."
-		}
-		finally {
-			# Remove the isolated repository after the test completes.
-			Remove-Item -LiteralPath $testDirectory -Recurse -Force
-		}
-	}
-
-	It 'restores the configured managed section after Copilot edits it' {
-		# Set up a repository and a target path that Copilot will mutate.
-		$testDirectory = New-TemporaryDirectory
-
-		try {
-			$targetPath = Join-Path $testDirectory '.editorconfig'
-			$global:CopilotCallCount = 0
-
-			# Stub Copilot to corrupt the managed section after the convention writes it.
-			function global:copilot {
-				$global:CopilotCallCount++
-				[System.IO.File]::WriteAllText($targetPath, "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = latin1`n# END DO NOT EDIT`n", $utf8)
-			}
-
-			# Run the convention with agent instructions configured.
+			# Run the convention with obsolete agent settings configured.
 			$output = InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{
 				path = '.editorconfig'
 				name = 'general-editorconfig'
@@ -168,62 +82,14 @@ DO NOT commit any changes to the git repository. Leave your changes unstaged.
 				agent = @{ instructions = 'Review the file.' }
 			}
 
-			# Assert the convention restores the configured managed section.
-			$global:CopilotCallCount | Should -Be 1
+			# Assert the file is updated without invoking Copilot.
+			(Test-Path -LiteralPath $targetPath) | Should -Be $true
 			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n"
-			(@($output | ForEach-Object { $_.ToString() }) -contains "'.editorconfig' changed; starting Copilot with configured agent instructions.") | Should -Be $true
+			$output[-1].ToString() | Should -Be "Updated 'general-editorconfig' section in '.editorconfig'."
 		}
 		finally {
 			# Remove the isolated repository after the test completes.
-			Remove-Item -LiteralPath $testDirectory -Recurse -Force
-		}
-	}
-
-
-	It 'does not run Copilot when agent instructions are missing, null, empty, or whitespace' {
-		# Set up reusable state for agent settings cases.
-		$testDirectory = New-TemporaryDirectory
-
-		try {
-			$global:CopilotCallCount = 0
-
-			# Stub Copilot so any unexpected invocation is observable.
-			function global:copilot {
-				$global:CopilotCallCount++
-			}
-
-			# Enumerate missing and blank instruction settings.
-			$agentSettingsCases = @(
-				@{},
-				@{ instructions = $null },
-				@{ instructions = '' },
-				@{ instructions = '   ' }
-			)
-
-			foreach ($agentSettings in $agentSettingsCases) {
-				# Run each case in its own repository directory.
-				$caseDirectory = Join-Path $testDirectory ([guid]::NewGuid().ToString('N'))
-				[System.IO.Directory]::CreateDirectory($caseDirectory) | Out-Null
-				$targetPath = Join-Path $caseDirectory '.editorconfig'
-
-				$output = InvokeConfigTextSectionConvention -TestDirectory $caseDirectory -Settings @{
-					path = '.editorconfig'
-					name = 'general-editorconfig'
-					text = "[*]`ncharset = utf-8"
-					'comment-prefix' = '#'
-					agent = $agentSettings
-				}
-
-				# Assert each case updates the file without calling Copilot.
-				(Test-Path -LiteralPath $targetPath) | Should -Be $true
-				$output[-1].ToString() | Should -Be "Updated 'general-editorconfig' section in '.editorconfig'."
-			}
-
-			# Assert none of the blank-instruction cases invoked Copilot.
-			$global:CopilotCallCount | Should -Be 0
-		}
-		finally {
-			# Remove the isolated repository after the test completes.
+			Remove-Item Function:\global:copilot -ErrorAction SilentlyContinue
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
 		}
 	}

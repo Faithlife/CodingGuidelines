@@ -9,8 +9,6 @@ Manages one named text section in a repository file.
 - `text`: Required exact text to place inside the managed section.
 - `comment-prefix`: Required comment prefix to use for the managed markers.
 - `comment-suffix`: Optional comment suffix to use for the managed markers. Defaults to no suffix.
-- `agent`: Optional Copilot agent settings to run after the convention changes the target file.
-- `agent.instructions`: Optional instructions string to pass to Copilot after the file changes. Missing, `null`, empty, or whitespace instructions do not run Copilot.
 
 ## Behavior
 
@@ -30,6 +28,4 @@ conventions:
         [*]
         charset = utf-8
       comment-prefix: '#'
-      agent:
-        instructions: Build the code and fix it if necessary.
 ```

@@ -6,7 +6,6 @@ Manages a named section within the repository-root `.gitignore` file.
 
 - `name`: Required non-empty section name used in the managed marker.
 - `text`: Required exact `.gitignore` text to place inside the managed section.
-- `agent`: Optional `config-text-section` agent settings to pass through, for example when callers want follow-up instructions after `.gitignore` changes.
 
 ## Behavior
 

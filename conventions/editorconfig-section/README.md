@@ -6,11 +6,10 @@ Manages a named section within the repository-root `.editorconfig` file.
 
 - `name`: Required non-empty section name used in the managed marker.
 - `text`: Required exact `.editorconfig` text to place inside the managed section.
-- `agent`: Optional `config-text-section` agent settings to pass through, for example when callers want build-validation instructions after `.editorconfig` changes.
 
 ## Behavior
 
-If `.editorconfig` does not exist, the convention creates it with the managed section. If the named section already exists, the convention replaces only that section. Other `.editorconfig` content is preserved.
+If `.editorconfig` does not exist, the convention creates it with the managed section. If the named section already exists, the convention replaces only that section. Other non-redundant `.editorconfig` content is preserved.
 
 ## Example
 

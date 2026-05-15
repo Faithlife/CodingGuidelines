@@ -90,11 +90,11 @@ trim_trailing_whitespace = false
 		}
 	}
 
-	It 'runs Copilot with the packaged instructions when it changes .editorconfig' {
+	It 'does not invoke Copilot when it changes .editorconfig' {
 		$testDirectory = New-TemporaryDirectory
 
 		try {
-			# Arrange an isolated repository and capture the packaged Copilot instructions.
+			# Arrange an isolated repository and a test Copilot command that should not run.
 			Copy-TestConventionAssets -TestDirectory $testDirectory
 			$testCopilot = New-TestCopilotCommand -TestDirectory $testDirectory
 			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
@@ -103,14 +103,12 @@ conventions:
 - path: ../conventions/editorconfig-root
 "@, $utf8)
 			Initialize-TestRepository -Path $testDirectory
-			$expectedInstructions = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-root/agent-instructions.md') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
 
 			# Apply the convention with a test Copilot command directory.
 			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory -CopilotCommandDirectory $testCopilot.CommandDirectory } | Should -Not -Throw
 
-			# Assert Copilot received the packaged instructions exactly.
-			(Test-Path -LiteralPath $testCopilot.InputPath) | Should -Be $true
-			(((Get-Content -LiteralPath $testCopilot.InputPath -Raw) -replace "`r`n", "`n").TrimEnd("`n")) | Should -Be $expectedInstructions
+			# Assert Copilot was not invoked.
+			(Test-Path -LiteralPath $testCopilot.InputPath) | Should -Be $false
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

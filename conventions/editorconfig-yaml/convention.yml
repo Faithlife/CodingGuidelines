@@ -6,5 +6,3 @@ conventions:
     settings:
       name: yaml
       text: ${{ readText("files/.editorconfig") }}
-      agent:
-        instructions: ${{ readText("agent-instructions.md") }}

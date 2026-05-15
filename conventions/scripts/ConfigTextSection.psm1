@@ -10,48 +10,6 @@ $OutputEncoding = $utf8
 $helpersPath = Join-Path $PSScriptRoot 'Helpers.ps1'
 . $helpersPath
 
-function Get-ConfigTextSectionAgentInstructions {
-	param(
-		[AllowNull()]
-		[object] $InstructionsSetting
-	)
-
-	# Treat a missing instructions setting as no agent instructions.
-	if ($null -eq $InstructionsSetting) {
-		return $null
-	}
-
-	# Reject non-string instruction values before trimming semantics are applied.
-	if ($InstructionsSetting -isnot [string]) {
-		throw "The 'agent.instructions' setting must be a string."
-	}
-
-	# Ignore blank instruction text so callers can test for configured content.
-	if ([string]::IsNullOrWhiteSpace($InstructionsSetting)) {
-		return $null
-	}
-
-	return $InstructionsSetting
-}
-
-function Get-ConfigTextSectionAgent {
-	param(
-		[Parameter(Mandatory = $true)]
-		[object] $AgentSetting
-	)
-
-	if ($AgentSetting -isnot [System.Collections.IDictionary]) {
-		throw "The 'agent' setting must be an object."
-	}
-
-	# Parse optional agent instructions into a normalized object shape.
-	$instructions = if ($AgentSetting.Contains('instructions')) { Get-ConfigTextSectionAgentInstructions -InstructionsSetting $AgentSetting.instructions } else { $null }
-
-	return [pscustomobject]@{
-		Instructions = $instructions
-	}
-}
-
 function Get-ConfigTextSectionName {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -487,10 +445,9 @@ function Invoke-ConfigTextSection {
 		throw "The 'path' setting is required."
 	}
 
-	# Resolve display paths and optional behaviors from the convention settings.
+	# Resolve display paths from the convention settings.
 	$targetPath = Get-RepositoryPath -PathSetting $Settings.path
 	$targetDisplayPath = Format-RepositoryRelativePath -Path $targetPath
-	$configuredAgent = if ($Settings.ContainsKey('agent')) { Get-ConfigTextSectionAgent -AgentSetting $Settings.agent } else { $null }
 	$configuredSection = Get-ConfigTextSection -Settings $Settings
 
 	# Managed sections can update files, but not directory paths.
@@ -525,28 +482,6 @@ function Invoke-ConfigTextSection {
 	}
 
 	[System.IO.File]::WriteAllText($targetPath, $newContent, $utf8)
-
-	# Let Copilot make follow-up fixes when agent instructions are configured.
-	if ($null -ne $configuredAgent -and -not [string]::IsNullOrWhiteSpace($configuredAgent.Instructions)) {
-		Write-Host "'$targetDisplayPath' changed; starting Copilot with configured agent instructions."
-		Invoke-CopilotWithIsolatedConfig -Instructions $configuredAgent.Instructions
-
-		# Re-read after Copilot so the managed section can be restored if needed.
-		$copilotContent = ''
-		$copilotLineEnding = $lineEnding
-
-		if (Test-Path -LiteralPath $targetPath -PathType Leaf) {
-			$copilotContent = [System.IO.File]::ReadAllText($targetPath)
-			$copilotLineEnding = Get-LineEnding -Content $copilotContent
-		}
-
-		# Reconcile only the managed section, preserving any other Copilot edits.
-		$reconciledSectionResult = Set-ConfigTextSectionText -Content $copilotContent -Section $configuredSection -LineEnding $copilotLineEnding -TargetPath $targetPath
-
-		if ($reconciledSectionResult.Updated) {
-			[System.IO.File]::WriteAllText($targetPath, $reconciledSectionResult.Content, $utf8)
-		}
-	}
 
 	Write-Host "Updated '$($configuredSection.Name)' section in '$targetDisplayPath'."
 }

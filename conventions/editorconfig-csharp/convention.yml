@@ -6,5 +6,3 @@ conventions:
     settings:
       name: csharp
       text: ${{ readText("files/.editorconfig") }}
-      agent:
-        instructions: ${{ readText("agent-instructions.md") }}
