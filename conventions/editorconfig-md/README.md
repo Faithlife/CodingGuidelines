@@ -1,10 +1,12 @@
 # editorconfig-md
 
-Ensures the repository-root `.editorconfig` contains the managed Markdown section from [files/.editorconfig](files/.editorconfig).
+Ensures the repository-root `.editorconfig` contains the managed Markdown section from [files/.editorconfig](./files/.editorconfig).
 
-This convention does not support any settings.
+## Behavior
 
-The convention composes [editorconfig-section](../editorconfig-section/README.md) with the fixed `md` managed section and reads the section text from the convention-local [files/.editorconfig](files/.editorconfig) file. When it changes `.editorconfig`, it runs packaged Copilot follow-up instructions and commits the result with the message `Update Markdown editorconfig settings`.
+The convention manages the fixed `md` section and reads the section text from the convention-local [files/.editorconfig](./files/.editorconfig) file. Existing `.editorconfig` content outside the managed section is preserved.
+
+## Example
 
 ```yaml
 conventions:

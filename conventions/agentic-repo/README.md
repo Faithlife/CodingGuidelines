@@ -2,14 +2,11 @@
 
 Applies conventions useful for repositories that keep agent customization files in source control.
 
-This convention does not support any settings.
+## Behavior
 
-It composes these conventions:
+The convention marks common agent customization paths as generated for GitHub linguist, ignores downloaded APM modules, and excludes agent package files from Prettier formatting when the repository appears to use Prettier. If the repository has an `apm.yml`, it also updates the Copilot APM target.
 
-- [gitattributes-section](../gitattributes-section/README.md) adds an `agentic-repo` managed section that marks `apm.lock.yaml`, `.agents/**`, `.github/agents/**`, `.github/hooks/**`, `.github/instructions/**`, and `.github/prompts/**` as generated for GitHub linguist.
-- [gitignore-section](../gitignore-section/README.md) adds an `agentic-repo` managed section that ignores `apm_modules/`.
-- [prettierignore-section](../prettierignore-section/README.md) adds an `agentic-repo` managed section for `.agents/`, `apm.lock.yaml`, and `apm.yml` when the repository appears to use Prettier.
-- [apm-install](../apm-install/README.md) updates the Copilot APM target when `apm.yml` exists.
+## Example
 
 ```yaml
 conventions:

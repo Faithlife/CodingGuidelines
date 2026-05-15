@@ -2,11 +2,17 @@
 
 Manages a named section within the repository-root `.gitignore` file.
 
-Settings:
+## Settings
 
-- `name`: Non-empty section name used in the managed marker.
-- `text`: Exact `.gitignore` text to place inside the managed section.
+- `name`: Required non-empty section name used in the managed marker.
+- `text`: Required exact `.gitignore` text to place inside the managed section.
 - `agent`: Optional `config-text-section` agent settings to pass through, for example when callers want follow-up instructions after `.gitignore` changes.
+
+## Behavior
+
+If `.gitignore` does not exist, the convention creates it with the managed section. If the named section already exists, the convention replaces only that section. Other `.gitignore` content is preserved.
+
+## Example
 
 ```yaml
 conventions:

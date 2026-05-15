@@ -2,7 +2,7 @@
 
 ## Use .editorconfig
 
-See [.editorconfig for Android](editorconfig.md).
+See [.editorconfig for Android](./editorconfig.md).
 
 ## Use Android Lint
 

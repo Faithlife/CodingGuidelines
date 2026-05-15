@@ -2,9 +2,11 @@
 
 Ensures the repository has a `global.json` that uses the .NET 10 SDK or later.
 
-This convention does not support any settings.
+## Behavior
 
-It is equivalent to applying [`dotnet-sdk`](../dotnet-sdk/) with `version: 10`.
+The convention is equivalent to applying [dotnet-sdk](../dotnet-sdk/README.md) with `version: 10`.
+
+## Example
 
 ```yaml
 conventions:

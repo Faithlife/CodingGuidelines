@@ -2,7 +2,11 @@
 
 Applies [license-mit](../license-mit/README.md) with `copyright-holder` set to `Faithlife`.
 
-This convention does not support any settings.
+## Behavior
+
+The convention renders the standard MIT license for Faithlife-owned repositories.
+
+## Example
 
 ```yaml
 conventions:

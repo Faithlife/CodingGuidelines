@@ -19,11 +19,11 @@ These settings make good defaults. Extension-specific settings can follow in the
 
 ## C\#
 
-See [.editorconfig for C#](csharp/editorconfig.md).
+See [.editorconfig for C#](./csharp/editorconfig.md).
 
 ## JavaScript/TypeScript
 
-See [.editorconfig for JavaScript/TypeScript](javascript/editorconfig.md).
+See [.editorconfig for JavaScript/TypeScript](./javascript/editorconfig.md).
 
 ## JSON
 
