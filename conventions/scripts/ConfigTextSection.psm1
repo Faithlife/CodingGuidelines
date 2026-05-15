@@ -10,6 +10,19 @@ $OutputEncoding = $utf8
 $helpersPath = Join-Path $PSScriptRoot 'Helpers.ps1'
 . $helpersPath
 
+<#
+.SYNOPSIS
+Validates and returns a managed config text section name.
+
+.DESCRIPTION
+Normalizes the shared `name` setting contract for conventions that create or inspect managed config text sections. A section name must be a non-empty single-line string because it is embedded in marker comments and later used to find matching managed blocks.
+
+.PARAMETER NameSetting
+The raw `name` setting value from convention settings.
+
+.OUTPUTS
+System.String. The validated section name.
+#>
 function Get-ConfigTextSectionName {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -88,6 +101,25 @@ function Get-ConfigTextSectionMarkerCommentSuffixText {
 	return ' ' + $CommentSuffix.TrimStart()
 }
 
+<#
+.SYNOPSIS
+Validates and returns managed config text section content.
+
+.DESCRIPTION
+Checks that a convention-provided `text` setting is a string and does not contain nested managed section marker lines for the configured comment syntax. Callers that inspect or write managed sections should use the same comment prefix and suffix that will appear in the target file.
+
+.PARAMETER TextSetting
+The raw `text` setting value from convention settings.
+
+.PARAMETER CommentPrefix
+The line comment prefix used for opening and closing managed section markers.
+
+.PARAMETER CommentSuffix
+The optional marker comment suffix text, including any leading separator expected in generated marker lines.
+
+.OUTPUTS
+System.String. The validated section text.
+#>
 function Get-ConfigTextSectionText {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -155,6 +187,19 @@ function Get-ConfigTextSection {
 	}
 }
 
+<#
+.SYNOPSIS
+Splits config text into line records with source indexes.
+
+.DESCRIPTION
+Parses text without discarding line-ending details. Each returned record contains the line text without its line ending plus the start and end indexes of the full line span in the original content. This lets convention cleanup logic preserve exact surrounding bytes while replacing or removing sections.
+
+.PARAMETER Content
+The full text content to parse. Empty content is allowed and returns no records.
+
+.OUTPUTS
+System.Object[]. Objects with `Text`, `StartIndex`, and `EndIndex` properties.
+#>
 function Get-ConfigTextSectionLineRecords {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -201,6 +246,28 @@ function Get-ConfigTextSectionLineRecords {
 	return $lineRecords.ToArray()
 }
 
+<#
+.SYNOPSIS
+Finds managed config text section blocks in file content.
+
+.DESCRIPTION
+Scans content for `DO NOT EDIT` managed section marker pairs using the supplied comment syntax. The function returns named block spans and throws when markers are nested, unexpected, or unterminated so callers do not update ambiguous files.
+
+.PARAMETER Content
+The full target file content to inspect.
+
+.PARAMETER CommentPrefix
+The line comment prefix used for opening and closing managed section markers.
+
+.PARAMETER CommentSuffix
+The optional marker comment suffix text, including any leading separator expected in marker lines.
+
+.PARAMETER TargetPath
+The target path used in error messages when marker state is invalid.
+
+.OUTPUTS
+System.Object[]. Objects with `Name`, `StartIndex`, and `EndIndex` properties.
+#>
 function Get-ConfigTextSectionRecords {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -486,4 +553,10 @@ function Invoke-ConfigTextSection {
 	Write-Host "Updated '$($configuredSection.Name)' section in '$targetDisplayPath'."
 }
 
-Export-ModuleMember -Function Invoke-ConfigTextSection
+Export-ModuleMember -Function @(
+	'Get-ConfigTextSectionLineRecords'
+	'Get-ConfigTextSectionName'
+	'Get-ConfigTextSectionRecords'
+	'Get-ConfigTextSectionText'
+	'Invoke-ConfigTextSection'
+)
