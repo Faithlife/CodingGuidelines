@@ -1,4 +1,5 @@
 conventions:
+  - path: ../conventions/faithlife-auto-apply-conventions
   - path: ../conventions/gitattributes-lf
   - path: ../conventions/agentic-repo
   - path: ../conventions/editorconfig-root
