@@ -1,3 +1,4 @@
+# applied automatically by https://github.com/Faithlife/RepoConventionsApplier (DO NOT REMOVE THIS LINE)
 conventions:
   - path: ../conventions/faithlife-auto-apply-conventions
   - path: ../conventions/gitattributes-lf
