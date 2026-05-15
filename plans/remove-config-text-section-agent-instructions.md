@@ -23,6 +23,64 @@ Remove Copilot agent-instruction support from `config-text-section`. Move the us
 - For unmanaged `[*]` sections, remove `indent_size`, `indent_style`, `tab_width`, and `insert_final_newline` when applying the `root` section, and remove an empty `[*]` section left behind by that cleanup.
 - The convention should never build C# projects or invoke tools to repair source after editorconfig changes.
 
+## Implementation Options
+
+### PowerShell Cleanup
+
+Pros:
+
+- Matches the current convention implementation style and test harness.
+- Adds no runtime dependency beyond PowerShell, which every executable convention already requires.
+- Keeps the convention useful for non-.NET repositories where a .NET SDK may not be installed.
+- Makes it straightforward to preserve existing file text, line endings, comments, and managed blocks because the script can work line-by-line on the original file.
+
+Cons:
+
+- Rich `.editorconfig` semantics are awkward in PowerShell, especially glob coverage and section precedence.
+- A broad cleanup algorithm could become hard to read and easy to over-apply.
+- Complex parsing code will need careful tests for comments, blank lines, duplicate properties, malformed sections, and managed-block boundaries.
+
+### C# Helper Run From PowerShell
+
+Pros:
+
+- Better language support for modeling parsed lines, sections, properties, and rewrite decisions.
+- Easier to write and maintain a small parser/rewrite engine if cleanup grows beyond simple line-oriented rules.
+- Can be unit tested more naturally if it becomes a standalone helper rather than inline script logic.
+
+Cons:
+
+- Running C# from a convention introduces bootstrapping complexity: compiling with `Add-Type`, generating a temporary project, or running a checked-in helper all add moving parts.
+- Using `dotnet run` or `dotnet build` for the helper would require a .NET SDK in target repositories and could be affected by the target repository's `global.json` or NuGet configuration.
+- Restore/compile time would make a small editorconfig convention noticeably heavier.
+- It is easy for consumers to confuse a C# helper build with the C# project build behavior that this plan intentionally removes.
+
+### `EditorConfig.Core.EditorConfigParser`
+
+`C:\Code\EditorConfigFix` has a concrete example of using the `editorconfig` NuGet package. It references `editorconfig` version `0.15.0`, calls `EditorConfigFile.Parse` to load discovered `.editorconfig` files, and uses `new EditorConfigParser().Parse(fullPath, editorConfigFiles)` to resolve effective settings for a target file. It also uses `ConfigSection.Glob` plus `GlobMatcher` to identify matching sections.
+
+Pros:
+
+- Uses an existing parser for `.editorconfig` syntax instead of fully hand-rolling parsing.
+- Could help validate section/property parsing and reduce bugs in interpreting ordinary editorconfig files.
+- If future behavior needs actual editorconfig property resolution, a library is preferable to recreating the full spec.
+- The `EditorConfigFix` example gives us a known working package version and API shape if we later choose a C# helper.
+
+Cons:
+
+- The cleanup needs a source-preserving rewrite: keep comments, blank lines, line endings, managed block boundaries, and unrelated formatting. A parser focused on editorconfig interpretation is unlikely to provide the exact trivia-preserving edit model needed here.
+- The library does not remove the need for custom logic to decide whether one unmanaged section is redundant with a managed section.
+- Adding a NuGet package means runtime restore or vendoring a dependency, both of which are a poor fit for a lightweight published convention.
+- A NuGet restore can depend on network access and target-repository package configuration, making convention application less deterministic.
+- The `EditorConfigFix` usage resolves settings for ordinary target files; it does not demonstrate rewriting `.editorconfig` files while preserving source trivia.
+
+Recommendation:
+
+- Keep `editorconfig-section` as a PowerShell convention for this change.
+- Keep the first deterministic cleanup intentionally conservative: remove only mechanically safe redundant rules, such as exact property/value duplicates in the same unmanaged section header as the managed section and the explicit `root`/`[*]` cases listed above.
+- Do not use `EditorConfig.Core.EditorConfigParser` for the first implementation because the main problem is safe source rewriting, not just parsing or effective-setting resolution.
+- Reconsider a small C# helper only if the cleanup scope expands to require deeper editorconfig semantics or the PowerShell parser becomes difficult to test and review. If that happens, use the `EditorConfigFix` package usage as the reference point, prefer a checked-in helper with clear SDK expectations, and avoid runtime NuGet restore during convention application.
+
 ## Implementation Plan
 
 - Replace `conventions/editorconfig-section/convention.yml` with executable behavior, likely by adding `convention.ps1` while preserving the published `editorconfig-section` path.
@@ -36,7 +94,7 @@ Remove Copilot agent-instruction support from `config-text-section`. Move the us
   - blank/comment-only sections that become removable after cleanup
 - Implement redundant-rule cleanup conservatively:
   - compare unmanaged rules against the target managed section's rules
-  - remove unmanaged assignments with the same property name and value when the managed section already covers the same or broader section
+  - remove unmanaged assignments with the same property name and value when they appear under the same section header as a section in the managed target section
   - remove unmanaged sections only when all remaining lines are blank or comments after rule removal
   - never remove rules or sections inside any managed block
   - preserve line endings and surrounding content as much as possible
@@ -74,7 +132,7 @@ Remove Copilot agent-instruction support from `config-text-section`. Move the us
 ## Documentation
 
 - Update `conventions/config-text-section/README.md` to remove `agent` and `agent.instructions` settings and any Copilot behavior from the example.
-- Update `conventions/editorconfig-section/README.md` to document deterministic redundant-rule cleanup and explicitly note that it does not run builds or invoke Copilot.
+- Update `conventions/editorconfig-section/README.md` only where the current documentation would become inaccurate, such as removing the `agent` setting. Do not document removed Copilot or build behavior as historical context.
 - Update README files for the editorconfig wrapper conventions only if they mention agent behavior directly.
 - If deleting `agent-instructions.md` files, make sure no `readText("agent-instructions.md")` references remain.
 
