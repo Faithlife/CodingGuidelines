@@ -7,7 +7,9 @@ $utf8 = [System.Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding = $utf8
 $OutputEncoding = $utf8
 
-# Load the shared config text section module.
+# Load shared helper functions and the config text section module.
+$helpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'Helpers.ps1'
+. $helpersPath
 $configTextSectionPath = Join-Path $PSScriptRoot '..' 'scripts' 'ConfigTextSection.psm1'
 Import-Module $configTextSectionPath
 

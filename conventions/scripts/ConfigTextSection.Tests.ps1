@@ -15,7 +15,7 @@ Describe 'config text section module' {
 
 		try {
 			$exportedCommandNames = @($module.ExportedCommands.Keys | Sort-Object)
-			($exportedCommandNames -join ',') | Should -Be 'Invoke-ConfigTextSection,Read-ConventionSettings'
+			($exportedCommandNames -join ',') | Should -Be 'Invoke-ConfigTextSection'
 		}
 		finally {
 			Remove-Module -Name $module.Name -Force -ErrorAction SilentlyContinue
