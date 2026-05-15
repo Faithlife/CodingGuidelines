@@ -1,11 +1,14 @@
 # update-editorconfig-csharp
 
-This local executable convention regenerates [conventions/editorconfig-csharp/files/.editorconfig](../../../conventions/editorconfig-csharp/files/.editorconfig) from the `editorconfig` code fences in [sections/csharp/editorconfig.md](../../../sections/csharp/editorconfig.md).
+Regenerates [conventions/editorconfig-csharp/files/.editorconfig](../../../conventions/editorconfig-csharp/files/.editorconfig) from the `editorconfig` code fences in [sections/csharp/editorconfig.md](../../../sections/csharp/editorconfig.md).
 
-It mirrors the repository's previous `UpdateEditorConfig.ps1` behavior so the published `editorconfig-csharp` convention can consume a generated file that lives next to the convention instead of under `sections/csharp/files`.
+## Behavior
 
-Settings:
+The generated file starts with a provenance comment, preserves any preamble lines before the first section, sorts indentation-related settings before other settings within each section, and writes LF line endings. The convention has pull request auto-merge enabled for changes it contributes.
 
-- None.
+## Example
 
-The script prepends a generated-from source comment, keeps the first four generated lines in document order, sorts the remaining non-empty lines for a stable output, and only rewrites the destination file when its content changes.
+```yaml
+conventions:
+  - path: .github/conventions/update-editorconfig-csharp
+```

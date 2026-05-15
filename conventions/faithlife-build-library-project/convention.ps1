@@ -2,9 +2,12 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-
+# Copy a published support file only when the target is missing.
 function CopyMissingConventionFile {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -25,6 +28,7 @@ function CopyMissingConventionFile {
 	return $true
 }
 
+# Return solution files located at the repository root.
 function GetRootSolutionPaths {
 	return @(
 		Get-ChildItem -LiteralPath (Get-Location) -File |
@@ -33,6 +37,7 @@ function GetRootSolutionPaths {
 	)
 }
 
+# Create a root solution when the repository does not already have one.
 function EnsureRootSolutionExists {
 	$rootSolutions = @(GetRootSolutionPaths)
 
@@ -56,15 +61,18 @@ function EnsureRootSolutionExists {
 	return $true
 }
 
+# Resolve published source files and their tools/Build targets.
 $conventionBuildCsPath = Join-Path $PSScriptRoot 'files' 'Build.cs'
 $conventionBuildCsprojPath = Join-Path $PSScriptRoot 'files' 'Build.csproj.xml'
 $targetDirectoryPath = Join-Path (Get-Location) 'tools/Build'
 $targetBuildCsPath = Join-Path $targetDirectoryPath 'Build.cs'
 $targetBuildCsprojPath = Join-Path $targetDirectoryPath 'Build.csproj'
 
+# Copy the build project files that are missing from the repository.
 $copiedBuildCs = CopyMissingConventionFile -SourcePath $conventionBuildCsPath -DestinationPath $targetBuildCsPath
 $copiedBuildCsproj = CopyMissingConventionFile -SourcePath $conventionBuildCsprojPath -DestinationPath $targetBuildCsprojPath
 
+# Add the build project to the root solution when the project file was created.
 if ($copiedBuildCsproj) {
 	$createdRootSolution = EnsureRootSolutionExists
 

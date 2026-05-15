@@ -1,10 +1,18 @@
 # apm-install
 
-This convention runs `apm install --update [package ...]` in the target repository.
+Installs configured packages and updates existing packages for the Copilot APM target with `apm`.
 
-If the target repository has no `apm.yml` file and no packages are configured in the input settings, the convention exits successfully without invoking `apm`.
+## Settings
 
-It is used to install and update APM-managed dependencies.
+- `packages`: Optional sequence of package identifiers to pass to `apm install --update --target copilot`. Defaults to no configured packages.
+
+## Behavior
+
+The convention requires the `apm` command to be available when it runs. `copilot` is the only target currently supported.
+
+If no packages are configured and the repository has no root `apm.yml`, the convention leaves the repository unchanged. After `apm install` completes, if the only changed file is `apm.lock.yaml`, the convention restores that file so update-only no-op runs stay clean.
+
+## Examples
 
 Install and update:
 

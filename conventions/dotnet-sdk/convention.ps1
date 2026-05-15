@@ -2,18 +2,22 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 $helpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'Helpers.ps1'
 . $helpersPath
 
-Set-Utf8NoBomConsoleEncoding
-
+# Evaluate whether global.json satisfies the requested SDK major version.
 function GetGlobalJsonSdkStatus {
 	param(
 		[string] $GlobalJsonPath,
 		[int] $MajorVersion
 	)
 
+	# Treat a missing global.json as nonconforming.
 	if (-not (Test-Path -LiteralPath $GlobalJsonPath -PathType Leaf)) {
 		return [pscustomobject]@{
 			Conforms = $false
@@ -21,6 +25,7 @@ function GetGlobalJsonSdkStatus {
 		}
 	}
 
+	# Read sdk.version and report malformed JSON as nonconforming.
 	try {
 		$sdkVersion = (Get-Content -LiteralPath $GlobalJsonPath -Raw | ConvertFrom-Json -AsHashtable).sdk.version
 	}
@@ -31,6 +36,7 @@ function GetGlobalJsonSdkStatus {
 		}
 	}
 
+	# Require sdk.version to be a string before parsing it.
 	if ($sdkVersion -isnot [string]) {
 		return [pscustomobject]@{
 			Conforms = $false
@@ -38,6 +44,7 @@ function GetGlobalJsonSdkStatus {
 		}
 	}
 
+	# Parse the major version from a three-part SDK version.
 	$versionMatch = [System.Text.RegularExpressions.Regex]::Match($sdkVersion, '^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)')
 
 	if (-not $versionMatch.Success) {
@@ -49,6 +56,7 @@ function GetGlobalJsonSdkStatus {
 
 	$currentMajorVersion = [int] $versionMatch.Groups['major'].Value
 
+	# Accept any SDK major version that meets or exceeds the requirement.
 	if ($currentMajorVersion -lt $MajorVersion) {
 		return [pscustomobject]@{
 			Conforms = $false
@@ -62,12 +70,53 @@ function GetGlobalJsonSdkStatus {
 	}
 }
 
-if ($args.Count -eq 0) {
-	throw 'The input path argument is required.'
+# Create or update global.json with the required SDK settings.
+function SetGlobalJsonSdkVersion {
+	param(
+		[Parameter(Mandatory = $true)]
+		[string] $GlobalJsonPath,
+
+		[Parameter(Mandatory = $true)]
+		[int] $MajorVersion
+	)
+
+	# Preserve the existing JSON object when possible so unrelated properties keep their relative order.
+	$globalJson = $null
+
+	if (Test-Path -LiteralPath $GlobalJsonPath -PathType Leaf) {
+		try {
+			$globalJson = [System.Text.Json.Nodes.JsonNode]::Parse((Get-Content -LiteralPath $GlobalJsonPath -Raw))
+		}
+		catch {
+			$globalJson = $null
+		}
+	}
+
+	# Replace malformed or non-object JSON with the minimal object shape this convention owns.
+	if ($globalJson -isnot [System.Text.Json.Nodes.JsonObject]) {
+		$globalJson = [System.Text.Json.Nodes.JsonObject]::new()
+	}
+
+	# Ensure the SDK section is an object before updating its required properties.
+	$sdkNode = $globalJson['sdk']
+
+	if ($sdkNode -isnot [System.Text.Json.Nodes.JsonObject]) {
+		$sdkNode = [System.Text.Json.Nodes.JsonObject]::new()
+		$globalJson['sdk'] = $sdkNode
+	}
+
+	# Set the deterministic SDK version and roll-forward policy.
+	$sdkNode['version'] = [System.Text.Json.Nodes.JsonValue]::Create("$MajorVersion.0.100")
+	$sdkNode['rollForward'] = [System.Text.Json.Nodes.JsonValue]::Create('latestFeature')
+
+	# Write System.Text.Json output using its stable two-space indented formatting.
+	$jsonOptions = [System.Text.Json.JsonSerializerOptions]::new()
+	$jsonOptions.WriteIndented = $true
+	[System.IO.File]::WriteAllText($GlobalJsonPath, ($globalJson.ToJsonString($jsonOptions) + "`n"), $utf8)
 }
 
-$inputPath = $args[0]
-$settings = Read-ConventionSettings -InputPath $inputPath
+# Read the convention input settings.
+$settings = Read-ConventionSettings -InputPath $args[0]
 
 if ($null -eq $settings -or -not $settings.ContainsKey('version')) {
 	throw "The 'version' setting is required."
@@ -75,6 +124,7 @@ if ($null -eq $settings -or -not $settings.ContainsKey('version')) {
 
 $versionSetting = $settings.version
 
+# Parse the required SDK major version from the convention settings.
 if ($versionSetting -is [byte] -or
 	$versionSetting -is [short] -or
 	$versionSetting -is [int] -or
@@ -92,6 +142,7 @@ else {
 	throw "The 'version' setting must be an integer or a string that parses to an integer."
 }
 
+# Validate the resolved major version before inspecting global.json.
 if ($majorVersion -le 0) {
 	throw "The 'version' setting must be a positive integer."
 }
@@ -101,6 +152,7 @@ $globalJsonDisplayPath = Format-RepositoryRelativePath -Path $globalJsonPath
 
 Write-Host "Checking $globalJsonDisplayPath for .NET SDK major version $majorVersion."
 
+# Check the current global.json status and exit when compliant.
 $globalJsonStatus = GetGlobalJsonSdkStatus -GlobalJsonPath $globalJsonPath -MajorVersion $majorVersion
 Write-Host $globalJsonStatus.Message
 
@@ -109,38 +161,13 @@ if ($globalJsonStatus.Conforms) {
 	return
 }
 
-$sdkVersion = "$majorVersion.0.100"
-$copilotInstructions = @"
-Update the repository in the current directory so that `global.json` conforms to the required .NET SDK configuration.
+Write-Host 'global.json does not conform; updating it.'
+SetGlobalJsonSdkVersion -GlobalJsonPath $globalJsonPath -MajorVersion $majorVersion
 
-Use this `global.json` when the file does not exist:
-
-```
-{
-  "sdk": {
-    "version": "$sdkVersion",
-    "rollForward": "latestFeature"
-  }
-}
-```
-
-If `global.json` already exists, change its properties to match those above.
-Preserve any properties in `global.json` that do not need to change.
-Do not modify any files other than `global.json`.
-
-When you're done, make sure the code still builds successfully, e.g. by running `./build.ps1 build` or `dotnet build`.
-If the code doesn't build successfully, read the error messages, read the affected files, and fix the issues by editing the code.
-DO NOT suppress warnings by adding `<NoWarn>` properties or `#pragma warning` directives.
-If you make changes, build the code again and keep fixing issues until it builds successfully.
-DO NOT commit any changes to the git repository. Leave your changes unstaged.
-"@
-
-Write-Host 'global.json does not conform; starting Copilot to update it.'
-Invoke-CopilotWithIsolatedConfig -Instructions $copilotInstructions
-
+# Verify the deterministic update produced a conforming global.json.
 $globalJsonStatus = GetGlobalJsonSdkStatus -GlobalJsonPath $globalJsonPath -MajorVersion $majorVersion
 Write-Host $globalJsonStatus.Message
 
 if (-not $globalJsonStatus.Conforms) {
-	throw 'Copilot failed to update global.json to the required .NET SDK configuration.'
+	throw 'Failed to update global.json to the required .NET SDK configuration.'
 }

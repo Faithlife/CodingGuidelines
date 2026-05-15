@@ -2,31 +2,40 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 Describe 'editorconfig-yaml convention' {
 	BeforeAll {
+		# Load shared test helpers for temporary repositories and convention execution.
 		$script:testHelpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'TestHelpers.ps1'
 		. $script:testHelpersPath
 	}
 
 	It 'creates .editorconfig with the YAML indentation section' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
+			# Arrange an isolated repository with the YAML editorconfig convention enabled.
 			Copy-TestConventionAssets -TestDirectory $testDirectory
 			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
 conventions:
 - path: ../conventions/editorconfig-yaml
-"@
+"@, $utf8)
 			Initialize-TestRepository -Path $testDirectory
 
+			# Apply the convention under test.
 			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
 
+			# Read the generated editorconfig and packaged section for comparison.
 			$content = Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw
 			$normalizedContent = ($content -replace "`r`n", "`n")
 			$expectedSection = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-yaml/files/.editorconfig') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
 
+			# Assert the generated file contains the managed YAML section.
 			$content | Should -Match "(?m)^# DO NOT EDIT: yaml convention\r?$"
 			$content | Should -Match "(?m)^\[\*\.\{yml,yaml\}\]\r?$"
 			$normalizedContent.Contains($expectedSection) | Should -Be $true
@@ -37,16 +46,17 @@ conventions:
 	}
 
 	It 'updates the managed YAML section and preserves unrelated content' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
+			# Arrange a repository with stale managed YAML settings and unrelated content.
 			Copy-TestConventionAssets -TestDirectory $testDirectory
 			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
 conventions:
 - path: ../conventions/editorconfig-yaml
-"@
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.editorconfig') -Content @"
+"@, $utf8)
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.editorconfig'), @"
 root = true
 
 # DO NOT EDIT: yaml convention
@@ -57,15 +67,18 @@ indent_size = 8
 
 [*.md]
 trim_trailing_whitespace = false
-"@
+"@, $utf8)
 			Initialize-TestRepository -Path $testDirectory
 
+			# Apply the convention under test.
 			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
 
+			# Read the updated editorconfig and packaged section for comparison.
 			$content = Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw
 			$normalizedContent = ($content -replace "`r`n", "`n")
 			$expectedSection = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-yaml/files/.editorconfig') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
 
+			# Assert the managed section changed while unrelated settings remained.
 			$normalizedContent.Contains($expectedSection) | Should -Be $true
 			$content | Should -Match "(?m)^\[\*\.md\]\r?$"
 			$content | Should -Match "(?m)^trim_trailing_whitespace = false\r?$"
@@ -76,20 +89,23 @@ trim_trailing_whitespace = false
 	}
 
 	It 'commits .editorconfig changes with the packaged commit message' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
+			# Arrange an isolated repository with the YAML editorconfig convention enabled.
 			Copy-TestConventionAssets -TestDirectory $testDirectory
 			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
-			Write-Utf8NoBomFile -Path (Join-Path $testDirectory '.github/conventions.yml') -Content @"
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
 conventions:
 - path: ../conventions/editorconfig-yaml
-"@
+"@, $utf8)
 			Initialize-TestRepository -Path $testDirectory
 			$initialHead = Get-CommitId -TestDirectory $testDirectory
 
+			# Apply the convention and allow it to create its packaged commit.
 			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
 
+			# Assert the commit message and clean working tree match expectations.
 			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should -Be $initialHead
 			(@(Get-CommitSubjects -TestDirectory $testDirectory -Count 1))[0] | Should -Be 'Update YAML editorconfig settings'
 			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0

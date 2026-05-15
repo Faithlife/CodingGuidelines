@@ -2,19 +2,19 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-
-# Copilot uses UTF-8 (no BOM)
-[System.Text.Encoding] $utf8 = [System.Text.UTF8Encoding]::new($false)
+$utf8 = [System.Text.UTF8Encoding]::new($false)
 [Console]::InputEncoding = $utf8
 [Console]::OutputEncoding = $utf8
 $OutputEncoding = $utf8
 
+# Find solution files deterministically before migrating them.
 $solutionFiles = @(Get-ChildItem -Path . -Filter '*.sln' -File -Recurse | Sort-Object -Property FullName)
 
 foreach ($solutionFile in $solutionFiles) {
 	$slnPath = $solutionFile.FullName
 	$slnxPath = [System.IO.Path]::ChangeExtension($slnPath, '.slnx')
 
+	# Migrate each .sln and remove it after the .slnx file exists.
 	Write-Host "Migrating solution '$slnPath' to '$slnxPath'."
 	& dotnet sln $slnPath migrate | Out-Null
 
@@ -30,18 +30,21 @@ foreach ($solutionFile in $solutionFiles) {
 	Remove-Item -LiteralPath $slnPath
 }
 
+# Rename matching ReSharper settings files to follow migrated .slnx files.
 $dotSettingsFiles = @(Get-ChildItem -Path . -Filter '*.sln.DotSettings' -File -Recurse | Sort-Object -Property FullName)
 
 foreach ($dotSettingsFile in $dotSettingsFiles) {
 	$pathWithoutDotSettings = $dotSettingsFile.FullName.Substring(0, $dotSettingsFile.FullName.Length - '.sln.DotSettings'.Length)
 	$slnxPath = "${pathWithoutDotSettings}.slnx"
 
+	# Skip settings files whose matching solution was not migrated.
 	if (-not (Test-Path -LiteralPath $slnxPath -PathType Leaf)) {
 		continue
 	}
 
 	$slnxDotSettingsPath = "${slnxPath}.DotSettings"
 
+	# Protect an existing .slnx.DotSettings file from being overwritten.
 	if (Test-Path -LiteralPath $slnxDotSettingsPath -PathType Leaf) {
 		throw "Cannot rename '$($dotSettingsFile.FullName)' because '$slnxDotSettingsPath' already exists."
 	}

@@ -72,7 +72,7 @@ CRITICAL_SECTION to serialize all access to g_importantData.
 
 ## More Information
 
-* [Describe Merge Commits Well](describe-merge-commits-well.md)
+* [Describe Merge Commits Well](./describe-merge-commits-well.md)
 * [A Note About Git Commit Messages](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html)
 * [Writing Good Commit Messages](https://github.com/erlang/otp/wiki/Writing-good-commit-messages)
 * [StackOverflow discussion](https://web.archive.org/web/20170329044732/http://stackoverflow.com/questions/43598/suggestions-for-a-good-commit-message-format-guideline)

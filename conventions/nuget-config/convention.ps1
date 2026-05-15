@@ -2,16 +2,20 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 $helpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'Helpers.ps1'
 . $helpersPath
 
-Set-Utf8NoBomConsoleEncoding
-
+# Resolve the published and target NuGet config paths.
 $sourceNuGetConfigPath = Join-Path $PSScriptRoot 'files' 'nuget.config'
 $targetNuGetConfigPath = Join-Path (Get-Location) 'nuget.config'
 $existingNuGetConfigItem = Get-Item -LiteralPath $targetNuGetConfigPath -ErrorAction SilentlyContinue
 
+# Detect case-insensitive NuGet config files that need normalization.
 if ($null -eq $existingNuGetConfigItem) {
 	$nonLowercaseNuGetConfigItems = @(
 		Get-ChildItem -LiteralPath (Get-Location) -File |
@@ -28,6 +32,7 @@ if ($null -eq $existingNuGetConfigItem) {
 	}
 }
 
+# Create nuget.config from the published template when none exists.
 if ($null -eq $existingNuGetConfigItem) {
 	$copyResult = Copy-FileIfDifferent -SourcePath $sourceNuGetConfigPath -DestinationPath $targetNuGetConfigPath
 
@@ -39,6 +44,7 @@ if ($null -eq $existingNuGetConfigItem) {
 	return
 }
 
+# Rename a differently-cased NuGet config file to the canonical name.
 if ($existingNuGetConfigItem.Name -cne 'nuget.config') {
 	$existingNuGetConfigPath = Join-Path (Get-Location) $existingNuGetConfigItem.Name
 	& git mv -f -- $existingNuGetConfigItem.Name 'nuget.config'
@@ -50,11 +56,13 @@ if ($existingNuGetConfigItem.Name -cne 'nuget.config') {
 	$existingNuGetConfigItem = Get-Item -LiteralPath $targetNuGetConfigPath
 }
 
+# Exit when the target already matches the published template.
 if (Test-FileContentMatches -ExpectedPath $sourceNuGetConfigPath -ActualPath $targetNuGetConfigPath) {
 	Write-Host "'$targetNuGetConfigPath' already matches the published NuGet config."
 	return
 }
 
+# Replace stale NuGet config content with the published template.
 $copyResult = Copy-FileIfDifferent -SourcePath $sourceNuGetConfigPath -DestinationPath $targetNuGetConfigPath
 
 if (-not $copyResult.Updated) {

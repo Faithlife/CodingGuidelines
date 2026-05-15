@@ -1,9 +1,8 @@
+commit:
+  message: "Update PowerShell editorconfig settings"
+
 conventions:
   - path: ../editorconfig-section
     settings:
       name: ps1
       text: ${{ readText("files/.editorconfig") }}
-      agent:
-        instructions: ${{ readText("agent-instructions.md") }}
-      commit:
-        message: "Update PowerShell editorconfig settings"

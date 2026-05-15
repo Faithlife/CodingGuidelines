@@ -17,12 +17,14 @@ indent_style = space
 [*.md]
 indent_size = 2
 indent_style = space
+insert_final_newline = true
 # END DO NOT EDIT
 
 # DO NOT EDIT: ps1 convention
 [*.ps1]
 indent_size = tab
 indent_style = tab
+insert_final_newline = true
 # END DO NOT EDIT
 
 # DO NOT EDIT: yaml convention
@@ -41,6 +43,7 @@ indent_style = space
 indent_size = tab
 indent_style = tab
 tab_width = 4
+insert_final_newline = true
 csharp_indent_block_contents = true
 csharp_indent_braces = false
 csharp_indent_case_contents = true
@@ -228,6 +231,8 @@ dotnet_diagnostic.IDE0301.severity = suggestion
 dotnet_diagnostic.IDE0305.severity = suggestion
 dotnet_diagnostic.IDE0306.severity = suggestion
 dotnet_diagnostic.IDE0370.severity = suggestion
+dotnet_diagnostic.IDE0390.severity = suggestion
+dotnet_diagnostic.IDE0391.severity = suggestion
 dotnet_diagnostic.IDE1005.severity = suggestion
 dotnet_diagnostic.NUnit2045.severity = suggestion
 dotnet_diagnostic.SA0001.severity = none

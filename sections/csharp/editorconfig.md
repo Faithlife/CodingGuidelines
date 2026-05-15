@@ -15,9 +15,10 @@ The .NET tooling uses two-space indentation for these file types.
 indent_size = tab
 indent_style = tab
 tab_width = 4
+insert_final_newline = true
 ```
 
-We have always used tabs of width 4 for C#.
+We have always used tabs of width 4 for C#. Code is cleaner with a final newline.
 
 ```editorconfig
 dotnet_analyzer_diagnostic.severity = warning

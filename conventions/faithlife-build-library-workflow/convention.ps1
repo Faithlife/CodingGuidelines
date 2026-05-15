@@ -2,16 +2,20 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 $helpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'Helpers.ps1'
 . $helpersPath
 
-Set-Utf8NoBomConsoleEncoding
-
+# Copy the published workflow into the repository when it differs.
 $sourceWorkflowPath = Join-Path $PSScriptRoot 'files' 'build.yaml'
 $targetWorkflowPath = Join-Path (Get-Location) '.github/workflows/build.yaml'
 $copyResult = Copy-FileIfDifferent -SourcePath $sourceWorkflowPath -DestinationPath $targetWorkflowPath
 
+# Report whether the workflow was created, updated, or already current.
 if ($copyResult.Updated) {
 	Write-Host "Updated '$targetWorkflowPath' from the published Faithlife build workflow."
 }

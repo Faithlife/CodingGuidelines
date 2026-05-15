@@ -1,17 +1,26 @@
 conventions:
   - path: ../gitattributes-section
+    commit:
+      message: "Update .gitattributes for agentic repository"
     settings:
       name: agentic-repo
       text: |
         apm.lock.yaml linguist-generated=true
         .agents/** linguist-generated=true
+        .github/agents/** linguist-generated=true
+        .github/hooks/** linguist-generated=true
+        .github/instructions/** linguist-generated=true
+        .github/prompts/** linguist-generated=true
   - path: ../gitignore-section
+    commit:
+      message: "Update .gitignore for agentic repository"
     settings:
       name: agentic-repo
       text: |
         apm_modules/
-        .apm-pin
   - path: ../prettierignore-section
+    commit:
+      message: "Update .prettierignore for agentic repository"
     settings:
       name: agentic-repo
       text: |

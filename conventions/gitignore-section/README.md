@@ -1,22 +1,26 @@
 # gitignore-section
 
-This [convention](https://github.com/Faithlife/RepoConventions) manages a named section within the repository-root `.gitignore` file.
+Manages a named section within the repository-root `.gitignore` file.
 
-Settings:
+## Settings
 
-- `name`: Non-empty section name used in the managed marker.
-- `text`: Exact `.gitignore` text to place inside the managed section.
-- `agent`: Optional `config-text-section` agent settings to pass through, for example when callers want follow-up instructions after `.gitignore` changes.
-- `commit`: Optional `config-text-section` commit settings to pass through, for example when callers want `.gitignore` changes committed before the convention exits.
+- `name`: Required non-empty section name used in the managed marker.
+- `text`: Required exact `.gitignore` text to place inside the managed section.
+
+## Behavior
+
+If `.gitignore` does not exist, the convention creates it with the managed section. If the named section already exists, the convention replaces only that section. Other non-redundant `.gitignore` content is preserved. Unmanaged pattern lines that exactly match patterns in the managed section are removed after the section is written.
+
+## Example
 
 ```yaml
 conventions:
   - path: Faithlife/CodingGuidelines/conventions/gitignore-section
+    commit:
+      message: Update .gitignore.
     settings:
       name: build-output
       text: |
         bin/
         obj/
-      commit:
-        message: Update .gitignore.
 ```
