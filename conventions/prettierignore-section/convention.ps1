@@ -7,9 +7,9 @@ $utf8 = [System.Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding = $utf8
 $OutputEncoding = $utf8
 
-# Load the shared config text section implementation.
-$configTextSectionPath = Join-Path $PSScriptRoot '..' 'scripts' 'ConfigTextSection.ps1'
-. $configTextSectionPath
+# Load the shared config text section module.
+$configTextSectionPath = Join-Path $PSScriptRoot '..' 'scripts' 'ConfigTextSection.psm1'
+Import-Module $configTextSectionPath
 
 # List Prettier configuration file names that signal Prettier usage.
 $prettierConfigFileNames = @(

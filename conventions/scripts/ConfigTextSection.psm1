@@ -550,3 +550,5 @@ function Invoke-ConfigTextSection {
 
 	Write-Host "Updated '$($configuredSection.Name)' section in '$targetDisplayPath'."
 }
+
+Export-ModuleMember -Function Invoke-ConfigTextSection, Read-ConventionSettings
