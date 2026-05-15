@@ -7,9 +7,148 @@ $utf8 = [System.Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding = $utf8
 $OutputEncoding = $utf8
 
-# Load the shared config text section helpers used by the composed convention.
-$configTextSectionPath = Join-Path $PSScriptRoot '..' 'scripts' 'ConfigTextSection.ps1'
-. $configTextSectionPath
+# Load shared repository helpers used by cleanup.
+$helpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'Helpers.ps1'
+. $helpersPath
+
+function GetEditorConfigSectionName {
+	param(
+		[Parameter(Mandatory = $true)]
+		[object] $NameSetting
+	)
+
+	# Require a single-line section name for marker matching.
+	if ($NameSetting -isnot [string] -or [string]::IsNullOrWhiteSpace($NameSetting)) {
+		throw "The 'name' setting must be a non-empty string."
+	}
+
+	if ($NameSetting.Contains("`r") -or $NameSetting.Contains("`n")) {
+		throw "The 'name' setting must be a single line."
+	}
+
+	return $NameSetting
+}
+
+function GetEditorConfigSectionText {
+	param(
+		[Parameter(Mandatory = $true)]
+		[object] $TextSetting
+	)
+
+	# Managed section text must be literal editorconfig text without nested markers.
+	if ($TextSetting -isnot [string]) {
+		throw "The 'text' setting must be a string."
+	}
+
+	$openingPattern = '^# DO NOT EDIT: .+ convention$'
+	$textLines = ($TextSetting -replace "`r`n", "`n" -replace "`r", "`n") -split "`n", 0, 'SimpleMatch'
+
+	foreach ($line in $textLines) {
+		if ($line -eq '# END DO NOT EDIT' -or $line -match $openingPattern) {
+			throw "The 'text' setting must not contain managed section marker lines."
+		}
+	}
+
+	return $TextSetting
+}
+
+function GetEditorConfigLineRecords {
+	param(
+		[Parameter(Mandatory = $true)]
+		[AllowEmptyString()]
+		[string] $Content
+	)
+
+	# Track text spans so cleanup can preserve exact original line endings.
+	$lineRecords = [System.Collections.Generic.List[object]]::new()
+	$position = 0
+
+	while ($position -lt $Content.Length) {
+		$lineStart = $position
+		$lineBreakLength = 0
+
+		while ($position -lt $Content.Length -and $Content[$position] -ne "`r" -and $Content[$position] -ne "`n") {
+			$position++
+		}
+
+		$lineText = $Content.Substring($lineStart, $position - $lineStart)
+
+		if ($position -lt $Content.Length) {
+			if ($Content[$position] -eq "`r" -and ($position + 1) -lt $Content.Length -and $Content[$position + 1] -eq "`n") {
+				$lineBreakLength = 2
+			}
+			else {
+				$lineBreakLength = 1
+			}
+
+			$position += $lineBreakLength
+		}
+
+		$lineRecords.Add([pscustomobject]@{
+			Text = $lineText
+			StartIndex = $lineStart
+			EndIndex = $position
+		})
+	}
+
+	return $lineRecords.ToArray()
+}
+
+function GetEditorConfigManagedBlockRecords {
+	param(
+		[Parameter(Mandatory = $true)]
+		[AllowEmptyString()]
+		[string] $Content,
+
+		[Parameter(Mandatory = $true)]
+		[string] $TargetPath
+	)
+
+	# Match editorconfig managed section markers written with hash comments.
+	$openingPattern = '^# DO NOT EDIT: (?<Name>.+) convention$'
+	$closingLine = '# END DO NOT EDIT'
+	$blocks = [System.Collections.Generic.List[object]]::new()
+	$currentBlock = $null
+
+	foreach ($line in GetEditorConfigLineRecords -Content $Content) {
+		if ($null -ne $currentBlock) {
+			if ($line.Text -match $openingPattern) {
+				throw "Found an unterminated managed section before '$($line.Text)' in '$TargetPath'."
+			}
+
+			if ($line.Text -eq $closingLine) {
+				$blocks.Add([pscustomobject]@{
+					Name = $currentBlock.Name
+					StartIndex = $currentBlock.StartIndex
+					EndIndex = $line.EndIndex
+				})
+				$currentBlock = $null
+				continue
+			}
+
+			continue
+		}
+
+		if ($line.Text -eq $closingLine) {
+			throw "Found an unexpected '$closingLine' marker in '$TargetPath'."
+		}
+
+		$match = [System.Text.RegularExpressions.Regex]::Match($line.Text, $openingPattern)
+
+		if ($match.Success) {
+			$currentBlock = [pscustomobject]@{
+				Name = $match.Groups['Name'].Value
+				StartIndex = $line.StartIndex
+			}
+		}
+	}
+
+	if ($null -ne $currentBlock) {
+		throw "Found an unterminated managed section for '$($currentBlock.Name)' in '$TargetPath'."
+	}
+
+	return $blocks.ToArray()
+}
 
 function GetEditorConfigLineObjects {
 	param(
@@ -21,7 +160,7 @@ function GetEditorConfigLineObjects {
 	# Convert shared line records into mutable objects that preserve original endings.
 	$lines = [System.Collections.Generic.List[object]]::new()
 
-	foreach ($lineRecord in Get-ConfigTextSectionLineRecords -Content $Content) {
+	foreach ($lineRecord in GetEditorConfigLineRecords -Content $Content) {
 		$lineText = $lineRecord.Text
 		$fullText = $Content.Substring($lineRecord.StartIndex, $lineRecord.EndIndex - $lineRecord.StartIndex)
 		$lineEnding = $fullText.Substring($lineText.Length)
@@ -300,7 +439,7 @@ function MoveRootEditorConfigBlockFirst {
 	)
 
 	# Find the managed root block written by the composed config-text-section convention.
-	$blocks = @(Get-ConfigTextSectionRecords -Content $Content -CommentPrefix '#' -CommentSuffix '' -TargetPath $TargetPath)
+	$blocks = @(GetEditorConfigManagedBlockRecords -Content $Content -TargetPath $TargetPath)
 	$rootBlocks = @($blocks | Where-Object { $_.Name -eq 'root' })
 
 	if ($rootBlocks.Count -ne 1 -or $rootBlocks[0].StartIndex -eq 0) {
@@ -331,8 +470,8 @@ function InvokeEditorConfigSectionCleanup {
 	)
 
 	# Normalize the settings already consumed by the composed config-text-section convention.
-	$name = Get-ConfigTextSectionName -NameSetting $Settings.name
-	$text = Get-ConfigTextSectionText -TextSetting $Settings.text -CommentPrefix '#' -CommentSuffix ''
+	$name = GetEditorConfigSectionName -NameSetting $Settings.name
+	$text = GetEditorConfigSectionText -TextSetting $Settings.text
 	$editorConfigPath = Get-RepositoryPath -PathSetting '.editorconfig'
 	$editorConfigDisplayPath = Format-RepositoryRelativePath -Path $editorConfigPath
 
