@@ -6,10 +6,13 @@ Manages a named section within the repository-root `.editorconfig` file.
 
 - `name`: Required non-empty section name used in the managed marker.
 - `text`: Required exact `.editorconfig` text to place inside the managed section.
+- `remove-root-rules`: Optional array of property names to remove from unmanaged `[*]` sections when `text` contains a top-level `root = true` declaration. Defaults to an empty array.
 
 ## Behavior
 
 If `.editorconfig` does not exist, the convention creates it with the managed section. If the named section already exists, the convention replaces only that section. Other non-redundant `.editorconfig` content is preserved.
+
+When the configured `text` contains a top-level `root = true` declaration, the convention treats the managed section as the root section and keeps it before other `.editorconfig` sections. It also removes unmanaged `root = true` declarations and removes configured `remove-root-rules` entries from unmanaged `[*]` sections.
 
 ## Example
 

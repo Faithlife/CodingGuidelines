@@ -69,6 +69,12 @@ charset = latin1
 
 [*.md]
 trim_trailing_whitespace = false
+
+[*]
+indent_size = 2
+indent_style = space
+tab_width = 2
+insert_final_newline = true
 "@, $utf8)
 			Initialize-TestRepository -Path $testDirectory
 
@@ -84,6 +90,10 @@ trim_trailing_whitespace = false
 			$content | Should -Match "(?m)^trim_trailing_whitespace = true\r?$"
 			$content | Should -Match "(?m)^\[\*\.md\]\r?$"
 			$content | Should -Match "(?m)^trim_trailing_whitespace = false\r?$"
+			$content | Should -Not -Match '(?m)^indent_size = 2\r?$'
+			$content | Should -Not -Match '(?m)^indent_style = space\r?$'
+			$content | Should -Not -Match '(?m)^tab_width = 2\r?$'
+			$content | Should -Not -Match '(?m)^insert_final_newline = true\r?$'
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

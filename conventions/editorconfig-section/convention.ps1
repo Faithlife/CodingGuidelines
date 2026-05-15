@@ -139,6 +139,59 @@ function GetManagedEditorConfigRules {
 	return $rules
 }
 
+function TestManagedEditorConfigTextIsRoot {
+	param(
+		[Parameter(Mandatory = $true)]
+		[AllowEmptyString()]
+		[string] $Text
+	)
+
+	# Detect whether this managed text owns the top-level editorconfig root declaration.
+	$lines = @(GetEditorConfigLineObjects -Content $Text)
+	SetEditorConfigLineMetadata -Lines $lines
+
+	foreach ($line in $lines) {
+		if ($null -eq $line.SectionHeader -and $line.Key -eq 'root' -and $line.Value -eq 'true') {
+			return $true
+		}
+	}
+
+	return $false
+}
+
+function GetEditorConfigRemoveRootRuleNames {
+	param(
+		[AllowNull()]
+		[object] $RemoveRootRulesSetting
+	)
+
+	# Default to no root rule cleanup unless the convention opts into specific rules.
+	$ruleNames = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+
+	if ($null -eq $RemoveRootRulesSetting) {
+		return ,$ruleNames
+	}
+
+	if ($RemoveRootRulesSetting -is [string] -or $RemoveRootRulesSetting -isnot [System.Collections.IEnumerable]) {
+		throw "The 'remove-root-rules' setting must be an array of non-empty strings."
+	}
+
+	# Validate every configured rule name before using it for cleanup.
+	foreach ($ruleName in $RemoveRootRulesSetting) {
+		if ($ruleName -isnot [string] -or [string]::IsNullOrWhiteSpace($ruleName)) {
+			throw "The 'remove-root-rules' setting must be an array of non-empty strings."
+		}
+
+		if ($ruleName.Contains("`r") -or $ruleName.Contains("`n")) {
+			throw "The 'remove-root-rules' setting must contain only single-line strings."
+		}
+
+		$ruleNames.Add($ruleName.Trim()) | Out-Null
+	}
+
+	return ,$ruleNames
+}
+
 function SetRedundantEditorConfigRuleRemoval {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -148,15 +201,14 @@ function SetRedundantEditorConfigRuleRemoval {
 		[System.Collections.Generic.Dictionary[string, object]] $ManagedRules,
 
 		[Parameter(Mandatory = $true)]
-		[string] $Name
+		[bool] $IsRoot,
+
+		[Parameter(Mandatory = $true)]
+		[AllowEmptyCollection()]
+		[System.Collections.Generic.HashSet[string]] $RemoveRootRuleNames
 	)
 
-	# Define root-wide rules that should not be specified from unmanaged [*] sections.
-	$rootOnlyRuleNames = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
-	$rootOnlyRuleNames.Add('indent_size') | Out-Null
-	$rootOnlyRuleNames.Add('indent_style') | Out-Null
-	$rootOnlyRuleNames.Add('tab_width') | Out-Null
-	$rootOnlyRuleNames.Add('insert_final_newline') | Out-Null
+	# Remove unmanaged rules that are either redundant or explicitly delegated to the managed root section.
 	$changed = $false
 
 	foreach ($line in $Lines) {
@@ -166,10 +218,10 @@ function SetRedundantEditorConfigRuleRemoval {
 
 		$removeLine = $false
 
-		if ($Name -eq 'root' -and $line.Key -eq 'root' -and $line.Value -eq 'true') {
+		if ($IsRoot -and $line.Key -eq 'root' -and $line.Value -eq 'true') {
 			$removeLine = $true
 		}
-		elseif ($Name -eq 'root' -and $line.SectionHeader -eq '[*]' -and $rootOnlyRuleNames.Contains($line.Key)) {
+		elseif ($IsRoot -and $line.SectionHeader -eq '[*]' -and $RemoveRootRuleNames.Contains($line.Key)) {
 			$removeLine = $true
 		}
 		elseif ($null -ne $line.SectionHeader -and $ManagedRules.ContainsKey($line.SectionHeader)) {
@@ -295,15 +347,18 @@ function MoveRootEditorConfigBlockFirst {
 		[string] $Content,
 
 		[Parameter(Mandatory = $true)]
+		[string] $Name,
+
+		[Parameter(Mandatory = $true)]
 		[string] $LineEnding,
 
 		[Parameter(Mandatory = $true)]
 		[string] $TargetPath
 	)
 
-	# Find the managed root block written by the composed config-text-section convention.
+	# Find the managed block that contains the root declaration.
 	$blocks = @(Get-ConfigTextSectionRecords -Content $Content -CommentPrefix '#' -CommentSuffix '' -TargetPath $TargetPath)
-	$rootBlocks = @($blocks | Where-Object { $_.Name -eq 'root' })
+	$rootBlocks = @($blocks | Where-Object { $_.Name -eq $Name })
 
 	if ($rootBlocks.Count -ne 1 -or $rootBlocks[0].StartIndex -eq 0) {
 		return $Content
@@ -332,9 +387,11 @@ function InvokeEditorConfigSectionCleanup {
 		[System.Collections.IDictionary] $Settings
 	)
 
-	# Normalize the settings already consumed by the composed config-text-section convention.
+	# Normalize the settings already consumed by the managed section writer.
 	$name = Get-ConfigTextSectionName -NameSetting $Settings.name
 	$text = Get-ConfigTextSectionText -TextSetting $Settings.text -CommentPrefix '#' -CommentSuffix ''
+	$isRoot = TestManagedEditorConfigTextIsRoot -Text $text
+	$removeRootRuleNames = GetEditorConfigRemoveRootRuleNames -RemoveRootRulesSetting $Settings['remove-root-rules']
 	$editorConfigPath = Get-RepositoryPath -PathSetting '.editorconfig'
 	$editorConfigDisplayPath = Format-RepositoryRelativePath -Path $editorConfigPath
 
@@ -349,13 +406,13 @@ function InvokeEditorConfigSectionCleanup {
 	$managedRules = GetManagedEditorConfigRules -Text $text
 	$lines = @(GetEditorConfigLineObjects -Content $content)
 	SetEditorConfigLineMetadata -Lines $lines
-	$changed = SetRedundantEditorConfigRuleRemoval -Lines $lines -ManagedRules $managedRules -Name $name
+	$changed = SetRedundantEditorConfigRuleRemoval -Lines $lines -ManagedRules $managedRules -IsRoot $isRoot -RemoveRootRuleNames $removeRootRuleNames
 	$changed = (SetEmptyEditorConfigSectionRemoval -Lines $lines) -or $changed
 	$newContent = JoinEditorConfigLines -Lines $lines
 
 	# Keep the root managed section before other editorconfig sections.
-	if ($name -eq 'root') {
-		$movedContent = MoveRootEditorConfigBlockFirst -Content $newContent -LineEnding $lineEnding -TargetPath $editorConfigPath
+	if ($isRoot) {
+		$movedContent = MoveRootEditorConfigBlockFirst -Content $newContent -Name $name -LineEnding $lineEnding -TargetPath $editorConfigPath
 		$changed = ($movedContent -cne $newContent) -or $changed
 		$newContent = $movedContent
 	}

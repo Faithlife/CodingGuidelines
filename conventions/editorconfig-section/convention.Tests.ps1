@@ -129,7 +129,7 @@ trim_trailing_whitespace = false
 		}
 	}
 
-	It 'normalizes root section placement and root-wide redundant rules' {
+	It 'normalizes inferred root section placement and configured root-wide rules' {
 		$testDirectory = New-TemporaryDirectory
 
 		try {
@@ -140,7 +140,7 @@ trim_trailing_whitespace = false
 conventions:
 - path: ../conventions/editorconfig-section
   settings:
-    name: root
+    name: foundation
     text: |
       root = true
 
@@ -148,6 +148,9 @@ conventions:
       charset = utf-8
       end_of_line = lf
       trim_trailing_whitespace = true
+    remove-root-rules:
+      - indent_size
+      - tab_width
 "@, $utf8)
 			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.editorconfig'), @"
 [*.md]
@@ -173,13 +176,13 @@ insert_final_newline = true
 
 			# Assert root is first, unmanaged root-wide rules were removed, and unrelated content remains.
 			(Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw) | Should -Be $content
-			$content.StartsWith("# DO NOT EDIT: root convention`n", [System.StringComparison]::Ordinal) | Should -Be $true
+			$content.StartsWith("# DO NOT EDIT: foundation convention`n", [System.StringComparison]::Ordinal) | Should -Be $true
 			([regex]::Matches($content, '(?m)^root = true\r?$')).Count | Should -Be 1
-			([regex]::Matches($content, '(?m)^\[\*\]\r?$')).Count | Should -Be 1
+			([regex]::Matches($content, '(?m)^\[\*\]\r?$')).Count | Should -Be 2
 			$content | Should -Not -Match '(?m)^indent_size = 2\r?$'
-			$content | Should -Not -Match '(?m)^indent_style = space\r?$'
 			$content | Should -Not -Match '(?m)^tab_width = 2\r?$'
-			$content | Should -Not -Match '(?m)^insert_final_newline = true\r?$'
+			$content | Should -Match '(?m)^indent_style = space\r?$'
+			$content | Should -Match '(?m)^insert_final_newline = true\r?$'
 			$content | Should -Match "(?m)^\[\*\.md\]\r?$"
 			$content | Should -Match "(?m)^trim_trailing_whitespace = false\r?$"
 			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0
