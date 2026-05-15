@@ -21,7 +21,9 @@ Describe 'dotnet-sdk convention' {
 				[Parameter(Mandatory = $true)]
 				[string] $InputJson,
 
-				[object] $SdkVersion = '10.0.100'
+				[object] $SdkVersion = '10.0.100',
+
+				[string] $GlobalJsonContent
 			)
 
 			$testDirectory = New-TemporaryDirectory
@@ -30,9 +32,13 @@ Describe 'dotnet-sdk convention' {
 			try {
 				$inputPath = New-ConventionInputFile -InputJson $InputJson
 
-				# Seed global.json when the scenario starts from an existing SDK version.
-				if ($null -ne $SdkVersion) {
-					$globalJsonPath = Join-Path $testDirectory 'global.json'
+				$globalJsonPath = Join-Path $testDirectory 'global.json'
+
+				# Seed global.json from explicit test content when the scenario needs a custom shape.
+				if ($PSBoundParameters.ContainsKey('GlobalJsonContent')) {
+					[System.IO.File]::WriteAllText($globalJsonPath, $GlobalJsonContent, $utf8)
+				}
+				elseif ($null -ne $SdkVersion) {
 					$globalJson = @{
 						sdk = @{
 							version = $SdkVersion
@@ -42,7 +48,19 @@ Describe 'dotnet-sdk convention' {
 					[System.IO.File]::WriteAllText($globalJsonPath, $globalJson, $utf8)
 				}
 
-				return Invoke-ConventionScript -ScriptPath $script:conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath
+				# Return both convention output and resulting global.json content before cleanup.
+				$output = Invoke-ConventionScript -ScriptPath $script:conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath
+				$resultingGlobalJson = if (Test-Path -LiteralPath $globalJsonPath -PathType Leaf) {
+					Get-Content -LiteralPath $globalJsonPath -Raw
+				}
+				else {
+					$null
+				}
+
+				return [pscustomobject]@{
+					Output = $output
+					GlobalJsonContent = $resultingGlobalJson
+				}
 			}
 			finally {
 				Remove-Item -LiteralPath $inputPath -ErrorAction SilentlyContinue
@@ -60,20 +78,15 @@ Describe 'dotnet-sdk convention' {
 		}
 	}
 
-	AfterEach {
-		# Clear the global Copilot stub between tests.
-		Remove-Item Function:\global:copilot -ErrorAction SilentlyContinue
-	}
-
 	It 'accepts an integer major version when global.json already conforms' {
 		# Arrange an integer required SDK major version.
 		$inputJson = '{"settings":{"version":10}}'
 
 		# Run the convention against a matching global.json.
-		$output = InvokeDotnetSdkConvention -InputJson $inputJson -SdkVersion '10.0.100'
+		$result = InvokeDotnetSdkConvention -InputJson $inputJson -SdkVersion '10.0.100'
 
 		# Assert the output reports compliance and no work.
-		$outputText = GetOutputText -Output $output
+		$outputText = GetOutputText -Output $result.Output
 		$outputText | Should -Match 'Checking global\.json for \.NET SDK major version 10\.'
 		$outputText | Should -Match 'global\.json already requires SDK major version 10, which satisfies required major version 10\.'
 		$outputText | Should -Match 'dotnet-sdk convention has nothing to do\.'
@@ -84,36 +97,67 @@ Describe 'dotnet-sdk convention' {
 		$inputJson = '{"settings":{"version":"10"}}'
 
 		# Run the convention against a newer matching global.json.
-		$output = InvokeDotnetSdkConvention -InputJson $inputJson -SdkVersion '11.0.100'
+		$result = InvokeDotnetSdkConvention -InputJson $inputJson -SdkVersion '11.0.100'
 
 		# Assert the newer SDK still satisfies the required major version.
-		GetOutputText -Output $output | Should -Match 'global\.json already requires SDK major version 11, which satisfies required major version 10\.'
+		GetOutputText -Output $result.Output | Should -Match 'global\.json already requires SDK major version 11, which satisfies required major version 10\.'
 	}
 
-	It 'logs why it starts Copilot when global.json is missing' {
+	It 'creates global.json when it is missing' {
 		# Arrange a required SDK version with no starting global.json.
 		$inputJson = '{"settings":{"version":10}}'
 
-		# Stub Copilot to create a conforming global.json.
-		function global:copilot {
-			[System.IO.File]::WriteAllText((Join-Path (Get-Location) 'global.json'), @'
+		# Run the convention and capture its output.
+		$result = InvokeDotnetSdkConvention -InputJson $inputJson -SdkVersion $null
+
+		# Assert the output explains both the missing file and the deterministic update.
+		$outputText = GetOutputText -Output $result.Output
+		$outputText | Should -Match 'global\.json is missing\.'
+		$outputText | Should -Match 'global\.json does not conform; updating it\.'
+		$outputText | Should -Match 'global\.json already requires SDK major version 10, which satisfies required major version 10\.'
+
+		# Assert the generated JSON has the required two-space-indented SDK settings.
+		$json = $result.GlobalJsonContent | ConvertFrom-Json -AsHashtable
+		$json.sdk.version | Should -Be '10.0.100'
+		$json.sdk.rollForward | Should -Be 'latestFeature'
+		($result.GlobalJsonContent -split "`n")[1].TrimEnd("`r") | Should -Be '  "sdk": {'
+	}
+
+	It 'updates an older global.json while preserving unrelated properties' {
+		# Arrange an older SDK file with unrelated top-level and SDK properties.
+		$inputJson = '{"settings":{"version":10}}'
+		$globalJsonContent = @'
 {
+  "name": "test-repository",
   "sdk": {
-    "version": "10.0.100",
-    "rollForward": "latestFeature"
+    "extra": true,
+    "version": "8.0.100"
   }
 }
-'@, $utf8)
-		}
+'@
 
-		# Run the convention and capture its output.
-		$output = InvokeDotnetSdkConvention -InputJson $inputJson -SdkVersion $null
+		# Run the convention against the older global.json.
+		$result = InvokeDotnetSdkConvention -InputJson $inputJson -GlobalJsonContent $globalJsonContent
 
-		# Assert the output explains both the missing file and the Copilot handoff.
-		$outputText = GetOutputText -Output $output
-		$outputText | Should -Match 'global\.json is missing\.'
-		$outputText | Should -Match 'global\.json does not conform; starting Copilot to update it\.'
-		$outputText | Should -Match 'global\.json already requires SDK major version 10, which satisfies required major version 10\.'
+		# Assert the SDK settings changed without removing unrelated data.
+		$json = $result.GlobalJsonContent | ConvertFrom-Json -AsHashtable
+		$json.name | Should -Be 'test-repository'
+		$json.sdk.extra | Should -Be $true
+		$json.sdk.version | Should -Be '10.0.100'
+		$json.sdk.rollForward | Should -Be 'latestFeature'
+	}
+
+	It 'replaces malformed global.json with required SDK settings' {
+		# Arrange a malformed global.json that cannot be repaired structurally.
+		$inputJson = '{"settings":{"version":10}}'
+
+		# Run the convention against invalid JSON.
+		$result = InvokeDotnetSdkConvention -InputJson $inputJson -GlobalJsonContent '{ invalid json'
+
+		# Assert the convention writes a valid minimal SDK configuration.
+		$json = $result.GlobalJsonContent | ConvertFrom-Json -AsHashtable
+		$json.sdk.version | Should -Be '10.0.100'
+		$json.sdk.rollForward | Should -Be 'latestFeature'
 	}
 
 	It 'rejects a missing version setting' {

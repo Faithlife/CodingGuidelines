@@ -196,22 +196,8 @@ Runs repo-conventions apply from a test repository.
 function Invoke-RepoConventionsApply {
 	param(
 		[Parameter(Mandatory = $true)]
-		[string] $TestDirectory,
-
-		[string] $CopilotCommandDirectory
+		[string] $TestDirectory
 	)
-
-	# Create a temporary fake Copilot command unless the test supplies one.
-	$temporaryCopilot = $null
-
-	if (-not $PSBoundParameters.ContainsKey('CopilotCommandDirectory')) {
-		$temporaryCopilot = New-TemporaryTestCopilotCommand
-		$CopilotCommandDirectory = $temporaryCopilot.CommandDirectory
-	}
-
-	# Prepend the fake Copilot command directory for this apply invocation.
-	$originalPath = $env:PATH
-	$env:PATH = "$CopilotCommandDirectory$([System.IO.Path]::PathSeparator)$originalPath"
 
 	# Run repo-conventions from the temporary repository under test.
 	Push-Location $TestDirectory
@@ -219,101 +205,7 @@ function Invoke-RepoConventionsApply {
 		return @(& repo-conventions apply 6>&1)
 	}
 	finally {
-		# Restore caller state and remove any helper command created here.
+		# Restore the caller location after the apply command completes.
 		Pop-Location
-		$env:PATH = $originalPath
-
-		if ($null -ne $temporaryCopilot) {
-			Remove-Item -LiteralPath $temporaryCopilot.CommandDirectory -Recurse -Force -ErrorAction SilentlyContinue
-		}
-	}
-}
-
-<#
-.SYNOPSIS
-Creates a fake copilot command for behavior tests.
-#>
-function New-TestCopilotCommand {
-	param(
-		[Parameter(Mandatory = $true)]
-		[string] $TestDirectory
-	)
-
-	# Create a repository-local tools directory to hold the fake command.
-	$commandDirectory = Join-Path $TestDirectory '.test-tools'
-	[System.IO.Directory]::CreateDirectory($commandDirectory) | Out-Null
-
-	$inputPath = Join-Path $commandDirectory 'copilot-input.txt'
-	$argumentsPath = Join-Path $commandDirectory 'copilot-arguments.txt'
-	$copilotHomePath = Join-Path $commandDirectory 'copilot-home.txt'
-
-	# Write a platform-specific command that captures invocation details for assertions.
-	if ($IsWindows) {
-		$commandPath = Join-Path $commandDirectory 'copilot.cmd'
-		$escapedInputPath = $inputPath.Replace('"', '""')
-		$escapedArgumentsPath = $argumentsPath.Replace('"', '""')
-		$escapedCopilotHomePath = $copilotHomePath.Replace('"', '""')
-		[System.IO.File]::WriteAllText($commandPath, "@echo off`r`n> `"$escapedArgumentsPath`" echo(%*`r`n> `"$escapedCopilotHomePath`" echo(%COPILOT_HOME%`r`nmore > `"$escapedInputPath`"`r`nexit /b 0`r`n", $utf8)
-	}
-	else {
-		$commandPath = Join-Path $commandDirectory 'copilot'
-		$commandContent = @'
-#!/bin/sh
-printf '%s\n' "$*" > '{0}'
-printf '%s\n' "$COPILOT_HOME" > '{1}'
-cat > '{2}'
-exit 0
-'@ -f $argumentsPath, $copilotHomePath, $inputPath
-		[System.IO.File]::WriteAllText($commandPath, $commandContent, $utf8)
-		& chmod +x $commandPath | Out-Null
-	}
-
-	# Return the command directory and captured invocation paths to the test.
-	return [pscustomobject]@{
-		CommandDirectory = $commandDirectory
-		InputPath = $inputPath
-		ArgumentsPath = $argumentsPath
-		CopilotHomePath = $copilotHomePath
-	}
-}
-
-<#
-.SYNOPSIS
-Creates a fake copilot command in a temporary directory outside the test repository.
-#>
-function New-TemporaryTestCopilotCommand {
-	# Create a fake Copilot command outside the repository under test.
-	$commandDirectory = New-TemporaryDirectory
-	$inputPath = Join-Path $commandDirectory 'copilot-input.txt'
-	$argumentsPath = Join-Path $commandDirectory 'copilot-arguments.txt'
-	$copilotHomePath = Join-Path $commandDirectory 'copilot-home.txt'
-
-	# Write a platform-specific command that discards stdin for apply tests.
-	if ($IsWindows) {
-		$commandPath = Join-Path $commandDirectory 'copilot.cmd'
-		$escapedInputPath = $inputPath.Replace('"', '""')
-		$escapedArgumentsPath = $argumentsPath.Replace('"', '""')
-		$escapedCopilotHomePath = $copilotHomePath.Replace('"', '""')
-		[System.IO.File]::WriteAllText($commandPath, "@echo off`r`n> `"$escapedArgumentsPath`" echo(%*`r`n> `"$escapedCopilotHomePath`" echo(%COPILOT_HOME%`r`nmore > `"$escapedInputPath`"`r`nexit /b 0`r`n", $utf8)
-	}
-	else {
-		$commandPath = Join-Path $commandDirectory 'copilot'
-		$commandContent = @'
-#!/bin/sh
-printf '%s\n' "$*" > '{0}'
-printf '%s\n' "$COPILOT_HOME" > '{1}'
-cat > /dev/null
-exit 0
-'@ -f $argumentsPath, $copilotHomePath
-		[System.IO.File]::WriteAllText($commandPath, $commandContent, $utf8)
-		& chmod +x $commandPath | Out-Null
-	}
-
-	# Return the command location so callers can prepend it to PATH.
-	return [pscustomobject]@{
-		CommandDirectory = $commandDirectory
-		InputPath = $inputPath
-		ArgumentsPath = $argumentsPath
-		CopilotHomePath = $copilotHomePath
 	}
 }

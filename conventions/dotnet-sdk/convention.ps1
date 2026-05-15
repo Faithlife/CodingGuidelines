@@ -70,6 +70,51 @@ function GetGlobalJsonSdkStatus {
 	}
 }
 
+# Create or update global.json with the required SDK settings.
+function SetGlobalJsonSdkVersion {
+	param(
+		[Parameter(Mandatory = $true)]
+		[string] $GlobalJsonPath,
+
+		[Parameter(Mandatory = $true)]
+		[int] $MajorVersion
+	)
+
+	# Preserve the existing JSON object when possible so unrelated properties keep their relative order.
+	$globalJson = $null
+
+	if (Test-Path -LiteralPath $GlobalJsonPath -PathType Leaf) {
+		try {
+			$globalJson = [System.Text.Json.Nodes.JsonNode]::Parse((Get-Content -LiteralPath $GlobalJsonPath -Raw))
+		}
+		catch {
+			$globalJson = $null
+		}
+	}
+
+	# Replace malformed or non-object JSON with the minimal object shape this convention owns.
+	if ($globalJson -isnot [System.Text.Json.Nodes.JsonObject]) {
+		$globalJson = [System.Text.Json.Nodes.JsonObject]::new()
+	}
+
+	# Ensure the SDK section is an object before updating its required properties.
+	$sdkNode = $globalJson['sdk']
+
+	if ($sdkNode -isnot [System.Text.Json.Nodes.JsonObject]) {
+		$sdkNode = [System.Text.Json.Nodes.JsonObject]::new()
+		$globalJson['sdk'] = $sdkNode
+	}
+
+	# Set the deterministic SDK version and roll-forward policy.
+	$sdkNode['version'] = [System.Text.Json.Nodes.JsonValue]::Create("$MajorVersion.0.100")
+	$sdkNode['rollForward'] = [System.Text.Json.Nodes.JsonValue]::Create('latestFeature')
+
+	# Write System.Text.Json output using its stable two-space indented formatting.
+	$jsonOptions = [System.Text.Json.JsonSerializerOptions]::new()
+	$jsonOptions.WriteIndented = $true
+	[System.IO.File]::WriteAllText($GlobalJsonPath, ($globalJson.ToJsonString($jsonOptions) + "`n"), $utf8)
+}
+
 # Read the convention input settings.
 $settings = Read-ConventionSettings -InputPath $args[0]
 
@@ -116,40 +161,13 @@ if ($globalJsonStatus.Conforms) {
 	return
 }
 
-$sdkVersion = "$majorVersion.0.100"
-# Ask Copilot to make only global.json conform to the required SDK.
-$copilotInstructions = @"
-Update the repository in the current directory so that `global.json` conforms to the required .NET SDK configuration.
+Write-Host 'global.json does not conform; updating it.'
+SetGlobalJsonSdkVersion -GlobalJsonPath $globalJsonPath -MajorVersion $majorVersion
 
-Use this `global.json` when the file does not exist:
-
-```
-{
-  "sdk": {
-    "version": "$sdkVersion",
-    "rollForward": "latestFeature"
-  }
-}
-```
-
-If `global.json` already exists, change its properties to match those above.
-Preserve any properties in `global.json` that do not need to change.
-Do not modify any files other than `global.json`.
-
-When you're done, make sure the code still builds successfully, e.g. by running `./build.ps1 build` or `dotnet build`.
-If the code doesn't build successfully, read the error messages, read the affected files, and fix the issues by editing the code.
-DO NOT suppress warnings by adding `<NoWarn>` properties or `#pragma warning` directives.
-If you make changes, build the code again and keep fixing issues until it builds successfully.
-DO NOT commit any changes to the git repository. Leave your changes unstaged.
-"@
-
-Write-Host 'global.json does not conform; starting Copilot to update it.'
-Invoke-CopilotWithIsolatedConfig -Instructions $copilotInstructions
-
-# Verify Copilot produced a conforming global.json.
+# Verify the deterministic update produced a conforming global.json.
 $globalJsonStatus = GetGlobalJsonSdkStatus -GlobalJsonPath $globalJsonPath -MajorVersion $majorVersion
 Write-Host $globalJsonStatus.Message
 
 if (-not $globalJsonStatus.Conforms) {
-	throw 'Copilot failed to update global.json to the required .NET SDK configuration.'
+	throw 'Failed to update global.json to the required .NET SDK configuration.'
 }

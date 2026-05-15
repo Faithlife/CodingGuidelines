@@ -42,20 +42,6 @@ Describe 'gitattributes-lf convention' {
 		}
 	}
 
-	BeforeEach {
-		# Stub Copilot so tests can assert whether it was invoked.
-		$global:CopilotCallCount = 0
-
-		function global:copilot {
-			$global:CopilotCallCount++
-		}
-	}
-
-	AfterEach {
-		# Remove the global Copilot stub after each scenario.
-		Remove-Item Function:\global:copilot -ErrorAction SilentlyContinue
-	}
-
 	It 'creates .gitattributes when it is missing' {
 		$testDirectory = New-TemporaryDirectory
 
@@ -69,10 +55,9 @@ Describe 'gitattributes-lf convention' {
 			$commitSubjects = @(Get-CommitSubjects -TestDirectory $testDirectory -Count 2)
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
-			# Assert LF attributes were created, committed, and did not invoke Copilot.
+			# Assert LF attributes were created, committed, and left the repository clean.
 			(Test-Path -LiteralPath (Join-Path $testDirectory '.gitattributes')) | Should -Be $true
 			((Get-Content -LiteralPath (Join-Path $testDirectory '.gitattributes') -Raw).TrimEnd("`r", "`n")) | Should -Be '* text=auto eol=lf'
-			$global:CopilotCallCount | Should -Be 0
 			$output[0].ToString() | Should -Be "Creating '.gitattributes' with LF normalization enabled."
 			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should -Be $initialHead
 			$commitSubjects[0] | Should -Be 'Use LF'
@@ -83,7 +68,7 @@ Describe 'gitattributes-lf convention' {
 		}
 	}
 
-	It 'uses Copilot and removes redundant eol rules from an existing file' {
+	It 'repairs eol attributes in an existing file' {
 		$testDirectory = New-TemporaryDirectory
 
 		try {
@@ -92,7 +77,7 @@ Describe 'gitattributes-lf convention' {
 			$gitattributesPath = Join-Path $testDirectory '.gitattributes'
 			$scriptPath = Join-Path $testDirectory 'script.ps1'
 			$notesPath = Join-Path $testDirectory 'notes.txt'
-			[System.IO.File]::WriteAllText($gitattributesPath, "* -text`n*.ps1 text eol=crlf`n*.png binary`n", $utf8)
+			[System.IO.File]::WriteAllText($gitattributesPath, "# keep this comment`n* -text`n*.ps1 text eol=crlf`n*.cmd eol=crlf`n*.png binary`n", $utf8)
 			[System.IO.File]::WriteAllText($scriptPath, "Write-Host 'test'`r`n", [System.Text.UTF8Encoding]::new($false))
 			[System.IO.File]::WriteAllText($notesPath, "line one`r`nline two`r`n", [System.Text.UTF8Encoding]::new($false))
 
@@ -101,24 +86,22 @@ Describe 'gitattributes-lf convention' {
 				& git add -A
 				& git commit -m 'Add gitattributes' | Out-Null
 
-				function global:copilot {
-					# Simulate Copilot rewriting attributes to the compliant shape.
-					$global:CopilotCallCount++
-					[System.IO.File]::WriteAllText($gitattributesPath, "* text=auto eol=lf`n*.png binary`n", $utf8)
-				}
-
-				# Apply the convention while the Copilot stub is in scope.
+				# Apply the convention to repair the attributes file deterministically.
 				$output = InvokeGitattributesLfConvention -TestDirectory $testDirectory
 			}
 			finally {
 				Pop-Location
 			}
 
-			# Assert Copilot was used and the final repository history is correct.
-			$global:CopilotCallCount | Should -Be 1
-			(Get-Content -LiteralPath $gitattributesPath -Raw) | Should -Match "^\* text=auto eol=lf\n"
-			(Get-Content -LiteralPath $gitattributesPath -Raw) | Should -Match "\.png binary"
-			(@($output | ForEach-Object { $_.ToString() }) -contains ".gitattributes is not compliant; starting Copilot to update '.gitattributes'.") | Should -Be $true
+			# Assert the deterministic repair stripped only line-ending policy and kept useful rules.
+			$gitattributesContent = Get-Content -LiteralPath $gitattributesPath -Raw
+			$gitattributesContent | Should -Match "^\* text=auto eol=lf\n"
+			$gitattributesContent | Should -Match "# keep this comment"
+			$gitattributesContent | Should -Match "\.ps1 text"
+			$gitattributesContent | Should -Not -Match "\.cmd"
+			$gitattributesContent | Should -Match "\.png binary"
+			$gitattributesContent | Should -Not -Match "eol=crlf"
+			(@($output | ForEach-Object { $_.ToString() }) -contains ".gitattributes is not compliant; updating '.gitattributes'.") | Should -Be $true
 			$commitSubjects = @(Get-CommitSubjects -TestDirectory $testDirectory -Count 4)
 			$commitSubjects[0] | Should -Be 'Ignore CRLF to LF for git blame'
 			$commitSubjects[1] | Should -Be 'Convert CRLF to LF'
@@ -131,19 +114,18 @@ Describe 'gitattributes-lf convention' {
 			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0
 		}
 		finally {
-			Remove-Item Function:\global:copilot -ErrorAction SilentlyContinue
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
 		}
 	}
 
-	It 'does not invoke Copilot when .gitattributes already conforms' {
+	It 'does not change .gitattributes when it already conforms' {
 		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a repository with already-compliant attributes.
 			Initialize-TestRepository -Path $testDirectory
 			$gitattributesPath = Join-Path $testDirectory '.gitattributes'
-			$expectedContent = "* text=auto eol=lf`n*.ps1 text eol=crlf`n*.png binary`n"
+			$expectedContent = "* text=auto eol=lf`n*.ps1 text`n*.png binary`n"
 			[System.IO.File]::WriteAllText($gitattributesPath, $expectedContent, $utf8)
 
 			Push-Location $testDirectory
@@ -160,11 +142,41 @@ Describe 'gitattributes-lf convention' {
 			# Apply the convention to the compliant repository.
 			$output = InvokeGitattributesLfConvention -TestDirectory $testDirectory
 
-			# Assert no Copilot call or commit occurred.
-			$global:CopilotCallCount | Should -Be 0
+			# Assert no commit occurred.
 			(Get-Content -LiteralPath $gitattributesPath -Raw) | Should -Be $expectedContent
 			$output[0].ToString() | Should -Be "'.gitattributes' already starts with '* text=auto eol=lf'."
 			(Get-CommitId -TestDirectory $testDirectory) | Should -Be $beforeHead
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'removes duplicate required and obsolete repository-wide rules' {
+		$testDirectory = New-TemporaryDirectory
+
+		try {
+			# Arrange a repository with duplicate and obsolete repository-wide newline rules.
+			Initialize-TestRepository -Path $testDirectory
+			$gitattributesPath = Join-Path $testDirectory '.gitattributes'
+			[System.IO.File]::WriteAllText($gitattributesPath, "* text=auto`n* text=auto eol=lf`n*.png binary`n", $utf8)
+
+			Push-Location $testDirectory
+			try {
+				& git add -A
+				& git commit -m 'Add duplicate attributes' | Out-Null
+			}
+			finally {
+				Pop-Location
+			}
+
+			# Apply the convention to collapse the repository-wide rules.
+			InvokeGitattributesLfConvention -TestDirectory $testDirectory | Out-Null
+
+			# Assert only the required rule and useful custom rules remain.
+			$gitattributesContent = Get-Content -LiteralPath $gitattributesPath -Raw
+			$gitattributesContent | Should -Be "* text=auto eol=lf`n*.png binary`n"
+			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -185,12 +197,6 @@ Describe 'gitattributes-lf convention' {
 				& git add -A
 				& git commit -m 'Add noncompliant gitattributes' | Out-Null
 
-				function global:copilot {
-					# Simulate Copilot rewriting attributes to the compliant shape.
-					$global:CopilotCallCount++
-					[System.IO.File]::WriteAllText($gitattributesPath, "* text=auto eol=lf`n", $utf8)
-				}
-
 				# Apply the convention twice in the same repository.
 				InvokeGitattributesLfConvention -TestDirectory $testDirectory | Out-Null
 				$headAfterFirstRun = & git rev-parse HEAD
@@ -203,12 +209,10 @@ Describe 'gitattributes-lf convention' {
 			}
 
 			# Assert only the first run changed the repository.
-			$global:CopilotCallCount | Should -Be 1
 			$headAfterSecondRun | Should -Be $headAfterFirstRun
 			$status.Count | Should -Be 0
 		}
 		finally {
-			Remove-Item Function:\global:copilot -ErrorAction SilentlyContinue
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
 		}
 	}

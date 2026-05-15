@@ -193,38 +193,3 @@ function New-TemporaryDirectory {
 	[System.IO.Directory]::CreateDirectory($path) | Out-Null
 	return $path
 }
-
-<#
-.SYNOPSIS
-Runs Copilot with shared convention settings and an isolated home directory.
-#>
-function Invoke-CopilotWithIsolatedConfig {
-	param(
-		[Parameter(Mandatory = $true)]
-		[string] $Instructions
-	)
-
-	# Fail early if the Copilot CLI is not available for this convention run.
-	Get-Command -Name copilot -ErrorAction Stop | Out-Null
-
-	# Use an isolated Copilot home directory so convention runs do not depend on or mutate the user's setup.
-	$copilotHomeDirectory = New-TemporaryDirectory
-	$originalCopilotHome = Get-Item -LiteralPath Env:\COPILOT_HOME -ErrorAction SilentlyContinue
-
-	try {
-		# Pipe instructions to Copilot with convention-safe tool and path permissions.
-		$env:COPILOT_HOME = $copilotHomeDirectory
-		$Instructions | & copilot --no-ask-user --allow-all-tools --allow-all-paths --model auto
-	}
-	finally {
-		if ($null -eq $originalCopilotHome) {
-			Remove-Item -LiteralPath Env:\COPILOT_HOME -ErrorAction SilentlyContinue
-		}
-		else {
-			Set-Item -LiteralPath Env:\COPILOT_HOME -Value $originalCopilotHome.Value
-		}
-
-		# Always remove the temporary Copilot home after the run.
-		Remove-Item -LiteralPath $copilotHomeDirectory -Recurse -Force
-	}
-}
