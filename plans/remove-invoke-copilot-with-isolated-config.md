@@ -43,24 +43,24 @@ For `gitattributes-lf`, the current instruction says to:
 
 - Make the first line exactly `* text=auto eol=lf`.
 - Move that line to the first line if it already exists later.
-- Remove every other rule containing `eol=`.
+- Remove the `eol=` attribute from every other rule, and remove the rule entirely when `eol=` was the only attribute it declared.
 - Remove redundant repository-wide newline rules made obsolete by the required first line, including `* text=auto` and `* -text`.
 - Preserve rules that are not about line endings.
 - Modify no files other than `.gitattributes`.
 - Leave the working tree unstaged before the convention stages its own commits.
 
-PowerShell can deterministically implement all of this with line-based filtering because `.gitattributes` is already line-oriented and the convention only needs to manage repository-wide newline policy. The main judgment call is preserving comments and blank lines. The recommended implementation should preserve non-removed comments and rules, remove duplicate required rules, and avoid adding extra blank lines at the top.
+PowerShell can deterministically implement all of this with line-based filtering because `.gitattributes` is already line-oriented and the convention only needs to manage repository-wide newline policy. The main judgment call is preserving comments and blank lines. The recommended implementation should preserve non-removed comments and rules, strip `eol=` attributes from rules that still have other attributes, remove duplicate required rules, and avoid adding extra blank lines at the top.
 
 ## Implementation Steps
 
 - Update [../conventions/dotnet-sdk/convention.ps1](../conventions/dotnet-sdk/convention.ps1):
   - Replace `$copilotInstructions` and `Invoke-CopilotWithIsolatedConfig` with a local function such as `SetGlobalJsonSdkVersion`.
-  - Parse existing `global.json` with `ConvertFrom-Json -AsHashtable` when it exists.
-  - Treat malformed or non-object JSON as nonconforming and replace it with a minimal valid object.
-  - Ensure the top-level `sdk` value is a hashtable.
+  - Parse existing `global.json` with `System.Text.Json.Nodes.JsonNode` when it exists so property order is preserved where possible.
+  - Treat malformed or non-object JSON as nonconforming and replace it with a minimal valid `JsonObject`.
+  - Ensure the top-level `sdk` value is a `JsonObject`.
   - Set `sdk.version` to `$majorVersion.0.100` and `sdk.rollForward` to `latestFeature`.
   - Preserve unrelated top-level properties and unrelated `sdk` properties.
-  - Write the file with `ConvertTo-Json -Depth 100` and `[System.IO.File]::WriteAllText(..., $utf8)`.
+  - Write the file with `System.Text.Json` using `WriteIndented = $true`, which produces two-space indentation, and `[System.IO.File]::WriteAllText(..., $utf8)`.
   - Change output from `starting Copilot` to deterministic wording such as `updating global.json`.
   - Keep the existing post-write `GetGlobalJsonSdkStatus` validation.
 
@@ -70,7 +70,8 @@ PowerShell can deterministically implement all of this with line-based filtering
   - If `.gitattributes` exists but is noncompliant, read all lines.
   - Build a new line list starting with `* text=auto eol=lf`.
   - Skip later lines that exactly equal the required rule.
-  - Skip rules containing `eol=`.
+  - For later rules containing `eol=`, remove only the `eol=` attribute and keep the rule when other attributes remain.
+  - Remove a later rule entirely when removing `eol=` leaves only the pattern and no attributes.
   - Skip obsolete repository-wide rules such as `* text=auto` and `* -text`.
   - Preserve all other lines, including comments, blank lines, and non-line-ending rules.
   - Write the result with a single final LF newline.
@@ -89,7 +90,7 @@ PowerShell can deterministically implement all of this with line-based filtering
 
 - Update tests:
   - In [../conventions/dotnet-sdk/convention.Tests.ps1](../conventions/dotnet-sdk/convention.Tests.ps1), remove `global:copilot` stubs and assert direct `global.json` output for missing, lower-version, malformed, and preserve-extra-properties scenarios.
-  - In [../conventions/gitattributes-lf/convention.Tests.ps1](../conventions/gitattributes-lf/convention.Tests.ps1), remove `global:copilot` stubs and assert deterministic repair of redundant `eol=` rules, duplicate required rules, obsolete repository-wide rules, comments, blank lines, and preserved binary/custom rules.
+  - In [../conventions/gitattributes-lf/convention.Tests.ps1](../conventions/gitattributes-lf/convention.Tests.ps1), remove `global:copilot` stubs and assert deterministic repair of redundant `eol=` attributes, rules that become empty after `eol=` removal, duplicate required rules, obsolete repository-wide rules, comments, blank lines, and preserved binary/custom rules.
   - Remove output assertions that say `starting Copilot` and replace them with the new deterministic messages.
   - Keep idempotence tests for both conventions.
 
@@ -124,7 +125,7 @@ Then run the full convention suite:
 
 ## Risks And Decisions
 
-- JSON formatting will change when rewriting `global.json`. That is acceptable unless preserving exact formatting becomes a requirement. Preserving data is more important than preserving whitespace.
-- PowerShell hashtables may not preserve property ordering exactly as the original JSON. If stable ordering matters, write `sdk` first for newly created files and accept existing-order differences for repaired files.
-- `.gitattributes` line filtering must be conservative. Only remove lines that clearly match the current Copilot prompt requirements: the required rule duplicate, any rule containing `eol=`, and exact obsolete repository-wide rules.
+- JSON formatting will change when rewriting `global.json`. That is acceptable, but the deterministic writer should use two-space indentation.
+- Use `System.Text.Json` rather than PowerShell hashtables for `global.json` so existing property ordering can be preserved where possible while updating only the required SDK values.
+- `.gitattributes` line filtering must be conservative. Only remove the required rule duplicate, exact obsolete repository-wide rules, and `eol=` attributes; remove a whole rule only when it has no attributes left after stripping `eol=`.
 - The convention will no longer try to build or repair source code after changing `global.json`. This is an intentional behavior change and should be reflected in tests by asserting only `global.json` content and conformity.
