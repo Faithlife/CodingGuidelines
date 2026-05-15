@@ -35,6 +35,7 @@
 | [editorconfig-root](./conventions/editorconfig-root/README.md) | Ensures the repository-root `.editorconfig` contains the standard `[*]` section described in [sections/editorconfig.md](./sections/editorconfig.md). |
 | [editorconfig-section](./conventions/editorconfig-section/README.md) | Manages a named section within the repository-root `.editorconfig` file. |
 | [editorconfig-yaml](./conventions/editorconfig-yaml/README.md) | Ensures the repository-root `.editorconfig` contains the managed YAML section from [files/.editorconfig](./conventions/editorconfig-yaml/files/.editorconfig). |
+| [faithlife-auto-apply-conventions](./conventions/faithlife-auto-apply-conventions/README.md) | Ensures that `.github/conventions.yml` starts with the marker used by RepoConventionsApplier. |
 | [faithlife-build-library-project](./conventions/faithlife-build-library-project/README.md) | Creates missing Faithlife build project files under `tools/Build`. |
 | [faithlife-build-library-workflow](./conventions/faithlife-build-library-workflow/README.md) | Installs the published `build.yaml` workflow at `.github/workflows/build.yaml`. |
 | [faithlife-build-script](./conventions/faithlife-build-script/README.md) | Installs the published `build.ps1` script at the repository root. |
