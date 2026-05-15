@@ -14,6 +14,4 @@
 * [Source Control](sections/source-control/readme.md)
 * [Internationalization](sections/internationalization.md)
 
-## Repository Setup
-
-* [Agentic Repository System](conventions/agentic-repository-system.md)
+> Apply these guidelines automatically with [Agentic Repository System](https://github.com/LogosBible/AgentConfiguration/blob/master/docs/agentic-repository-system.md).
