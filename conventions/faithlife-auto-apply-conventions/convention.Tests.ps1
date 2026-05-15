@@ -46,13 +46,13 @@ Describe 'faithlife-auto-apply-conventions convention' {
 			[System.IO.Directory]::CreateDirectory($githubDirectory) | Out-Null
 
 			$conventionsYamlPath = Join-Path $githubDirectory 'conventions.yml'
-			Write-Utf8NoBomFile -Path $conventionsYamlPath -Content $Content
+			[System.IO.File]::WriteAllText($conventionsYamlPath, $Content, $utf8)
 			return $conventionsYamlPath
 		}
 	}
 
 	It 'fails when .github/conventions.yml is missing' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			Initialize-TestRepository -Path $testDirectory
@@ -65,7 +65,7 @@ Describe 'faithlife-auto-apply-conventions convention' {
 	}
 
 	It 'adds the marker as the first line when the file has normal content' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			Initialize-TestRepository -Path $testDirectory
@@ -94,7 +94,7 @@ Describe 'faithlife-auto-apply-conventions convention' {
 	}
 
 	It 'replaces an existing DO NOT REMOVE first line' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			Initialize-TestRepository -Path $testDirectory
@@ -111,7 +111,7 @@ Describe 'faithlife-auto-apply-conventions convention' {
 	}
 
 	It 'preserves CRLF line endings when adding the marker' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			Initialize-TestRepository -Path $testDirectory
@@ -127,7 +127,7 @@ Describe 'faithlife-auto-apply-conventions convention' {
 	}
 
 	It 'is idempotent when the marker is already present' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			Initialize-TestRepository -Path $testDirectory
