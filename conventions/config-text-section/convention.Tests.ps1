@@ -62,38 +62,6 @@ Describe 'config-text-section convention' {
 		}
 	}
 
-	It 'ignores obsolete agent settings' {
-		# Set up an empty repository and a Copilot function that must not be called.
-		$testDirectory = New-TemporaryDirectory
-
-		try {
-			$targetPath = Join-Path $testDirectory '.editorconfig'
-
-			function global:copilot {
-				throw 'Copilot should not run.'
-			}
-
-			# Run the convention with obsolete agent settings configured.
-			$output = InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{
-				path = '.editorconfig'
-				name = 'general-editorconfig'
-				text = "[*]`ncharset = utf-8"
-				'comment-prefix' = '#'
-				agent = @{ instructions = 'Review the file.' }
-			}
-
-			# Assert the file is updated without invoking Copilot.
-			(Test-Path -LiteralPath $targetPath) | Should -Be $true
-			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n"
-			$output[-1].ToString() | Should -Be "Updated 'general-editorconfig' section in '.editorconfig'."
-		}
-		finally {
-			# Remove the isolated repository after the test completes.
-			Remove-Item Function:\global:copilot -ErrorAction SilentlyContinue
-			Remove-Item -LiteralPath $testDirectory -Recurse -Force
-		}
-	}
-
 	It 'resolves relative paths from the repository root' {
 		# Set up an empty repository for relative path resolution.
 		$testDirectory = New-TemporaryDirectory

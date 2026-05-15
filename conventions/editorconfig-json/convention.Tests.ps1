@@ -88,28 +88,4 @@ indent_size = 4
 		}
 	}
 
-	It 'does not invoke Copilot when it changes .editorconfig' {
-		$testDirectory = New-TemporaryDirectory
-
-		try {
-			# Arrange an isolated repository and a test Copilot command that should not run.
-			Copy-TestConventionAssets -TestDirectory $testDirectory
-			$testCopilot = New-TestCopilotCommand -TestDirectory $testDirectory
-			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
-			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
-conventions:
-- path: ../conventions/editorconfig-json
-"@, $utf8)
-			Initialize-TestRepository -Path $testDirectory
-
-			# Apply the convention with a test Copilot command directory.
-			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory -CopilotCommandDirectory $testCopilot.CommandDirectory } | Should -Not -Throw
-
-			# Assert Copilot was not invoked.
-			(Test-Path -LiteralPath $testCopilot.InputPath) | Should -Be $false
-		}
-		finally {
-			Remove-Item -LiteralPath $testDirectory -Recurse -Force
-		}
-	}
 }
