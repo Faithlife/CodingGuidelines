@@ -3,7 +3,7 @@
 $ErrorActionPreference = 'Stop'
 Push-Location $PSScriptRoot
 try {
-	dotnet publish ./tools/Build/Build.csproj --artifacts-path ./artifacts --nologo --verbosity quiet
+	dotnet publish ./tools/Build/Build.csproj --artifacts-path ./artifacts --nologo --verbosity quiet -tl:off
 	if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 	dotnet ./artifacts/publish/Build/release/Build.dll $args
 	if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
