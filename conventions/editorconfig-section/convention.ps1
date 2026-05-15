@@ -367,6 +367,16 @@ function InvokeEditorConfigSectionCleanup {
 	}
 }
 
-# Clean up unmanaged .editorconfig rules after the composed section writer runs.
+# Write the managed .editorconfig section using the shared section writer.
 $settings = Read-ConventionSettings -InputPath $args[0]
+$sectionSettings = @{
+	path = '.editorconfig'
+	name = $settings.name
+	text = $settings.text
+	'comment-prefix' = '#'
+	'comment-suffix' = ''
+}
+Invoke-ConfigTextSection -Settings $sectionSettings
+
+# Clean up unmanaged .editorconfig rules after the managed section is written.
 InvokeEditorConfigSectionCleanup -Settings $settings

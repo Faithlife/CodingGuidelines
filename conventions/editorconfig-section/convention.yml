@@ -1,7 +1,0 @@
-conventions:
-  - path: ../config-text-section
-    settings:
-      path: .editorconfig
-      name: ${{ settings.name }}
-      text: ${{ settings.text }}
-      comment-prefix: '#'
