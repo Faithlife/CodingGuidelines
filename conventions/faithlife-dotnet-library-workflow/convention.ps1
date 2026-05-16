@@ -11,8 +11,8 @@ $helpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'Helpers.ps1'
 . $helpersPath
 
 # Copy the published workflow into the repository when it differs.
-$sourceWorkflowPath = Join-Path $PSScriptRoot 'files' 'build.yaml'
-$targetWorkflowPath = Join-Path (Get-Location) '.github/workflows/build.yaml'
+$sourceWorkflowPath = Join-Path $PSScriptRoot 'files' 'ci.yml'
+$targetWorkflowPath = Join-Path (Get-Location) '.github/workflows/ci.yml'
 $copyResult = Copy-FileIfDifferent -SourcePath $sourceWorkflowPath -DestinationPath $targetWorkflowPath
 
 # Report whether the workflow was created, updated, or already current.

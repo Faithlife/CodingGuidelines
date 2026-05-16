@@ -11,7 +11,7 @@ Describe 'faithlife-dotnet-library-workflow convention' {
 	BeforeAll {
 		# Cache convention paths and load shared test helpers.
 		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
-		$script:expectedWorkflowPath = Join-Path $PSScriptRoot 'files' 'build.yaml'
+		$script:expectedWorkflowPath = Join-Path $PSScriptRoot 'files' 'ci.yml'
 		$script:testHelpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'TestHelpers.ps1'
 		. $script:testHelpersPath
 
@@ -48,7 +48,7 @@ Describe 'faithlife-dotnet-library-workflow convention' {
 		}
 	}
 
-	It 'creates .github/workflows/build.yaml when it is missing' {
+	It 'creates .github/workflows/ci.yml when it is missing' {
 		$testDirectory = New-TemporaryDirectory
 
 		try {
@@ -57,14 +57,14 @@ Describe 'faithlife-dotnet-library-workflow convention' {
 
 			# Apply the convention and collect the generated workflow state.
 			$output = InvokeFaithlifeDotNetLibraryWorkflowConvention -TestDirectory $testDirectory
-			$workflowPath = Join-Path $testDirectory '.github/workflows/build.yaml'
+			$workflowPath = Join-Path $testDirectory '.github/workflows/ci.yml'
 			$status = @(GetAllGitStatusLines -TestDirectory $testDirectory)
 
 			# Assert the published workflow was created and reported.
 			(Test-Path -LiteralPath $workflowPath) | Should -Be $true
 			(Get-Content -LiteralPath $workflowPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedWorkflowPath -Raw)
 			$status.Count | Should -Be 1
-			$status[0] | Should -Match '^\?\? \.github/workflows/build\.yaml$'
+			$status[0] | Should -Match '^\?\? \.github/workflows/ci\.yml$'
 			(@($output | ForEach-Object { $_.ToString() }) -contains "Created '$workflowPath' from the published Faithlife build workflow.") | Should -Be $true
 		}
 		finally {
@@ -72,13 +72,13 @@ Describe 'faithlife-dotnet-library-workflow convention' {
 		}
 	}
 
-	It 'updates an existing build workflow to the published file' {
+	It 'updates an existing ci workflow to the published file' {
 		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a repository with a committed placeholder workflow.
 			Initialize-TestRepository -Path $testDirectory
-			$workflowPath = Join-Path $testDirectory '.github/workflows/build.yaml'
+			$workflowPath = Join-Path $testDirectory '.github/workflows/ci.yml'
 			New-Item -ItemType Directory -Path (Split-Path -Parent $workflowPath) -Force | Out-Null
 			[System.IO.File]::WriteAllText($workflowPath, "name: Placeholder`n", $utf8)
 
@@ -98,7 +98,7 @@ Describe 'faithlife-dotnet-library-workflow convention' {
 			# Assert the workflow was replaced with the published file.
 			(Get-Content -LiteralPath $workflowPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedWorkflowPath -Raw)
 			$status.Count | Should -Be 1
-			$status[0] | Should -Match '^ M \.github/workflows/build\.yaml$'
+			$status[0] | Should -Match '^ M \.github/workflows/ci\.yml$'
 			(@($output | ForEach-Object { $_.ToString() }) -contains "Updated '$workflowPath' from the published Faithlife build workflow.") | Should -Be $true
 		}
 		finally {
@@ -118,7 +118,7 @@ Describe 'faithlife-dotnet-library-workflow convention' {
 			Push-Location $testDirectory
 			try {
 				& git add -A
-				& git commit -m 'Add build workflow' | Out-Null
+				& git commit -m 'Add ci workflow' | Out-Null
 				$headAfterFirstRun = & git rev-parse HEAD
 			}
 			finally {
@@ -133,7 +133,7 @@ Describe 'faithlife-dotnet-library-workflow convention' {
 			# Assert the second run reported no content changes.
 			$headAfterSecondRun | Should -Be $headAfterFirstRun
 			$status.Count | Should -Be 0
-			$expectedWorkflowPath = Join-Path $testDirectory '.github' 'workflows' 'build.yaml'
+			$expectedWorkflowPath = Join-Path $testDirectory '.github' 'workflows' 'ci.yml'
 		(@($output | ForEach-Object { $_.ToString() }) -contains "'$expectedWorkflowPath' already matches the published Faithlife build workflow.") | Should -Be $true
 		}
 		finally {
