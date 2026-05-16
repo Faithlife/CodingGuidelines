@@ -70,6 +70,21 @@ EndGlobal
 				Pop-Location
 			}
 		}
+
+		function script:GetExpectedBuildCsprojContent {
+			# Return the published Build.csproj content with an optional target framework override.
+			param(
+				[string] $TargetFramework
+			)
+
+			$content = Get-Content -LiteralPath $script:expectedBuildCsprojPath -Raw
+
+			if ([string]::IsNullOrEmpty($TargetFramework)) {
+				return $content
+			}
+
+			return ($content -replace '<TargetFramework>[^<]+</TargetFramework>', "<TargetFramework>$TargetFramework</TargetFramework>")
+		}
 	}
 
 	It 'creates both files, creates a root solution, and adds the project when they are missing' {
@@ -122,7 +137,7 @@ EndGlobal
 		}
 	}
 
-	It 'leaves existing files unchanged' {
+	It 'replaces existing files with the published content' {
 		$testDirectory = New-TemporaryDirectory
 
 		try {
@@ -148,11 +163,51 @@ EndGlobal
 			$output = InvokeFaithlifeDotNetLibraryBuildConvention -TestDirectory $testDirectory
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
-			# Assert existing content stayed unchanged and the working tree stayed clean.
-			((Get-Content -LiteralPath $buildCsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'existing build cs'
-			((Get-Content -LiteralPath $buildCsprojPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'existing build csproj'
-			$status.Count | Should -Be 0
-			@($output).Count | Should -Be 0
+			# Assert the published files replaced the existing content.
+			(Get-Content -LiteralPath $buildCsPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedBuildCsPath -Raw)
+			(Get-Content -LiteralPath $buildCsprojPath -Raw) | Should -Be (GetExpectedBuildCsprojContent)
+			$status.Count | Should -Be 2
+			$status[0] | Should -Match '^ M tools/Build/Build\.cs$'
+			$status[1] | Should -Match '^ M tools/Build/Build\.csproj$'
+			$output.Count | Should -Be 2
+			$output[0].ToString() | Should -Match "Updated '.+tools[/\\]Build[/\\]Build\.cs'\."
+			$output[1].ToString() | Should -Match "Updated '.+tools[/\\]Build[/\\]Build\.csproj'\."
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'retargets Build.csproj from the repository global.json SDK version' {
+		$testDirectory = New-TemporaryDirectory
+
+		try {
+			# Arrange a repository with a pinned SDK version in global.json.
+			Initialize-TestRepository -Path $testDirectory
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'global.json'), @'
+{
+  "sdk": {
+    "version": "9.0.203"
+  }
+}
+'@, $utf8)
+
+			Push-Location $testDirectory
+			try {
+				& git add global.json
+				& git commit -m 'Add global.json' | Out-Null
+			}
+			finally {
+				Pop-Location
+			}
+
+			# Apply the convention and read the emitted project file.
+			$output = InvokeFaithlifeDotNetLibraryBuildConvention -TestDirectory $testDirectory
+			$buildCsprojPath = Join-Path $testDirectory 'tools/Build/Build.csproj'
+
+			# Assert the generated project targets the SDK major/minor from global.json.
+			(Get-Content -LiteralPath $buildCsprojPath -Raw) | Should -Be (GetExpectedBuildCsprojContent -TargetFramework 'net9.0')
+			$output.Count | Should -Be 4
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
