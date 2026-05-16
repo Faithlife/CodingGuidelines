@@ -9,5 +9,3 @@ conventions:
   - path: ../editorconfig-yaml
   - path: ../editorconfig-csharp
   - path: ../build-script
-  - path: ../faithlife-dotnet-library-build
-  - path: ../faithlife-dotnet-library-workflow
