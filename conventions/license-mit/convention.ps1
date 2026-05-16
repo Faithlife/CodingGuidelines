@@ -42,7 +42,6 @@ $existingContent = Get-Content -LiteralPath $targetLicensePath -Raw
 
 # Exit when the existing license already matches the rendered template.
 if ($existingContent -eq $renderedLicenseContent) {
-	Write-Host "'$targetLicensePath' already matches the published MIT license."
 	return
 }
 

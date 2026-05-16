@@ -144,7 +144,7 @@ Describe 'gitattributes-lf convention' {
 
 			# Assert no commit occurred.
 			(Get-Content -LiteralPath $gitattributesPath -Raw) | Should -Be $expectedContent
-			$output[0].ToString() | Should -Be "'.gitattributes' already starts with '* text=auto eol=lf'."
+			@($output).Count | Should -Be 0
 			(Get-CommitId -TestDirectory $testDirectory) | Should -Be $beforeHead
 		}
 		finally {

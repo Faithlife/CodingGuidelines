@@ -53,7 +53,7 @@ Describe 'prettierignore-section convention' {
 
 			# Assert no prettierignore file was created.
 			(Test-Path -LiteralPath $prettierignorePath) | Should -Be $false
-			$output[-1].ToString() | Should -Be "Prettier was not detected; leaving '.prettierignore' unchanged."
+			@($output).Count | Should -Be 0
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -78,7 +78,7 @@ Describe 'prettierignore-section convention' {
 			$secondOutput = InvokePrettierignoreSectionConvention -TestDirectory $testDirectory -Settings (GetDefaultSettings)
 
 			(Get-Content -LiteralPath $prettierignorePath -Raw) | Should -Be "existing-entry/`n`n# DO NOT EDIT: build-output convention`ncoverage/`ndist/`n# END DO NOT EDIT`n"
-			$secondOutput[-1].ToString() | Should -Be "'.prettierignore' already contains the 'build-output' section."
+			@($secondOutput).Count | Should -Be 0
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -169,7 +169,7 @@ Describe 'prettierignore-section convention' {
 
 			# Assert no prettierignore file was created.
 			(Test-Path -LiteralPath (Join-Path $testDirectory '.prettierignore')) | Should -Be $false
-			$output[-1].ToString() | Should -Be "Prettier was not detected; leaving '.prettierignore' unchanged."
+			@($output).Count | Should -Be 0
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

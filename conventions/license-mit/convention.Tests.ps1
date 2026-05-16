@@ -155,8 +155,7 @@ Describe 'license-mit convention' {
 			# Assert the second run reported no content changes.
 			$headAfterSecondRun | Should -Be $headAfterFirstRun
 			$status.Count | Should -Be 0
-			$expectedLicensePath = Join-Path $testDirectory 'LICENSE'
-		(@($output | ForEach-Object { $_.ToString() }) -contains "'$expectedLicensePath' already matches the published MIT license.") | Should -Be $true
+			@($output).Count | Should -Be 0
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

@@ -229,7 +229,6 @@ function SetCompliantGitattributes {
 	}
 
 	if (TestConformingGitattributes -Path $Path) {
-		Write-Host "'$displayPath' already starts with '$requiredRule'."
 		return
 	}
 

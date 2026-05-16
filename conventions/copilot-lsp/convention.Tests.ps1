@@ -243,7 +243,7 @@ Describe 'copilot-lsp convention' {
 
 			# Assert the convention reports compliance and leaves git clean.
 			$status.Count | Should -Be 0
-			(GetOutputText -Output $output) | Should -Match "'\.github/lsp\.json' already contains the configured Copilot LSP servers\."
+			@($output).Count | Should -Be 0
 		}
 		finally {
 			# Remove the isolated repository after the test completes.

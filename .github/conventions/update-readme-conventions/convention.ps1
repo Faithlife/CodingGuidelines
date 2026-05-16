@@ -227,7 +227,6 @@ $section = NewConventionsSection -Entries $entries
 $newContent = (SetReadmeConventionsSection -Content $existingContent -Section $section).Replace("`n", $lineEnding)
 
 if ($newContent -ceq $existingContent) {
-	Write-Host "'README.md' already contains the current conventions table."
 	return
 }
 

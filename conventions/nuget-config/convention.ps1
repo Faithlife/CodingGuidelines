@@ -58,7 +58,6 @@ if ($existingNuGetConfigItem.Name -cne 'nuget.config') {
 
 # Exit when the target already matches the published template.
 if (Test-FileContentMatches -ExpectedPath $sourceNuGetConfigPath -ActualPath $targetNuGetConfigPath) {
-	Write-Host "'$targetNuGetConfigPath' already matches the published NuGet config."
 	return
 }
 

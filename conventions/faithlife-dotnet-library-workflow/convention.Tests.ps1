@@ -133,8 +133,7 @@ Describe 'faithlife-dotnet-library-workflow convention' {
 			# Assert the second run reported no content changes.
 			$headAfterSecondRun | Should -Be $headAfterFirstRun
 			$status.Count | Should -Be 0
-			$expectedWorkflowPath = Join-Path $testDirectory '.github' 'workflows' 'ci.yml'
-		(@($output | ForEach-Object { $_.ToString() }) -contains "'$expectedWorkflowPath' already matches the published Faithlife build workflow.") | Should -Be $true
+			@($output).Count | Should -Be 0
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

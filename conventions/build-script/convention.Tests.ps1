@@ -144,7 +144,7 @@ Describe 'build-script convention' {
 			# On Linux/Mac, git tracks file mode and the working tree file may remain at mode
 			# 100644 while the index is 100755; only assert that nothing is staged.
 			(@($status | Where-Object { $_ -notmatch '^ ' })).Count | Should -Be 0
-			(@($output | ForEach-Object { $_.ToString() }) -contains "'build.ps1' already matches the published Faithlife build script and is executable in Git.") | Should -Be $true
+			@($output).Count | Should -Be 0
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

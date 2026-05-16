@@ -41,7 +41,6 @@ else {
 
 # Leave the file unchanged when the current marker is already present.
 if ($firstLine -ceq $requiredFirstLine) {
-	Write-Host "'$targetRelativePath' already starts with the RepoConventionsApplier marker."
 	return
 }
 

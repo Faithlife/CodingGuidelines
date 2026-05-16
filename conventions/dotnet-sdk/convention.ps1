@@ -150,17 +150,15 @@ if ($majorVersion -le 0) {
 $globalJsonPath = Join-Path -Path (Get-Location) -ChildPath 'global.json'
 $globalJsonDisplayPath = Format-RepositoryRelativePath -Path $globalJsonPath
 
-Write-Host "Checking $globalJsonDisplayPath for .NET SDK major version $majorVersion."
-
 # Check the current global.json status and exit when compliant.
 $globalJsonStatus = GetGlobalJsonSdkStatus -GlobalJsonPath $globalJsonPath -MajorVersion $majorVersion
-Write-Host $globalJsonStatus.Message
 
 if ($globalJsonStatus.Conforms) {
-	Write-Host 'dotnet-sdk convention has nothing to do.'
 	return
 }
 
+Write-Host "Checking $globalJsonDisplayPath for .NET SDK major version $majorVersion."
+Write-Host $globalJsonStatus.Message
 Write-Host 'global.json does not conform; updating it.'
 SetGlobalJsonSdkVersion -GlobalJsonPath $globalJsonPath -MajorVersion $majorVersion
 

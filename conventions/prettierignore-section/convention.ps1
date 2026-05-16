@@ -130,7 +130,6 @@ $settings = Read-ConventionSettings -InputPath $args[0]
 
 # Leave repositories without Prettier usage unchanged.
 if (-not (TestPrettierUsage)) {
-	Write-Host "Prettier was not detected; leaving '.prettierignore' unchanged."
 	return
 }
 

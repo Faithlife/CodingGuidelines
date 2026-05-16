@@ -15,13 +15,10 @@ $sourceWorkflowPath = Join-Path $PSScriptRoot 'files' 'ci.yml'
 $targetWorkflowPath = Join-Path (Get-Location) '.github/workflows/ci.yml'
 $copyResult = Copy-FileIfDifferent -SourcePath $sourceWorkflowPath -DestinationPath $targetWorkflowPath
 
-# Report whether the workflow was created, updated, or already current.
+# Report whether the workflow was created or updated.
 if ($copyResult.Updated) {
 	Write-Host "Updated '$targetWorkflowPath' from the published Faithlife build workflow."
 }
 elseif ($copyResult.Created) {
 	Write-Host "Created '$targetWorkflowPath' from the published Faithlife build workflow."
-}
-else {
-	Write-Host "'$targetWorkflowPath' already matches the published Faithlife build workflow."
 }

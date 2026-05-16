@@ -150,7 +150,7 @@ Describe 'faithlife-auto-apply-conventions convention' {
 			(Get-Content -LiteralPath $conventionsYamlPath -Raw) | Should -Be "$requiredFirstLine`nconventions:`n  - path: old/convention`n"
 			$headAfterRun | Should -Be $headBeforeRun
 			$status.Count | Should -Be 0
-			(@($output | ForEach-Object { $_.ToString() }) -contains "'.github/conventions.yml' already starts with the RepoConventionsApplier marker.") | Should -Be $true
+			@($output).Count | Should -Be 0
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
