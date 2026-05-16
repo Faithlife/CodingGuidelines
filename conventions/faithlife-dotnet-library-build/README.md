@@ -1,6 +1,6 @@
-# faithlife-build-library-project
+# faithlife-dotnet-library-build
 
-Creates missing Faithlife build project files under `tools/Build`.
+Creates missing Faithlife .NET library build project files under `tools/Build`.
 
 > [!WARNING]
 > This convention only works with repositories in the [Faithlife](https://github.com/Faithlife) organization.
@@ -13,5 +13,5 @@ If the convention copies `Build.csproj`, it ensures the repository root has a so
 
 ```yaml
 conventions:
-  - path: Faithlife/CodingGuidelines/conventions/faithlife-build-library-project
+  - path: Faithlife/CodingGuidelines/conventions/faithlife-dotnet-library-build
 ```

@@ -22,9 +22,11 @@
 | --- | --- |
 | [agentic-repo](./conventions/agentic-repo/README.md) | Applies conventions useful for repositories that keep agent customization files in source control. |
 | [apm-install](./conventions/apm-install/README.md) | Installs configured packages and updates existing packages for the Copilot APM target with `apm`. |
+| [build-script](./conventions/build-script/README.md) | Installs the published `build.ps1` script at the repository root. |
 | [config-text-section](./conventions/config-text-section/README.md) | Manages one named text section in a repository file. |
 | [copilot-lsp](./conventions/copilot-lsp/README.md) | Manages project-scoped GitHub Copilot CLI LSP server definitions in `.github/lsp.json`. |
 | [copilot-lsp-csharp](./conventions/copilot-lsp-csharp/README.md) | Applies the published C# GitHub Copilot CLI LSP server configuration. |
+| [dotnet-common](./conventions/dotnet-common/README.md) | Applies conventions common to Faithlife .NET libraries. |
 | [dotnet-sdk](./conventions/dotnet-sdk/README.md) | Ensures the repository has a `global.json` that uses the specified .NET SDK major version or later. |
 | [dotnet-sdk10](./conventions/dotnet-sdk10/README.md) | Ensures the repository has a `global.json` that uses the .NET 10 SDK or later. |
 | [dotnet-slnx](./conventions/dotnet-slnx/README.md) | Ensures the repository uses `.slnx` solutions rather than `.sln`. |
@@ -36,10 +38,8 @@
 | [editorconfig-section](./conventions/editorconfig-section/README.md) | Manages a named section within the repository-root `.editorconfig` file. |
 | [editorconfig-yaml](./conventions/editorconfig-yaml/README.md) | Ensures the repository-root `.editorconfig` contains the managed YAML section from [files/.editorconfig](./conventions/editorconfig-yaml/files/.editorconfig). |
 | [faithlife-auto-apply-conventions](./conventions/faithlife-auto-apply-conventions/README.md) | Ensures that `.github/conventions.yml` starts with the marker used by RepoConventionsApplier. |
-| [faithlife-build-library-project](./conventions/faithlife-build-library-project/README.md) | Creates missing Faithlife build project files under `tools/Build`. |
-| [faithlife-build-library-workflow](./conventions/faithlife-build-library-workflow/README.md) | Installs the published `build.yaml` workflow at `.github/workflows/build.yaml`. |
-| [faithlife-build-script](./conventions/faithlife-build-script/README.md) | Installs the published `build.ps1` script at the repository root. |
-| [faithlife-csharp-library](./conventions/faithlife-csharp-library/README.md) | Applies conventions common to Faithlife C# libraries. |
+| [faithlife-dotnet-library-build](./conventions/faithlife-dotnet-library-build/README.md) | Creates missing Faithlife .NET library build project files under `tools/Build`. |
+| [faithlife-dotnet-library-workflow](./conventions/faithlife-dotnet-library-workflow/README.md) | Installs the published Faithlife .NET library `build.yaml` workflow at `.github/workflows/build.yaml`. |
 | [faithlife-license-mit](./conventions/faithlife-license-mit/README.md) | Applies [license-mit](./conventions/license-mit/README.md) with `copyright-holder` set to `Faithlife`. |
 | [gitattributes-lf](./conventions/gitattributes-lf/README.md) | Ensures the repository-root `.gitattributes` starts with `* text=auto eol=lf`. |
 | [gitattributes-section](./conventions/gitattributes-section/README.md) | Manages a named section within the repository-root `.gitattributes` file. |

@@ -1,6 +1,6 @@
-# faithlife-build-library-workflow
+# faithlife-dotnet-library-workflow
 
-Installs the published `build.yaml` workflow at `.github/workflows/build.yaml`.
+Installs the published Faithlife .NET library `build.yaml` workflow at `.github/workflows/build.yaml`.
 
 > [!WARNING]
 > This convention only works with repositories in the [Faithlife](https://github.com/Faithlife) organization.
@@ -13,5 +13,5 @@ The convention copies the workflow from [files/build.yaml](./files/build.yaml) a
 
 ```yaml
 conventions:
-  - path: Faithlife/CodingGuidelines/conventions/faithlife-build-library-workflow
+  - path: Faithlife/CodingGuidelines/conventions/faithlife-dotnet-library-workflow
 ```

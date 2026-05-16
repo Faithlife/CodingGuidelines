@@ -8,6 +8,6 @@ conventions:
   - path: ../editorconfig-ps1
   - path: ../editorconfig-yaml
   - path: ../editorconfig-csharp
-  - path: ../faithlife-build-script
-  - path: ../faithlife-build-library-project
-  - path: ../faithlife-build-library-workflow
+  - path: ../build-script
+  - path: ../faithlife-dotnet-library-build
+  - path: ../faithlife-dotnet-library-workflow

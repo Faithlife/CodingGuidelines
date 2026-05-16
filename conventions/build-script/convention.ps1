@@ -87,4 +87,3 @@ if (-not $copyResult.Changed -and $modeBefore -eq '100755') {
 elseif ($modeBefore -ne '100755') {
 	Write-Host "Marked 'build.ps1' as executable in Git."
 }
-

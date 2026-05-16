@@ -7,7 +7,7 @@ $utf8 = [System.Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding = $utf8
 $OutputEncoding = $utf8
 
-Describe 'faithlife-build-library-project convention' {
+Describe 'faithlife-dotnet-library-build convention' {
 	BeforeAll {
 		# Cache convention paths and load shared test helpers.
 		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
@@ -16,7 +16,7 @@ Describe 'faithlife-build-library-project convention' {
 		$script:testHelpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'TestHelpers.ps1'
 		. $script:testHelpersPath
 
-		function script:InvokeFaithlifeBuildLibraryProjectConvention {
+		function script:InvokeFaithlifeDotNetLibraryBuildConvention {
 			# Invoke the convention script with an empty settings file.
 			param(
 				[Parameter(Mandatory = $true)]
@@ -80,7 +80,7 @@ EndGlobal
 			Initialize-TestRepository -Path $testDirectory
 
 			# Apply the convention and collect created paths and git status.
-			$output = InvokeFaithlifeBuildLibraryProjectConvention -TestDirectory $testDirectory
+			$output = InvokeFaithlifeDotNetLibraryBuildConvention -TestDirectory $testDirectory
 			$solutionPaths = @(
 				Get-ChildItem -LiteralPath $testDirectory -File |
 					Where-Object { $_.Extension -in '.sln', '.slnx' }
@@ -145,7 +145,7 @@ EndGlobal
 			}
 
 			# Apply the convention to the repository that already has build files.
-			$output = InvokeFaithlifeBuildLibraryProjectConvention -TestDirectory $testDirectory
+			$output = InvokeFaithlifeDotNetLibraryBuildConvention -TestDirectory $testDirectory
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
 			# Assert existing content stayed unchanged and the working tree stayed clean.
@@ -181,7 +181,7 @@ EndGlobal
 			}
 
 			# Apply the convention and collect the copied project state.
-			$output = InvokeFaithlifeBuildLibraryProjectConvention -TestDirectory $testDirectory
+			$output = InvokeFaithlifeDotNetLibraryBuildConvention -TestDirectory $testDirectory
 			$buildCsprojPath = Join-Path $testDirectory 'tools/Build/Build.csproj'
 			$status = @(GetAllGitStatusLines -TestDirectory $testDirectory)
 
@@ -219,7 +219,7 @@ EndGlobal
 			# Arrange a repository after a successful first convention run.
 			Initialize-TestRepository -Path $testDirectory
 
-			InvokeFaithlifeBuildLibraryProjectConvention -TestDirectory $testDirectory | Out-Null
+			InvokeFaithlifeDotNetLibraryBuildConvention -TestDirectory $testDirectory | Out-Null
 
 			Push-Location $testDirectory
 			try {
@@ -232,7 +232,7 @@ EndGlobal
 			}
 
 			# Apply the convention a second time and capture repository state.
-			$output = InvokeFaithlifeBuildLibraryProjectConvention -TestDirectory $testDirectory
+			$output = InvokeFaithlifeDotNetLibraryBuildConvention -TestDirectory $testDirectory
 			$headAfterSecondRun = Get-CommitId -TestDirectory $testDirectory
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 

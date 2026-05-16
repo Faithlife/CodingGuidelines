@@ -7,7 +7,7 @@ $utf8 = [System.Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding = $utf8
 $OutputEncoding = $utf8
 
-Describe 'faithlife-build-library-workflow convention' {
+Describe 'faithlife-dotnet-library-workflow convention' {
 	BeforeAll {
 		# Cache convention paths and load shared test helpers.
 		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
@@ -15,7 +15,7 @@ Describe 'faithlife-build-library-workflow convention' {
 		$script:testHelpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'TestHelpers.ps1'
 		. $script:testHelpersPath
 
-		function script:InvokeFaithlifeBuildLibraryWorkflowConvention {
+		function script:InvokeFaithlifeDotNetLibraryWorkflowConvention {
 			# Invoke the convention script with an empty settings file.
 			param(
 				[Parameter(Mandatory = $true)]
@@ -56,7 +56,7 @@ Describe 'faithlife-build-library-workflow convention' {
 			Initialize-TestRepository -Path $testDirectory
 
 			# Apply the convention and collect the generated workflow state.
-			$output = InvokeFaithlifeBuildLibraryWorkflowConvention -TestDirectory $testDirectory
+			$output = InvokeFaithlifeDotNetLibraryWorkflowConvention -TestDirectory $testDirectory
 			$workflowPath = Join-Path $testDirectory '.github/workflows/build.yaml'
 			$status = @(GetAllGitStatusLines -TestDirectory $testDirectory)
 
@@ -92,7 +92,7 @@ Describe 'faithlife-build-library-workflow convention' {
 			}
 
 			# Apply the convention and collect the modified workflow state.
-			$output = InvokeFaithlifeBuildLibraryWorkflowConvention -TestDirectory $testDirectory
+			$output = InvokeFaithlifeDotNetLibraryWorkflowConvention -TestDirectory $testDirectory
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
 			# Assert the workflow was replaced with the published file.
@@ -113,7 +113,7 @@ Describe 'faithlife-build-library-workflow convention' {
 			# Arrange a repository after a successful first convention run.
 			Initialize-TestRepository -Path $testDirectory
 
-			InvokeFaithlifeBuildLibraryWorkflowConvention -TestDirectory $testDirectory | Out-Null
+			InvokeFaithlifeDotNetLibraryWorkflowConvention -TestDirectory $testDirectory | Out-Null
 
 			Push-Location $testDirectory
 			try {
@@ -126,7 +126,7 @@ Describe 'faithlife-build-library-workflow convention' {
 			}
 
 			# Apply the convention a second time and capture repository state.
-			$output = InvokeFaithlifeBuildLibraryWorkflowConvention -TestDirectory $testDirectory
+			$output = InvokeFaithlifeDotNetLibraryWorkflowConvention -TestDirectory $testDirectory
 			$headAfterSecondRun = Get-CommitId -TestDirectory $testDirectory
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
