@@ -6,3 +6,6 @@ conventions:
     settings:
       name: json
       text: ${{ readText("files/.editorconfig") }}
+
+pull-request:
+  auto-merge: true
