@@ -37,6 +37,8 @@ jobs:
       run: .\build.ps1 build --skip restore
     - name: Test
       run: .\build.ps1 test --skip build
+    - name: Package
+      run: .\build.ps1 package --skip test
     - name: Log in to NuGet
       if: runner.os == 'Windows' && github.repository_owner == 'Faithlife' && github.ref == 'refs/heads/master'
       uses: NuGet/login@v1
@@ -48,4 +50,4 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
-      run: .\build.ps1 publish --skip test
+      run: .\build.ps1 publish --skip package
