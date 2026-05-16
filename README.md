@@ -28,7 +28,7 @@
 | [copilot-lsp-csharp](./conventions/copilot-lsp-csharp/README.md) | Applies the published C# GitHub Copilot CLI LSP server configuration. |
 | [dotnet-common](./conventions/dotnet-common/README.md) | Applies conventions common to repositories that build a .NET solution. |
 | [dotnet-sdk](./conventions/dotnet-sdk/README.md) | Ensures the repository has a `global.json` that uses the specified .NET SDK major version or later. |
-| [dotnet-sdk10](./conventions/dotnet-sdk10/README.md) | Ensures the repository has a `global.json` that uses the .NET 10 SDK or later. |
+| [dotnet-sdk-10](./conventions/dotnet-sdk-10/README.md) | Ensures the repository has a `global.json` that uses the .NET 10 SDK or later. |
 | [dotnet-slnx](./conventions/dotnet-slnx/README.md) | Ensures the repository uses `.slnx` solutions rather than `.sln`. |
 | [editorconfig-csharp](./conventions/editorconfig-csharp/README.md) | Ensures the repository-root `.editorconfig` contains the standard C# section from [files/.editorconfig](./conventions/editorconfig-csharp/files/.editorconfig). |
 | [editorconfig-json](./conventions/editorconfig-json/README.md) | Ensures the repository-root `.editorconfig` contains the managed JSON section from [files/.editorconfig](./conventions/editorconfig-json/files/.editorconfig). |
