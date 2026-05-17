@@ -10,15 +10,22 @@ $OutputEncoding = $utf8
 $helpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'Helpers.ps1'
 . $helpersPath
 
-# Copy the published workflow into the repository when it differs.
-$sourceWorkflowPath = Join-Path $PSScriptRoot 'files' 'ci.yml'
-$targetWorkflowPath = Join-Path (Get-Location) '.github/workflows/ci.yml'
-$copyResult = Copy-FileIfDifferent -SourcePath $sourceWorkflowPath -DestinationPath $targetWorkflowPath
+# Copy each published workflow into the repository when it differs.
+$publishedWorkflowNames = @(
+	'ci.yml'
+	'copilot-setup-steps.yml'
+)
 
-# Report whether the workflow was created or updated.
-if ($copyResult.Updated) {
-	Write-Host "Updated '$targetWorkflowPath' from the published Faithlife build workflow."
-}
-elseif ($copyResult.Created) {
-	Write-Host "Created '$targetWorkflowPath' from the published Faithlife build workflow."
+foreach ($publishedWorkflowName in $publishedWorkflowNames) {
+	$sourceWorkflowPath = Join-Path $PSScriptRoot 'files' $publishedWorkflowName
+	$targetWorkflowPath = Join-Path (Get-Location) '.github/workflows' $publishedWorkflowName
+	$copyResult = Copy-FileIfDifferent -SourcePath $sourceWorkflowPath -DestinationPath $targetWorkflowPath
+
+	# Report whether the workflow was created or updated.
+	if ($copyResult.Updated) {
+		Write-Host "Updated '$targetWorkflowPath' from the published Faithlife build workflow."
+	}
+	elseif ($copyResult.Created) {
+		Write-Host "Created '$targetWorkflowPath' from the published Faithlife build workflow."
+	}
 }

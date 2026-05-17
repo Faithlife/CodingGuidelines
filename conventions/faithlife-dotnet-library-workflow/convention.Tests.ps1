@@ -11,7 +11,10 @@ Describe 'faithlife-dotnet-library-workflow convention' {
 	BeforeAll {
 		# Cache convention paths and load shared test helpers.
 		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
-		$script:expectedWorkflowPath = Join-Path $PSScriptRoot 'files' 'ci.yml'
+		$script:expectedWorkflowPaths = @{
+			'ci.yml' = Join-Path $PSScriptRoot 'files' 'ci.yml'
+			'copilot-setup-steps.yml' = Join-Path $PSScriptRoot 'files' 'copilot-setup-steps.yml'
+		}
 		$script:testHelpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'TestHelpers.ps1'
 		. $script:testHelpersPath
 
@@ -48,7 +51,7 @@ Describe 'faithlife-dotnet-library-workflow convention' {
 		}
 	}
 
-	It 'creates .github/workflows/ci.yml when it is missing' {
+	It 'creates the published workflows when they are missing' {
 		$testDirectory = New-TemporaryDirectory
 
 		try {
@@ -57,30 +60,37 @@ Describe 'faithlife-dotnet-library-workflow convention' {
 
 			# Apply the convention and collect the generated workflow state.
 			$output = InvokeFaithlifeDotNetLibraryWorkflowConvention -TestDirectory $testDirectory
-			$workflowPath = Join-Path $testDirectory '.github/workflows/ci.yml'
 			$status = @(GetAllGitStatusLines -TestDirectory $testDirectory)
+			$ciWorkflowPath = Join-Path $testDirectory '.github/workflows/ci.yml'
+			$copilotSetupWorkflowPath = Join-Path $testDirectory '.github/workflows/copilot-setup-steps.yml'
 
 			# Assert the published workflow was created and reported.
-			(Test-Path -LiteralPath $workflowPath) | Should -Be $true
-			(Get-Content -LiteralPath $workflowPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedWorkflowPath -Raw)
-			$status.Count | Should -Be 1
-			$status[0] | Should -Match '^\?\? \.github/workflows/ci\.yml$'
-			(@($output | ForEach-Object { $_.ToString() }) -contains "Created '$workflowPath' from the published Faithlife build workflow.") | Should -Be $true
+			(Test-Path -LiteralPath $ciWorkflowPath) | Should -Be $true
+			(Get-Content -LiteralPath $ciWorkflowPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedWorkflowPaths['ci.yml'] -Raw)
+			(Test-Path -LiteralPath $copilotSetupWorkflowPath) | Should -Be $true
+			(Get-Content -LiteralPath $copilotSetupWorkflowPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedWorkflowPaths['copilot-setup-steps.yml'] -Raw)
+			$status.Count | Should -Be 2
+			$status | Should -Contain '?? .github/workflows/ci.yml'
+			$status | Should -Contain '?? .github/workflows/copilot-setup-steps.yml'
+			(@($output | ForEach-Object { $_.ToString() }) -contains "Created '$ciWorkflowPath' from the published Faithlife build workflow.") | Should -Be $true
+			(@($output | ForEach-Object { $_.ToString() }) -contains "Created '$copilotSetupWorkflowPath' from the published Faithlife build workflow.") | Should -Be $true
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
 		}
 	}
 
-	It 'updates an existing ci workflow to the published file' {
+	It 'updates existing published workflows to the packaged files' {
 		$testDirectory = New-TemporaryDirectory
 
 		try {
 			# Arrange a repository with a committed placeholder workflow.
 			Initialize-TestRepository -Path $testDirectory
-			$workflowPath = Join-Path $testDirectory '.github/workflows/ci.yml'
-			New-Item -ItemType Directory -Path (Split-Path -Parent $workflowPath) -Force | Out-Null
-			[System.IO.File]::WriteAllText($workflowPath, "name: Placeholder`n", $utf8)
+			$ciWorkflowPath = Join-Path $testDirectory '.github/workflows/ci.yml'
+			$copilotSetupWorkflowPath = Join-Path $testDirectory '.github/workflows/copilot-setup-steps.yml'
+			New-Item -ItemType Directory -Path (Split-Path -Parent $ciWorkflowPath) -Force | Out-Null
+			[System.IO.File]::WriteAllText($ciWorkflowPath, "name: Placeholder`n", $utf8)
+			[System.IO.File]::WriteAllText($copilotSetupWorkflowPath, "name: Placeholder`n", $utf8)
 
 			Push-Location $testDirectory
 			try {
@@ -96,10 +106,13 @@ Describe 'faithlife-dotnet-library-workflow convention' {
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
 			# Assert the workflow was replaced with the published file.
-			(Get-Content -LiteralPath $workflowPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedWorkflowPath -Raw)
-			$status.Count | Should -Be 1
-			$status[0] | Should -Match '^ M \.github/workflows/ci\.yml$'
-			(@($output | ForEach-Object { $_.ToString() }) -contains "Updated '$workflowPath' from the published Faithlife build workflow.") | Should -Be $true
+			(Get-Content -LiteralPath $ciWorkflowPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedWorkflowPaths['ci.yml'] -Raw)
+			(Get-Content -LiteralPath $copilotSetupWorkflowPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedWorkflowPaths['copilot-setup-steps.yml'] -Raw)
+			$status.Count | Should -Be 2
+			$status | Should -Contain ' M .github/workflows/ci.yml'
+			$status | Should -Contain ' M .github/workflows/copilot-setup-steps.yml'
+			(@($output | ForEach-Object { $_.ToString() }) -contains "Updated '$ciWorkflowPath' from the published Faithlife build workflow.") | Should -Be $true
+			(@($output | ForEach-Object { $_.ToString() }) -contains "Updated '$copilotSetupWorkflowPath' from the published Faithlife build workflow.") | Should -Be $true
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
