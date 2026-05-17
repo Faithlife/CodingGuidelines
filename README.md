@@ -38,8 +38,8 @@
 | [editorconfig-section](./conventions/editorconfig-section/README.md) | Manages a named section within the repository-root `.editorconfig` file. |
 | [editorconfig-yaml](./conventions/editorconfig-yaml/README.md) | Ensures the repository-root `.editorconfig` contains the managed YAML section from [files/.editorconfig](./conventions/editorconfig-yaml/files/.editorconfig). |
 | [faithlife-auto-apply-conventions](./conventions/faithlife-auto-apply-conventions/README.md) | Ensures that `.github/conventions.yml` starts with the marker used by RepoConventionsApplier. |
-| [faithlife-dotnet-library-build](./conventions/faithlife-dotnet-library-build/README.md) | Creates missing Faithlife .NET library build project files under `tools/Build`. |
-| [faithlife-dotnet-library-workflow](./conventions/faithlife-dotnet-library-workflow/README.md) | Installs the published Faithlife .NET library `ci.yml` workflow at `.github/workflows/ci.yml`. |
+| [faithlife-dotnet-library-build](./conventions/faithlife-dotnet-library-build/README.md) | Creates or refreshes Faithlife .NET library build project files under `tools/Build`. |
+| [faithlife-dotnet-library-workflow](./conventions/faithlife-dotnet-library-workflow/README.md) | Installs the published Faithlife .NET library workflows at `.github/workflows/ci.yml` and `.github/workflows/copilot-setup-steps.yml`. |
 | [faithlife-license-mit](./conventions/faithlife-license-mit/README.md) | Applies [license-mit](./conventions/license-mit/README.md) with `copyright-holder` set to `Faithlife`. |
 | [gitattributes-lf](./conventions/gitattributes-lf/README.md) | Ensures the repository-root `.gitattributes` starts with `* text=auto eol=lf`. |
 | [gitattributes-section](./conventions/gitattributes-section/README.md) | Manages a named section within the repository-root `.gitattributes` file. |
