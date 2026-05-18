@@ -7,8 +7,8 @@ $utf8 = [System.Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding = $utf8
 $OutputEncoding = $utf8
 
-# Define the Pester suite for the apm-install convention.
-Describe 'apm-install convention' {
+# Define the Pester suite for the apm convention.
+Describe 'apm convention' {
 	BeforeAll {
 		# Load the convention script and shared test helpers.
 		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
@@ -81,7 +81,7 @@ exit 0
 		}
 	}
 
-	It 'runs apm install --update --target copilot' {
+	It 'runs apm install --target copilot by default' {
 		# Set up a repository with apm.yml and a fake argument capture file.
 		$testDirectory = New-TemporaryDirectory
 		$toolDirectory = New-TemporaryDirectory
@@ -109,6 +109,48 @@ exit 0
 
 			# Run the convention and assert it invokes apm with the default arguments.
 			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
+			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install --target copilot'
+		}
+		finally {
+			# Restore process state and remove temporary files.
+			$env:PATH = $originalPath
+			Remove-Item Env:APM_ARGUMENTS_PATH -ErrorAction SilentlyContinue
+			Remove-Item -LiteralPath $inputPath -Force
+			Remove-Item -LiteralPath $toolDirectory -Recurse -Force
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'adds --update only when the update setting is true' {
+		# Set up a repository with apm.yml and an explicit update request.
+		$testDirectory = New-TemporaryDirectory
+		$toolDirectory = New-TemporaryDirectory
+		$argumentsPath = Join-Path $toolDirectory 'apm-arguments.txt'
+		$inputPath = New-ConventionInputFile -Settings @{
+			update = $true
+		}
+		$originalPath = $env:PATH
+
+		try {
+			# Arrange a fake apm command that records its argument list.
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'apm.yml'), "packages: []`n", $utf8)
+			Initialize-TestRepository -Path $testDirectory
+			NewFakeApmCommand -ToolDirectory $toolDirectory -WindowsScript @'
+@echo off
+setlocal
+> "%APM_ARGUMENTS_PATH%" echo %*
+exit /b 0
+'@ -BashScript @'
+#!/usr/bin/env bash
+printf '%s\n' "$*" > "$APM_ARGUMENTS_PATH"
+exit 0
+'@
+
+			$env:APM_ARGUMENTS_PATH = $argumentsPath
+			$env:PATH = $toolDirectory + [System.IO.Path]::PathSeparator + $originalPath
+
+			# Run the convention and assert the update flag is included only when requested.
+			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
 			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install --update --target copilot'
 		}
 		finally {
@@ -121,13 +163,13 @@ exit 0
 		}
 	}
 
-	It 'passes configured packages to apm install --update --target copilot' {
+	It 'passes configured install packages to apm install --target copilot' {
 		# Set up convention input that includes configured apm packages.
 		$testDirectory = New-TemporaryDirectory
 		$toolDirectory = Join-Path $testDirectory 'tools'
 		$argumentsPath = Join-Path $testDirectory 'apm-arguments.txt'
 		$inputPath = New-ConventionInputFile -Settings @{
-			packages = @(
+			install = @(
 				'richlander/dotnet-inspect/skills/dotnet-inspect'
 				'microsoft/playwright-cli/skills/playwright-cli'
 			)
@@ -153,7 +195,7 @@ exit 0
 
 			# Run the convention and assert configured packages are appended.
 			{ & $conventionScriptPath $inputPath } | Should -Not -Throw
-			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install --update --target copilot richlander/dotnet-inspect/skills/dotnet-inspect microsoft/playwright-cli/skills/playwright-cli'
+			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install --target copilot richlander/dotnet-inspect/skills/dotnet-inspect microsoft/playwright-cli/skills/playwright-cli'
 		}
 		finally {
 			# Restore process state and remove temporary files.

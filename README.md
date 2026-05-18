@@ -23,7 +23,7 @@
 | Convention | Description |
 | --- | --- |
 | [agentic-repo](./conventions/agentic-repo/README.md) | Applies conventions useful for repositories that keep agent customization files in source control. |
-| [apm-install](./conventions/apm-install/README.md) | Installs configured packages and updates existing packages for the Copilot APM target with `apm`. |
+| [apm](./conventions/apm/README.md) | Installs configured packages for the Copilot APM target with `apm` and optionally updates existing packages. |
 | [build-script](./conventions/build-script/README.md) | Installs the published `build.ps1` script at the repository root. |
 | [config-text-section](./conventions/config-text-section/README.md) | Manages one named text section in a repository file. |
 | [copilot-lsp](./conventions/copilot-lsp/README.md) | Manages project-scoped GitHub Copilot CLI LSP server definitions in `.github/lsp.json`. |

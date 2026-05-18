@@ -27,7 +27,9 @@ conventions:
         .agents/
         apm.lock.yaml
         apm.yml
-  - path: ../apm-install
+  - path: ../apm
+    settings:
+      update: true
 
 pull-request:
   auto-merge: true
