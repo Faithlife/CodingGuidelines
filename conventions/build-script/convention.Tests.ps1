@@ -7,7 +7,7 @@ $utf8 = [System.Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding = $utf8
 $OutputEncoding = $utf8
 
-Describe 'faithlife-build-script convention' {
+Describe 'build-script convention' {
 	BeforeAll {
 		# Cache convention paths and load shared test helpers.
 		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
@@ -15,7 +15,7 @@ Describe 'faithlife-build-script convention' {
 		$script:testHelpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'TestHelpers.ps1'
 		. $script:testHelpersPath
 
-		function script:InvokeFaithlifeBuildScriptConvention {
+		function script:InvokeBuildScriptConvention {
 			# Invoke the convention script with an empty settings file.
 			param(
 				[Parameter(Mandatory = $true)]
@@ -63,7 +63,7 @@ Describe 'faithlife-build-script convention' {
 			Initialize-TestRepository -Path $testDirectory
 
 			# Apply the convention and collect the generated build script state.
-			$output = InvokeFaithlifeBuildScriptConvention -TestDirectory $testDirectory
+			$output = InvokeBuildScriptConvention -TestDirectory $testDirectory
 			$buildScriptPath = Join-Path $testDirectory 'build.ps1'
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
@@ -100,7 +100,7 @@ Describe 'faithlife-build-script convention' {
 			}
 
 			# Apply the convention and collect the modified build script state.
-			$output = InvokeFaithlifeBuildScriptConvention -TestDirectory $testDirectory
+			$output = InvokeBuildScriptConvention -TestDirectory $testDirectory
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
 			# Assert the script content and git mode were updated.
@@ -123,7 +123,7 @@ Describe 'faithlife-build-script convention' {
 			# Arrange a repository after a successful first convention run.
 			Initialize-TestRepository -Path $testDirectory
 
-			InvokeFaithlifeBuildScriptConvention -TestDirectory $testDirectory | Out-Null
+			InvokeBuildScriptConvention -TestDirectory $testDirectory | Out-Null
 
 			Push-Location $testDirectory
 			try {
@@ -135,7 +135,7 @@ Describe 'faithlife-build-script convention' {
 			}
 
 			# Apply the convention a second time and capture repository state.
-			$output = InvokeFaithlifeBuildScriptConvention -TestDirectory $testDirectory
+			$output = InvokeBuildScriptConvention -TestDirectory $testDirectory
 			$headAfterSecondRun = Get-CommitId -TestDirectory $testDirectory
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
@@ -144,7 +144,7 @@ Describe 'faithlife-build-script convention' {
 			# On Linux/Mac, git tracks file mode and the working tree file may remain at mode
 			# 100644 while the index is 100755; only assert that nothing is staged.
 			(@($status | Where-Object { $_ -notmatch '^ ' })).Count | Should -Be 0
-			(@($output | ForEach-Object { $_.ToString() }) -contains "'build.ps1' already matches the published Faithlife build script and is executable in Git.") | Should -Be $true
+			@($output).Count | Should -Be 0
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

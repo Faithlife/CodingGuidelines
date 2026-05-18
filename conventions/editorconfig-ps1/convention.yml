@@ -6,3 +6,6 @@ conventions:
     settings:
       name: ps1
       text: ${{ readText("files/.editorconfig") }}
+
+pull-request:
+  auto-merge: true

@@ -203,7 +203,6 @@ $changed = EnsureLspServers -RootObject $rootObject -DesiredServers $desiredServ
 
 # Stop when the file already contains the configured servers.
 if (-not $changed) {
-	Write-Host "'$lspConfigDisplayPath' already contains the configured Copilot LSP servers."
 	return
 }
 

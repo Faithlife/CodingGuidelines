@@ -28,3 +28,6 @@ conventions:
         apm.lock.yaml
         apm.yml
   - path: ../apm-install
+
+pull-request:
+  auto-merge: true

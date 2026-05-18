@@ -7,7 +7,7 @@ $utf8 = [System.Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding = $utf8
 $OutputEncoding = $utf8
 
-Describe 'faithlife-build-library-project convention' {
+Describe 'faithlife-dotnet-library-build convention' {
 	BeforeAll {
 		# Cache convention paths and load shared test helpers.
 		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
@@ -16,7 +16,7 @@ Describe 'faithlife-build-library-project convention' {
 		$script:testHelpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'TestHelpers.ps1'
 		. $script:testHelpersPath
 
-		function script:InvokeFaithlifeBuildLibraryProjectConvention {
+		function script:InvokeFaithlifeDotNetLibraryBuildConvention {
 			# Invoke the convention script with an empty settings file.
 			param(
 				[Parameter(Mandatory = $true)]
@@ -70,6 +70,21 @@ EndGlobal
 				Pop-Location
 			}
 		}
+
+		function script:GetExpectedBuildCsprojContent {
+			# Return the published Build.csproj content with an optional target framework override.
+			param(
+				[string] $TargetFramework
+			)
+
+			$content = Get-Content -LiteralPath $script:expectedBuildCsprojPath -Raw
+
+			if ([string]::IsNullOrEmpty($TargetFramework)) {
+				return $content
+			}
+
+			return ($content -replace '<TargetFramework>[^<]+</TargetFramework>', "<TargetFramework>$TargetFramework</TargetFramework>")
+		}
 	}
 
 	It 'creates both files, creates a root solution, and adds the project when they are missing' {
@@ -80,7 +95,7 @@ EndGlobal
 			Initialize-TestRepository -Path $testDirectory
 
 			# Apply the convention and collect created paths and git status.
-			$output = InvokeFaithlifeBuildLibraryProjectConvention -TestDirectory $testDirectory
+			$output = InvokeFaithlifeDotNetLibraryBuildConvention -TestDirectory $testDirectory
 			$solutionPaths = @(
 				Get-ChildItem -LiteralPath $testDirectory -File |
 					Where-Object { $_.Extension -in '.sln', '.slnx' }
@@ -122,7 +137,7 @@ EndGlobal
 		}
 	}
 
-	It 'leaves existing files unchanged' {
+	It 'replaces existing files with the published content' {
 		$testDirectory = New-TemporaryDirectory
 
 		try {
@@ -145,14 +160,54 @@ EndGlobal
 			}
 
 			# Apply the convention to the repository that already has build files.
-			$output = InvokeFaithlifeBuildLibraryProjectConvention -TestDirectory $testDirectory
+			$output = InvokeFaithlifeDotNetLibraryBuildConvention -TestDirectory $testDirectory
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
-			# Assert existing content stayed unchanged and the working tree stayed clean.
-			((Get-Content -LiteralPath $buildCsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'existing build cs'
-			((Get-Content -LiteralPath $buildCsprojPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'existing build csproj'
-			$status.Count | Should -Be 0
-			@($output).Count | Should -Be 0
+			# Assert the published files replaced the existing content.
+			(Get-Content -LiteralPath $buildCsPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedBuildCsPath -Raw)
+			(Get-Content -LiteralPath $buildCsprojPath -Raw) | Should -Be (GetExpectedBuildCsprojContent)
+			$status.Count | Should -Be 2
+			$status[0] | Should -Match '^ M tools/Build/Build\.cs$'
+			$status[1] | Should -Match '^ M tools/Build/Build\.csproj$'
+			$output.Count | Should -Be 2
+			$output[0].ToString() | Should -Match "Updated '.+tools[/\\]Build[/\\]Build\.cs'\."
+			$output[1].ToString() | Should -Match "Updated '.+tools[/\\]Build[/\\]Build\.csproj'\."
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'retargets Build.csproj from the repository global.json SDK version' {
+		$testDirectory = New-TemporaryDirectory
+
+		try {
+			# Arrange a repository with a pinned SDK version in global.json.
+			Initialize-TestRepository -Path $testDirectory
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'global.json'), @'
+{
+  "sdk": {
+    "version": "9.0.203"
+  }
+}
+'@, $utf8)
+
+			Push-Location $testDirectory
+			try {
+				& git add global.json
+				& git commit -m 'Add global.json' | Out-Null
+			}
+			finally {
+				Pop-Location
+			}
+
+			# Apply the convention and read the emitted project file.
+			$output = InvokeFaithlifeDotNetLibraryBuildConvention -TestDirectory $testDirectory
+			$buildCsprojPath = Join-Path $testDirectory 'tools/Build/Build.csproj'
+
+			# Assert the generated project targets the SDK major/minor from global.json.
+			(Get-Content -LiteralPath $buildCsprojPath -Raw) | Should -Be (GetExpectedBuildCsprojContent -TargetFramework 'net9.0')
+			$output.Count | Should -Be 4
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -181,7 +236,7 @@ EndGlobal
 			}
 
 			# Apply the convention and collect the copied project state.
-			$output = InvokeFaithlifeBuildLibraryProjectConvention -TestDirectory $testDirectory
+			$output = InvokeFaithlifeDotNetLibraryBuildConvention -TestDirectory $testDirectory
 			$buildCsprojPath = Join-Path $testDirectory 'tools/Build/Build.csproj'
 			$status = @(GetAllGitStatusLines -TestDirectory $testDirectory)
 
@@ -219,7 +274,7 @@ EndGlobal
 			# Arrange a repository after a successful first convention run.
 			Initialize-TestRepository -Path $testDirectory
 
-			InvokeFaithlifeBuildLibraryProjectConvention -TestDirectory $testDirectory | Out-Null
+			InvokeFaithlifeDotNetLibraryBuildConvention -TestDirectory $testDirectory | Out-Null
 
 			Push-Location $testDirectory
 			try {
@@ -232,7 +287,7 @@ EndGlobal
 			}
 
 			# Apply the convention a second time and capture repository state.
-			$output = InvokeFaithlifeBuildLibraryProjectConvention -TestDirectory $testDirectory
+			$output = InvokeFaithlifeDotNetLibraryBuildConvention -TestDirectory $testDirectory
 			$headAfterSecondRun = Get-CommitId -TestDirectory $testDirectory
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 

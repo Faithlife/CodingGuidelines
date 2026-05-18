@@ -537,7 +537,6 @@ function Invoke-ConfigTextSection {
 
 	# Avoid rewriting files that already contain the desired managed section.
 	if ($newContent -ceq $existingContent) {
-		Write-Host "'$targetDisplayPath' already contains the '$($configuredSection.Name)' section."
 		return
 	}
 

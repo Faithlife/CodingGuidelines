@@ -41,7 +41,6 @@ else {
 
 # Leave the file unchanged when the current marker is already present.
 if ($firstLine -ceq $requiredFirstLine) {
-	Write-Host "'$targetRelativePath' already starts with the RepoConventionsApplier marker."
 	return
 }
 
@@ -54,7 +53,7 @@ if ($firstLine.Contains('DO NOT REMOVE', [System.StringComparison]::Ordinal)) {
 		$requiredFirstLine
 	}
 
-	Write-Utf8NoBomFile -Path $targetPath -Content $newContent
+	[System.IO.File]::WriteAllText($targetPath, $newContent, $utf8)
 	Write-Host "Updated existing auto-apply marker in '$targetRelativePath'."
 	return
 }

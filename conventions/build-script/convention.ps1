@@ -80,11 +80,7 @@ if ($modeAfter -ne '100755') {
 	throw "Expected 'build.ps1' to have Git mode 100755, but found '$modeAfter'."
 }
 
-# Report no-op and permission-only outcomes.
-if (-not $copyResult.Changed -and $modeBefore -eq '100755') {
-	Write-Host "'build.ps1' already matches the published Faithlife build script and is executable in Git."
-}
-elseif ($modeBefore -ne '100755') {
+# Report permission-only outcomes.
+if ($modeBefore -ne '100755') {
 	Write-Host "Marked 'build.ps1' as executable in Git."
 }
-

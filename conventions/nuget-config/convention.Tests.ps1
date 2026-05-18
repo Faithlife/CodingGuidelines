@@ -88,7 +88,7 @@ Describe 'nuget-config convention' {
 			$nuGetConfigNames.Count | Should -Be 1
 			$nuGetConfigNames[0] | Should -Be 'nuget.config'
 			(Get-Content -LiteralPath $nuGetConfigPath -Raw) | Should -Be $expectedContent
-			(@($output | ForEach-Object { $_.ToString() }) -contains "'$nuGetConfigPath' already matches the published NuGet config.") | Should -Be $true
+			@($output).Count | Should -Be 0
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -163,8 +163,7 @@ Describe 'nuget-config convention' {
 			# Assert the second run reported no content changes.
 			$headAfterSecondRun | Should -Be $headAfterFirstRun
 			$status.Count | Should -Be 0
-			$nuGetConfigPath = Join-Path $testDirectory 'nuget.config'
-			(@($output | ForEach-Object { $_.ToString() }) -contains "'$nuGetConfigPath' already matches the published NuGet config.") | Should -Be $true
+			@($output).Count | Should -Be 0
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

@@ -85,11 +85,8 @@ Describe 'dotnet-sdk convention' {
 		# Run the convention against a matching global.json.
 		$result = InvokeDotnetSdkConvention -InputJson $inputJson -SdkVersion '10.0.100'
 
-		# Assert the output reports compliance and no work.
-		$outputText = GetOutputText -Output $result.Output
-		$outputText | Should -Match 'Checking global\.json for \.NET SDK major version 10\.'
-		$outputText | Should -Match 'global\.json already requires SDK major version 10, which satisfies required major version 10\.'
-		$outputText | Should -Match 'dotnet-sdk convention has nothing to do\.'
+		# Assert the no-op path stays quiet.
+		@($result.Output).Count | Should -Be 0
 	}
 
 	It 'accepts a string major version when global.json already conforms' {
@@ -99,8 +96,8 @@ Describe 'dotnet-sdk convention' {
 		# Run the convention against a newer matching global.json.
 		$result = InvokeDotnetSdkConvention -InputJson $inputJson -SdkVersion '11.0.100'
 
-		# Assert the newer SDK still satisfies the required major version.
-		GetOutputText -Output $result.Output | Should -Match 'global\.json already requires SDK major version 11, which satisfies required major version 10\.'
+		# Assert the newer SDK still satisfies the required major version without output.
+		@($result.Output).Count | Should -Be 0
 	}
 
 	It 'creates global.json when it is missing' {

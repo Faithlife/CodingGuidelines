@@ -6,3 +6,6 @@ conventions:
     settings:
       name: csharp
       text: ${{ readText("files/.editorconfig") }}
+
+pull-request:
+  auto-merge: true

@@ -1,4 +1,4 @@
-# faithlife-build-script
+# build-script
 
 Installs the published `build.ps1` script at the repository root.
 
@@ -10,5 +10,5 @@ The convention copies the script from [files/build.ps1](./files/build.ps1) and m
 
 ```yaml
 conventions:
-  - path: Faithlife/CodingGuidelines/conventions/faithlife-build-script
+  - path: Faithlife/CodingGuidelines/conventions/build-script
 ```

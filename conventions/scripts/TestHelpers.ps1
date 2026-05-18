@@ -202,7 +202,7 @@ function Invoke-RepoConventionsApply {
 	# Run repo-conventions from the temporary repository under test.
 	Push-Location $TestDirectory
 	try {
-		return @(& repo-conventions apply 6>&1)
+		return @(& dotnet dnx -y repo-conventions -- apply 6>&1)
 	}
 	finally {
 		# Restore the caller location after the apply command completes.

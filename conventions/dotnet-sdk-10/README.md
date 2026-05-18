@@ -1,4 +1,4 @@
-# dotnet-sdk10
+# dotnet-sdk-10
 
 Ensures the repository has a `global.json` that uses the .NET 10 SDK or later.
 
@@ -10,5 +10,5 @@ The convention is equivalent to applying [dotnet-sdk](../dotnet-sdk/README.md) w
 
 ```yaml
 conventions:
-  - path: Faithlife/CodingGuidelines/conventions/dotnet-sdk10
+  - path: Faithlife/CodingGuidelines/conventions/dotnet-sdk-10
 ```

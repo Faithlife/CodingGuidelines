@@ -54,7 +54,7 @@ Describe 'config-text-section convention' {
 			$secondOutput = InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = '/.editorconfig'; name = 'general-editorconfig'; text = "[*]`ncharset = utf-8"; 'comment-prefix' = '#' }
 
 			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "# DO NOT EDIT: general-editorconfig convention`n[*]`ncharset = utf-8`n# END DO NOT EDIT`n"
-			$secondOutput[-1].ToString() | Should -Be "'.editorconfig' already contains the 'general-editorconfig' section."
+			@($secondOutput).Count | Should -Be 0
 		}
 		finally {
 			# Remove the isolated repository after the test completes.
@@ -118,7 +118,7 @@ Describe 'config-text-section convention' {
 			# Assert content, timestamp, and compliance output are unchanged.
 			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be $expectedContent
 			([System.IO.File]::GetLastWriteTimeUtc($targetPath)) | Should -Be $expectedWriteTime
-			$output[-1].ToString() | Should -Be "'.editorconfig' already contains the 'general-editorconfig' section."
+			@($output).Count | Should -Be 0
 		}
 		finally {
 			# Remove the isolated repository after the test completes.
