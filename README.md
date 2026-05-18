@@ -23,7 +23,7 @@
 | Convention | Description |
 | --- | --- |
 | [agentic-repo](./conventions/agentic-repo/README.md) | Applies conventions useful for repositories that keep agent customization files in source control. |
-| [apm-install](./conventions/apm-install/README.md) | Installs configured packages and updates existing packages for the Copilot APM target with `apm`. |
+| [apm](./conventions/apm/README.md) | Installs configured packages for the Copilot APM target with `apm` and optionally updates existing packages. |
 | [build-script](./conventions/build-script/README.md) | Installs the published `build.ps1` script at the repository root. |
 | [config-text-section](./conventions/config-text-section/README.md) | Manages one named text section in a repository file. |
 | [copilot-lsp](./conventions/copilot-lsp/README.md) | Manages project-scoped GitHub Copilot CLI LSP server definitions in `.github/lsp.json`. |
@@ -44,6 +44,7 @@
 | [faithlife-dotnet-library-build](./conventions/faithlife-dotnet-library-build/README.md) | Creates or refreshes Faithlife .NET library build project files under `tools/Build`. |
 | [faithlife-dotnet-library-workflow](./conventions/faithlife-dotnet-library-workflow/README.md) | Installs the published Faithlife .NET library workflows at `.github/workflows/ci.yml` and `.github/workflows/copilot-setup-steps.yml`. |
 | [faithlife-license-mit](./conventions/faithlife-license-mit/README.md) | Applies [license-mit](./conventions/license-mit/README.md) with `copyright-holder` set to `Faithlife`. |
+| [gitattributes-csharp](./conventions/gitattributes-csharp/README.md) | Ensures the repository-root `.gitattributes` contains the standard C# section from [files/.gitattributes](./conventions/gitattributes-csharp/files/.gitattributes). |
 | [gitattributes-lf](./conventions/gitattributes-lf/README.md) | Ensures the repository-root `.gitattributes` starts with `* text=auto eol=lf`. |
 | [gitattributes-section](./conventions/gitattributes-section/README.md) | Manages a named section within the repository-root `.gitattributes` file. |
 | [gitignore-section](./conventions/gitignore-section/README.md) | Manages a named section within the repository-root `.gitignore` file. |

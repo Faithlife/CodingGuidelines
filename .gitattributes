@@ -8,3 +8,8 @@ apm.lock.yaml linguist-generated=true
 .github/instructions/** linguist-generated=true
 .github/prompts/** linguist-generated=true
 # END DO NOT EDIT
+
+# DO NOT EDIT: csharp convention
+# generated from https://github.com/Faithlife/CodingGuidelines/blob/master/sections/csharp/gitattributes.md
+*.cs text diff=csharp
+# END DO NOT EDIT

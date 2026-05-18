@@ -7,26 +7,37 @@ $utf8 = [System.Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding = $utf8
 $OutputEncoding = $utf8
 
-# Collect optional package settings from the convention input.
-$packages = @()
+# Collect optional install settings from the convention input.
+$packagesToInstall = @()
+$shouldUpdate = $false
 $conventionInput = Get-Content -LiteralPath $args[0] -Raw | ConvertFrom-Json -AsHashtable
 $settings = $conventionInput.settings
 
-if ($null -ne $settings -and $settings.ContainsKey('packages') -and $null -ne $settings.packages) {
-	[string[]] $packages = @($settings.packages)
+if ($null -ne $settings -and $settings.ContainsKey('install') -and $null -ne $settings.install) {
+	[string[]] $packagesToInstall = @($settings.install)
+}
+
+if ($null -ne $settings -and $settings.ContainsKey('update') -and $null -ne $settings.update) {
+	$shouldUpdate = [bool] $settings.update
 }
 
 # Skip when neither an apm manifest nor explicit packages are available.
-if ($packages.Count -eq 0 -and -not (Test-Path -LiteralPath 'apm.yml')) {
+if ($packagesToInstall.Count -eq 0 -and -not (Test-Path -LiteralPath 'apm.yml')) {
 	Write-Host 'Skipping apm install because apm.yml is absent and no packages were configured.'
 	return
 }
 
 # Build the apm install command for the copilot target.
-$apmArguments = @('install', '--update', '--target', 'copilot')
+$apmArguments = @('install')
 
-if ($packages.Count -gt 0) {
-	$apmArguments += $packages
+if ($shouldUpdate) {
+	$apmArguments += '--update'
+}
+
+$apmArguments += @('--target', 'copilot')
+
+if ($packagesToInstall.Count -gt 0) {
+	$apmArguments += $packagesToInstall
 }
 
 # Verify apm is available before invoking it.

@@ -1,0 +1,2 @@
+# generated from https://github.com/Faithlife/CodingGuidelines/blob/master/sections/csharp/gitattributes.md
+*.cs text diff=csharp
