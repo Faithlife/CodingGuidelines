@@ -1,5 +1,5 @@
 commit:
-  message: Update .editorconfig for C#
+  message: Update C# editorconfig settings
 
 conventions:
   - path: ../editorconfig-section
