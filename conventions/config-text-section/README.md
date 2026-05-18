@@ -20,7 +20,7 @@ If the target file does not exist, the convention creates it with the managed se
 conventions:
   - path: Faithlife/CodingGuidelines/conventions/config-text-section
     commit:
-      message: Update .editorconfig.
+      message: Update .editorconfig
     settings:
       path: .editorconfig
       name: general-editorconfig

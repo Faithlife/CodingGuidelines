@@ -17,7 +17,7 @@ If `.gitattributes` does not exist, the convention creates it with the managed s
 conventions:
   - path: Faithlife/CodingGuidelines/conventions/gitattributes-section
     commit:
-      message: Update .gitattributes.
+      message: Update .gitattributes
     settings:
       name: generated-files
       text: |

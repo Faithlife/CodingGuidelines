@@ -1,5 +1,5 @@
 commit:
-  message: "Update root .editorconfig"
+  message: Update root .editorconfig
 
 conventions:
   - path: ../editorconfig-section

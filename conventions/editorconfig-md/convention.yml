@@ -1,5 +1,5 @@
 commit:
-  message: "Update .editorconfig for Markdown"
+  message: Update .editorconfig for Markdown
 
 conventions:
   - path: ../editorconfig-section

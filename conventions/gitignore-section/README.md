@@ -17,7 +17,7 @@ If `.gitignore` does not exist, the convention creates it with the managed secti
 conventions:
   - path: Faithlife/CodingGuidelines/conventions/gitignore-section
     commit:
-      message: Update .gitignore.
+      message: Update .gitignore
     settings:
       name: build-output
       text: |

@@ -18,7 +18,7 @@ The convention leaves the repository unchanged when Prettier is not detected. Pr
 conventions:
   - path: Faithlife/CodingGuidelines/conventions/prettierignore-section
     commit:
-      message: Update .prettierignore.
+      message: Update .prettierignore
     settings:
       name: build-output
       text: |

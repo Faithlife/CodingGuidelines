@@ -20,7 +20,7 @@ When the configured `text` contains a top-level `root = true` declaration, the c
 conventions:
   - path: Faithlife/CodingGuidelines/conventions/editorconfig-section
     commit:
-      message: Update .editorconfig.
+      message: Update .editorconfig
     settings:
       name: general-editorconfig
       text: |
