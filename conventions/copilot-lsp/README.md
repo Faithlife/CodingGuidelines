@@ -1,12 +1,16 @@
 # copilot-lsp
 
-This [convention](https://github.com/Faithlife/RepoConventions) manages project-scoped GitHub Copilot CLI LSP server definitions in `.github/lsp.json`.
+Manages project-scoped GitHub Copilot CLI LSP server definitions in `.github/lsp.json`.
 
 ## Settings
 
-- `servers`: JSON object whose properties match the `lspServers` entries from the GitHub Copilot CLI LSP configuration format.
+- `servers`: Required JSON object whose properties match the `lspServers` entries from the GitHub Copilot CLI LSP configuration format.
+
+## Behavior
 
 The convention writes the configured servers to the `lspServers` property in `.github/lsp.json`. If a configured server name already exists, the convention replaces that server definition instead of merging properties. Other server definitions in the file are preserved. If every configured server already matches exactly, the convention leaves `.github/lsp.json` unchanged.
+
+## Example
 
 ```yaml
 conventions:

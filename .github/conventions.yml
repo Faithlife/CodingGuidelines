@@ -1,4 +1,6 @@
+# applied automatically by https://github.com/Faithlife/RepoConventionsApplier (DO NOT REMOVE THIS LINE)
 conventions:
+  - path: ../conventions/faithlife-auto-apply-conventions
   - path: ../conventions/gitattributes-lf
   - path: ../conventions/agentic-repo
   - path: ../conventions/editorconfig-root
@@ -8,8 +10,9 @@ conventions:
   - path: ../conventions/editorconfig-yaml
   - path: ../conventions/editorconfig-csharp
   - path: ../conventions/faithlife-license-mit
-  - path: ../conventions/dotnet-sdk10
+  - path: ../conventions/dotnet-sdk-10
   - path: ./conventions/update-editorconfig-csharp
+  - path: ./conventions/update-readme-conventions
 
 pull-request:
   reviewers:

@@ -2,14 +2,17 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
-$configTextSectionPath = Join-Path $PSScriptRoot '..' 'scripts' 'ConfigTextSection.ps1'
-. $configTextSectionPath
+# Load shared helper functions and the config text section module.
+$helpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'Helpers.ps1'
+. $helpersPath
+$configTextSectionPath = Join-Path $PSScriptRoot '..' 'scripts' 'ConfigTextSection.psm1'
+Import-Module $configTextSectionPath
 
-if ($args.Count -eq 0) {
-	throw 'The input path argument is required.'
-}
-
-$inputPath = $args[0]
-$settings = Read-ConventionSettings -InputPath $inputPath
+# Apply the configured text section to the target repository.
+$settings = Read-ConventionSettings -InputPath $args[0]
 Invoke-ConfigTextSection -Settings $settings

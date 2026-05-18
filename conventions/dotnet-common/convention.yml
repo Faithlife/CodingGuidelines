@@ -1,0 +1,11 @@
+conventions:
+  - path: ../gitattributes-lf
+  - path: ../dotnet-sdk-10
+  - path: ../dotnet-slnx
+  - path: ../editorconfig-root
+  - path: ../editorconfig-json
+  - path: ../editorconfig-md
+  - path: ../editorconfig-ps1
+  - path: ../editorconfig-yaml
+  - path: ../editorconfig-csharp
+  - path: ../build-script

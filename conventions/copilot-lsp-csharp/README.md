@@ -1,6 +1,12 @@
 # copilot-lsp-csharp
 
-This [convention](https://github.com/Faithlife/RepoConventions) applies the published C# GitHub Copilot CLI LSP server configuration.
+Applies the published C# GitHub Copilot CLI LSP server configuration.
+
+## Behavior
+
+The convention applies a fixed `csharp` server definition that runs `dnx --yes --prerelease roslyn-language-server -- --stdio --autoLoadProjects` for `.cs` and `.cshtml` files.
+
+## Example
 
 ```yaml
 conventions:

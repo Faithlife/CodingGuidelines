@@ -1,9 +1,8 @@
+commit:
+  message: "Update YAML editorconfig settings"
+
 conventions:
   - path: ../editorconfig-section
     settings:
       name: yaml
       text: ${{ readText("files/.editorconfig") }}
-      agent:
-        instructions: ${{ readText("agent-instructions.md") }}
-      commit:
-        message: "Update YAML editorconfig settings"

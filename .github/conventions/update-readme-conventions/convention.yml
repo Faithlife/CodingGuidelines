@@ -1,0 +1,5 @@
+commit:
+  message: Update README conventions table
+
+pull-request:
+  auto-merge: true

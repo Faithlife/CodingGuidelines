@@ -1,5 +1,11 @@
 #requires -PSEdition Core
 #requires -Version 7.0
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 if ((Get-Module -ListAvailable Pester | Sort-Object Version -Descending | Select-Object -First 1).Version -lt [version]'5.0.0') {
 	throw "Pester 5 is required to run these tests. Currently using $((Get-Module Pester).Version)."
@@ -7,14 +13,6 @@ if ((Get-Module -ListAvailable Pester | Sort-Object Version -Descending | Select
 
 $helpersPath = Join-Path $PSScriptRoot 'Helpers.ps1'
 . $helpersPath
-
-<#
-.SYNOPSIS
-Creates a unique temporary directory for a test case.
-#>
-function New-TestDirectory {
-	return New-TemporaryDirectory
-}
 
 <#
 .SYNOPSIS
@@ -30,15 +28,19 @@ function New-ConventionInputFile {
 		[string] $InputJson
 	)
 
+	# Place each generated RepoConventions input in a unique temp JSON file.
 	$inputPath = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString('N') + '.json')
 	$content = if ($PSCmdlet.ParameterSetName -eq 'Settings') {
+		# Wrap settings in the input shape consumed by convention scripts.
 		@{ settings = $Settings } | ConvertTo-Json -Depth 10 -Compress
 	}
 	else {
+		# Use caller-supplied JSON verbatim for malformed-input tests.
 		$InputJson
 	}
 
-	Write-Utf8NoBomFile -Path $inputPath -Content $content
+	# Write the input with the same encoding conventions as published files.
+	[System.IO.File]::WriteAllText($inputPath, $content, $utf8)
 	return $inputPath
 }
 
@@ -57,15 +59,19 @@ function Invoke-ConventionScript {
 		[string] $InputPath
 	)
 
+	# Run the script from the temporary repository root under test.
 	Push-Location $RepositoryRoot
 	try {
+		# Pass an input path only for conventions that require one.
 		if ($PSBoundParameters.ContainsKey('InputPath')) {
 			return @(& $ScriptPath $InputPath 6>&1)
 		}
 
+		# Capture informational output from scripts invoked without input.
 		return @(& $ScriptPath 6>&1)
 	}
 	finally {
+		# Restore the caller's location even when the convention throws.
 		Pop-Location
 	}
 }
@@ -80,6 +86,7 @@ function Initialize-TestRepository {
 		[string] $Path
 	)
 
+	# Initialize Git state inside the temporary repository under test.
 	Push-Location $Path
 	try {
 		& git init -b master | Out-Null
@@ -87,11 +94,13 @@ function Initialize-TestRepository {
 		& git config user.name 'Test User'
 		& git config core.autocrlf false
 
-		Write-Utf8NoBomFile -Path (Join-Path $Path 'README.md') -Content "# Test`n"
+		# Create a baseline commit so tests can inspect later convention changes.
+		[System.IO.File]::WriteAllText((Join-Path $Path 'README.md'), "# Test`n", $utf8)
 		& git add -A
 		& git commit -m 'Initial' | Out-Null
 	}
 	finally {
+		# Restore the caller's location after repository initialization.
 		Pop-Location
 	}
 }
@@ -108,6 +117,7 @@ function Get-CommitSubjects {
 		[int] $Count = 10
 	)
 
+	# Read recent subjects from inside the repository under test.
 	Push-Location $TestDirectory
 	try {
 		[string[]] $subjects = @(& git log --format=%s -$Count)
@@ -130,6 +140,7 @@ function Get-CommitId {
 		[string] $Revision = 'HEAD'
 	)
 
+	# Resolve the requested revision from inside the repository under test.
 	Push-Location $TestDirectory
 	try {
 		return (& git rev-parse $Revision)
@@ -149,6 +160,7 @@ function Get-GitStatusLines {
 		[string] $TestDirectory
 	)
 
+	# Return porcelain status lines from inside the repository under test.
 	Push-Location $TestDirectory
 	try {
 		[string[]] $statusLines = @(& git status --short)
@@ -169,8 +181,10 @@ function Copy-TestConventionAssets {
 		[string] $TestDirectory
 	)
 
+	# Locate the source repository root relative to the shared test helper script.
 	$sourceRepositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..' '..'))
 
+	# Copy published conventions and shared sections into the temp repository.
 	Copy-Item -LiteralPath (Join-Path $sourceRepositoryRoot 'conventions') -Destination (Join-Path $TestDirectory 'conventions') -Recurse
 	Copy-Item -LiteralPath (Join-Path $sourceRepositoryRoot 'sections') -Destination (Join-Path $TestDirectory 'sections') -Recurse
 }
@@ -182,88 +196,16 @@ Runs repo-conventions apply from a test repository.
 function Invoke-RepoConventionsApply {
 	param(
 		[Parameter(Mandatory = $true)]
-		[string] $TestDirectory,
-
-		[string] $CopilotCommandDirectory
-	)
-
-	$temporaryCopilot = $null
-
-	if (-not $PSBoundParameters.ContainsKey('CopilotCommandDirectory')) {
-		$temporaryCopilot = New-TemporaryTestCopilotCommand
-		$CopilotCommandDirectory = $temporaryCopilot.CommandDirectory
-	}
-
-	$originalPath = $env:PATH
-	$env:PATH = "$CopilotCommandDirectory$([System.IO.Path]::PathSeparator)$originalPath"
-
-	Push-Location $TestDirectory
-	try {
-		return @(& repo-conventions apply 6>&1)
-	}
-	finally {
-		Pop-Location
-		$env:PATH = $originalPath
-
-		if ($null -ne $temporaryCopilot) {
-			Remove-Item -LiteralPath $temporaryCopilot.CommandDirectory -Recurse -Force -ErrorAction SilentlyContinue
-		}
-	}
-}
-
-<#
-.SYNOPSIS
-Creates a fake copilot command for behavior tests.
-#>
-function New-TestCopilotCommand {
-	param(
-		[Parameter(Mandatory = $true)]
 		[string] $TestDirectory
 	)
 
-	$commandDirectory = Join-Path $TestDirectory '.test-tools'
-	[System.IO.Directory]::CreateDirectory($commandDirectory) | Out-Null
-
-	$inputPath = Join-Path $commandDirectory 'copilot-input.txt'
-
-	if ($IsWindows) {
-		$commandPath = Join-Path $commandDirectory 'copilot.cmd'
-		$escapedInputPath = $inputPath.Replace('"', '""')
-		Write-Utf8NoBomFile -Path $commandPath -Content "@echo off`r`nmore > `"$escapedInputPath`"`r`nexit /b 0`r`n"
+	# Run repo-conventions from the temporary repository under test.
+	Push-Location $TestDirectory
+	try {
+		return @(& dotnet dnx -y repo-conventions -- apply 6>&1)
 	}
-	else {
-		$commandPath = Join-Path $commandDirectory 'copilot'
-		Write-Utf8NoBomFile -Path $commandPath -Content "#!/bin/sh`ncat > '$inputPath'`nexit 0`n"
-		& chmod +x $commandPath | Out-Null
-	}
-
-	return [pscustomobject]@{
-		CommandDirectory = $commandDirectory
-		InputPath = $inputPath
-	}
-}
-
-<#
-.SYNOPSIS
-Creates a fake copilot command in a temporary directory outside the test repository.
-#>
-function New-TemporaryTestCopilotCommand {
-	$commandDirectory = New-TemporaryDirectory
-	$inputPath = Join-Path $commandDirectory 'copilot-input.txt'
-
-	if ($IsWindows) {
-		$commandPath = Join-Path $commandDirectory 'copilot.cmd'
-		$escapedInputPath = $inputPath.Replace('"', '""')
-		Write-Utf8NoBomFile -Path $commandPath -Content "@echo off`r`nmore > `"$escapedInputPath`"`r`nexit /b 0`r`n"
-	}
-	else {
-		$commandPath = Join-Path $commandDirectory 'copilot'
-		Write-Utf8NoBomFile -Path $commandPath -Content "#!/bin/sh`ncat > /dev/null`nexit 0`n"
-		& chmod +x $commandPath | Out-Null
-	}
-
-	return [pscustomobject]@{
-		CommandDirectory = $commandDirectory
-		InputPath = $inputPath
+	finally {
+		# Restore the caller location after the apply command completes.
+		Pop-Location
 	}
 }

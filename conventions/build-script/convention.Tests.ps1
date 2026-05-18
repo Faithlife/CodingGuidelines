@@ -1,0 +1,153 @@
+#requires -PSEdition Core
+#requires -Version 7.0
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
+
+Describe 'build-script convention' {
+	BeforeAll {
+		# Cache convention paths and load shared test helpers.
+		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
+		$script:expectedBuildScriptPath = Join-Path $PSScriptRoot 'files' 'build.ps1'
+		$script:testHelpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'TestHelpers.ps1'
+		. $script:testHelpersPath
+
+		function script:InvokeBuildScriptConvention {
+			# Invoke the convention script with an empty settings file.
+			param(
+				[Parameter(Mandatory = $true)]
+				[string] $TestDirectory
+			)
+
+			$inputPath = New-ConventionInputFile -Settings @{}
+
+			try {
+				return Invoke-ConventionScript -ScriptPath $script:conventionScriptPath -RepositoryRoot $TestDirectory -InputPath $inputPath
+			}
+			finally {
+				Remove-Item -LiteralPath $inputPath -ErrorAction SilentlyContinue
+			}
+		}
+
+		function script:GetBuildScriptIndexMode {
+			# Read the tracked git mode for build.ps1 from the index.
+			param(
+				[Parameter(Mandatory = $true)]
+				[string] $TestDirectory
+			)
+
+			Push-Location $TestDirectory
+			try {
+				[string[]] $indexLines = @(& git ls-files --stage -- build.ps1)
+
+				if ($indexLines.Count -eq 0) {
+					return $null
+				}
+
+				return ($indexLines[0] -split '\s+', 2)[0]
+			}
+			finally {
+				Pop-Location
+			}
+		}
+	}
+
+	It 'creates build.ps1 in the repository root and marks it executable in Git' {
+		$testDirectory = New-TemporaryDirectory
+
+		try {
+			# Arrange an empty initialized repository.
+			Initialize-TestRepository -Path $testDirectory
+
+			# Apply the convention and collect the generated build script state.
+			$output = InvokeBuildScriptConvention -TestDirectory $testDirectory
+			$buildScriptPath = Join-Path $testDirectory 'build.ps1'
+			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
+
+			# Assert the published build script was created with executable git mode.
+			(Test-Path -LiteralPath $buildScriptPath) | Should -Be $true
+			(Get-Content -LiteralPath $buildScriptPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedBuildScriptPath -Raw)
+			(GetBuildScriptIndexMode -TestDirectory $testDirectory) | Should -Be '100755'
+			$status.Count | Should -Be 1
+			# On Windows: 'A  build.ps1' (no worktree change); on Linux/Mac: 'AM build.ps1' (mode differs in worktree)
+			$status[0] | Should -Match '^A.\sbuild\.ps1$'
+			(@($output | ForEach-Object { $_.ToString() }) -contains "Marked 'build.ps1' as executable in Git.") | Should -Be $true
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'updates an existing build.ps1 to the published script' {
+		$testDirectory = New-TemporaryDirectory
+
+		try {
+			# Arrange a repository with a committed placeholder build script.
+			Initialize-TestRepository -Path $testDirectory
+			$buildScriptPath = Join-Path $testDirectory 'build.ps1'
+			[System.IO.File]::WriteAllText($buildScriptPath, "Write-Host 'placeholder'`n", $utf8)
+
+			Push-Location $testDirectory
+			try {
+				& git add -- build.ps1
+				& git commit -m 'Add placeholder build script' | Out-Null
+			}
+			finally {
+				Pop-Location
+			}
+
+			# Apply the convention and collect the modified build script state.
+			$output = InvokeBuildScriptConvention -TestDirectory $testDirectory
+			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
+
+			# Assert the script content and git mode were updated.
+			(Get-Content -LiteralPath $buildScriptPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedBuildScriptPath -Raw)
+			(GetBuildScriptIndexMode -TestDirectory $testDirectory) | Should -Be '100755'
+			$status.Count | Should -Be 1
+			# On Windows: 'M  build.ps1' (no worktree change); on Linux/Mac: 'MM build.ps1' (mode differs in worktree)
+			$status[0] | Should -Match '^M.\sbuild\.ps1$'
+			(@($output | ForEach-Object { $_.ToString() }) -contains "Updated '$buildScriptPath' from the published Faithlife build script.") | Should -Be $true
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'is idempotent after the first successful application' {
+		$testDirectory = New-TemporaryDirectory
+
+		try {
+			# Arrange a repository after a successful first convention run.
+			Initialize-TestRepository -Path $testDirectory
+
+			InvokeBuildScriptConvention -TestDirectory $testDirectory | Out-Null
+
+			Push-Location $testDirectory
+			try {
+				& git commit -m 'Add build script' | Out-Null
+				$headAfterFirstRun = & git rev-parse HEAD
+			}
+			finally {
+				Pop-Location
+			}
+
+			# Apply the convention a second time and capture repository state.
+			$output = InvokeBuildScriptConvention -TestDirectory $testDirectory
+			$headAfterSecondRun = Get-CommitId -TestDirectory $testDirectory
+			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
+
+			# Assert the second run made no staged changes and reported idempotence.
+			$headAfterSecondRun | Should -Be $headAfterFirstRun
+			# On Linux/Mac, git tracks file mode and the working tree file may remain at mode
+			# 100644 while the index is 100755; only assert that nothing is staged.
+			(@($status | Where-Object { $_ -notmatch '^ ' })).Count | Should -Be 0
+			@($output).Count | Should -Be 0
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+}

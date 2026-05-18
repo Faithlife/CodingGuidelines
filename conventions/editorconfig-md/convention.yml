@@ -1,9 +1,11 @@
+commit:
+  message: "Update Markdown editorconfig settings"
+
 conventions:
   - path: ../editorconfig-section
     settings:
       name: md
       text: ${{ readText("files/.editorconfig") }}
-      agent:
-        instructions: ${{ readText("agent-instructions.md") }}
-      commit:
-        message: "Update Markdown editorconfig settings"
+
+pull-request:
+  auto-merge: true

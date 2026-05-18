@@ -1,5 +1,5 @@
 # TypeScript Coding Guidelines
 
-# Follow JavaScript Guidelines
+## Follow JavaScript Guidelines
 
-All the [JavaScript guidelines](javascript.md) apply.
+All the [JavaScript guidelines](./javascript.md) apply.

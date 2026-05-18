@@ -1,9 +1,11 @@
+commit:
+  message: "Update JSON editorconfig settings"
+
 conventions:
   - path: ../editorconfig-section
     settings:
       name: json
       text: ${{ readText("files/.editorconfig") }}
-      agent:
-        instructions: ${{ readText("agent-instructions.md") }}
-      commit:
-        message: "Update JSON editorconfig settings"
+
+pull-request:
+  auto-merge: true

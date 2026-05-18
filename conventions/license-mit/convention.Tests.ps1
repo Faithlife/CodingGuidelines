@@ -2,9 +2,14 @@
 #requires -Version 7.0
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 
 Describe 'license-mit convention' {
 	BeforeAll {
+		# Cache convention paths, defaults, and shared test helpers.
 		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
 		$script:templateLicensePath = Join-Path $PSScriptRoot 'files' 'LICENSE'
 		$script:testHelpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'TestHelpers.ps1'
@@ -12,6 +17,7 @@ Describe 'license-mit convention' {
 		. $script:testHelpersPath
 
 		function script:InvokeLicenseMitConvention {
+			# Invoke the convention script with optional copyright settings.
 			param(
 				[Parameter(Mandatory = $true)]
 				[string] $TestDirectory,
@@ -36,6 +42,7 @@ Describe 'license-mit convention' {
 		}
 
 		function script:GetExpectedLicenseText {
+			# Render the template license text for the current UTC year.
 			param(
 				[Parameter(Mandatory = $true)]
 				[string] $CopyrightHolder
@@ -48,11 +55,13 @@ Describe 'license-mit convention' {
 	}
 
 	It 'requires the copyright-holder setting' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
+			# Arrange an empty initialized repository.
 			Initialize-TestRepository -Path $testDirectory
 
+			# Assert the convention fails without the required setting.
 			{ InvokeLicenseMitConvention -TestDirectory $testDirectory } | Should -Throw "The 'copyright-holder' setting is required."
 		}
 		finally {
@@ -61,15 +70,18 @@ Describe 'license-mit convention' {
 	}
 
 	It 'creates LICENSE when it is missing' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
+			# Arrange an empty initialized repository.
 			Initialize-TestRepository -Path $testDirectory
 
+			# Apply the convention and collect the created license state.
 			$output = InvokeLicenseMitConvention -TestDirectory $testDirectory -CopyrightHolder $script:defaultCopyrightHolder
 			$licensePath = Join-Path $testDirectory 'LICENSE'
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
+			# Assert the rendered MIT license was created and reported.
 			(Test-Path -LiteralPath $licensePath) | Should -Be $true
 			(Get-Content -LiteralPath $licensePath -Raw) | Should -Be (GetExpectedLicenseText -CopyrightHolder $script:defaultCopyrightHolder)
 			((Get-Content -LiteralPath $licensePath -Raw) -match '<YEAR>') | Should -Be $false
@@ -84,12 +96,13 @@ Describe 'license-mit convention' {
 	}
 
 	It 'replaces an existing LICENSE when it differs' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
+			# Arrange a repository with a committed non-template license.
 			Initialize-TestRepository -Path $testDirectory
 			$licensePath = Join-Path $testDirectory 'LICENSE'
-			Write-Utf8NoBomFile -Path $licensePath -Content "Old license text`n"
+			[System.IO.File]::WriteAllText($licensePath, "Old license text`n", $utf8)
 
 			Push-Location $testDirectory
 			try {
@@ -100,9 +113,11 @@ Describe 'license-mit convention' {
 				Pop-Location
 			}
 
+			# Apply the convention with a replacement copyright holder.
 			$output = InvokeLicenseMitConvention -TestDirectory $testDirectory -CopyrightHolder 'Contoso'
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
+			# Assert the existing license was replaced and reported.
 			(Get-Content -LiteralPath $licensePath -Raw) | Should -Be (GetExpectedLicenseText -CopyrightHolder 'Contoso')
 			$status.Count | Should -Be 1
 			$status[0] | Should -Match '^ M LICENSE$'
@@ -114,9 +129,10 @@ Describe 'license-mit convention' {
 	}
 
 	It 'is idempotent after the first successful application' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
+			# Arrange a repository after a successful first convention run.
 			Initialize-TestRepository -Path $testDirectory
 
 			InvokeLicenseMitConvention -TestDirectory $testDirectory -CopyrightHolder $script:defaultCopyrightHolder | Out-Null
@@ -131,14 +147,15 @@ Describe 'license-mit convention' {
 				Pop-Location
 			}
 
+			# Apply the convention a second time and capture repository state.
 			$output = InvokeLicenseMitConvention -TestDirectory $testDirectory -CopyrightHolder $script:defaultCopyrightHolder
 			$headAfterSecondRun = Get-CommitId -TestDirectory $testDirectory
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
 
+			# Assert the second run reported no content changes.
 			$headAfterSecondRun | Should -Be $headAfterFirstRun
 			$status.Count | Should -Be 0
-			$expectedLicensePath = Join-Path $testDirectory 'LICENSE'
-		(@($output | ForEach-Object { $_.ToString() }) -contains "'$expectedLicensePath' already matches the published MIT license.") | Should -Be $true
+			@($output).Count | Should -Be 0
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
