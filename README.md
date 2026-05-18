@@ -26,6 +26,7 @@
 | [config-text-section](./conventions/config-text-section/README.md) | Manages one named text section in a repository file. |
 | [copilot-lsp](./conventions/copilot-lsp/README.md) | Manages project-scoped GitHub Copilot CLI LSP server definitions in `.github/lsp.json`. |
 | [copilot-lsp-csharp](./conventions/copilot-lsp-csharp/README.md) | Applies the published C# GitHub Copilot CLI LSP server configuration. |
+| [copilot-lsp-typescript](./conventions/copilot-lsp-typescript/README.md) | This [convention](https://github.com/Faithlife/RepoConventions) applies the published TypeScript GitHub Copilot CLI LSP server configuration. |
 | [dotnet-common](./conventions/dotnet-common/README.md) | Applies conventions common to repositories that build a .NET solution. |
 | [dotnet-sdk](./conventions/dotnet-sdk/README.md) | Ensures the repository has a `global.json` that uses the specified .NET SDK major version or later. |
 | [dotnet-sdk-10](./conventions/dotnet-sdk-10/README.md) | Ensures the repository has a `global.json` that uses the .NET 10 SDK or later. |
