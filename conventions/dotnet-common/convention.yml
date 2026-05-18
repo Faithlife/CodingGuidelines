@@ -8,4 +8,5 @@ conventions:
   - path: ../editorconfig-ps1
   - path: ../editorconfig-yaml
   - path: ../editorconfig-csharp
+  - path: ../gitattributes-csharp
   - path: ../build-script
