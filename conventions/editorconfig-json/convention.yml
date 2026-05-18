@@ -1,5 +1,5 @@
 commit:
-  message: "Update JSON editorconfig settings"
+  message: "Update .editorconfig for JSON"
 
 conventions:
   - path: ../editorconfig-section

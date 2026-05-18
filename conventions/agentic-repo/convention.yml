@@ -1,7 +1,7 @@
 conventions:
   - path: ../gitattributes-section
     commit:
-      message: "Update .gitattributes for agentic repository"
+      message: "Update .gitattributes for agentic-repo"
     settings:
       name: agentic-repo
       text: |
@@ -13,14 +13,14 @@ conventions:
         .github/prompts/** linguist-generated=true
   - path: ../gitignore-section
     commit:
-      message: "Update .gitignore for agentic repository"
+      message: "Update .gitignore for agentic-repo"
     settings:
       name: agentic-repo
       text: |
         apm_modules/
   - path: ../prettierignore-section
     commit:
-      message: "Update .prettierignore for agentic repository"
+      message: "Update .prettierignore for agentic-repo"
     settings:
       name: agentic-repo
       text: |

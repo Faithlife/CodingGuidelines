@@ -1,5 +1,5 @@
 commit:
-  message: "Update YAML editorconfig settings"
+  message: "Update .editorconfig for YAML"
 
 conventions:
   - path: ../editorconfig-section
