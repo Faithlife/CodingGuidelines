@@ -1,3 +1,6 @@
+commit:
+  message: Update LSP server for C#
+
 conventions:
   - path: ../copilot-lsp
     settings:
