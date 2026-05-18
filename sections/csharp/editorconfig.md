@@ -757,6 +757,12 @@ dotnet_diagnostic.CA1873.severity = suggestion
 
 The `LoggerMessage` pattern is overkill for most projects.
 
+```editorconfig
+dotnet_diagnostic.CA1861.severity = suggestion
+```
+
+Moving constant arrays to static readonly fields makes the code less readable for insufficient benefit in most cases.
+
 ## [Quality: Reliability Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/reliability-warnings)
 
 ```editorconfig

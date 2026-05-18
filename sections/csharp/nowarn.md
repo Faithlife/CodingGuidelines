@@ -5,7 +5,7 @@
 A `<NoWarn>` entry should always start with any existing settings, like so:
 
 ```xml
-<NoWarn>$(NoWarn);CS1591;CS1998;CA1861;CA2007;CA5394;NU1507;NU5105</NoWarn>
+<NoWarn>$(NoWarn);CS1591;CS1998;CA2007;CA5394;NU1507;NU5105</NoWarn>
 ```
 
 If the need to disable a warning is particular to one or few projects but is still reasonable for others, add it to the `*.csproj` projects; otherwise add it to `Directory.Build.props`.
@@ -19,10 +19,6 @@ Missing XML comments is not considered an issue worth fixing for most projects. 
 ### [CS1998: This async method lacks 'await' operators](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-messages/async-await-errors)
 
 It is common for `Task`-returning methods to not actually do any asynchronous work, particularly when overriding methods. Removing the `async` keyword and returning `Task.FromResult` just makes the code harder to read for little benefit.
-
-### [CA1861: Avoid constant arrays as arguments](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1861)
-
-Moving constant arrays to static readonly fields makes the code less readable for insufficient benefit in most cases.
 
 ### [CA2007: Do not directly await a Task](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
 
