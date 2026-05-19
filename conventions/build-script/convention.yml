@@ -1,2 +1,5 @@
+commit:
+  message: Update build.ps1
+
 pull-request:
   auto-merge: true
