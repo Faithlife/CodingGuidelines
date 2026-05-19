@@ -192,6 +192,185 @@ function GetEditorConfigRemoveRootRuleNames {
 	return ,$ruleNames
 }
 
+function GetEditorConfigSectionKey {
+	param(
+		[Parameter(Mandatory = $true)]
+		[string] $SectionHeader
+	)
+
+	# Extract the section key from a normalized editorconfig section header.
+	$trimmed = $SectionHeader.Trim()
+
+	if ($trimmed -notmatch '^\[(?<Key>[^\]]+)\]$') {
+		return $null
+	}
+
+	return $Matches.Key
+}
+
+function ExpandEditorConfigSectionKey {
+	param(
+		[Parameter(Mandatory = $true)]
+		[string] $SectionKey
+	)
+
+	# Expand only simple finite brace alternatives that can be proven by exact string comparison.
+	$alternatives = [System.Collections.Generic.List[string]]::new()
+	$alternatives.Add('') | Out-Null
+	$position = 0
+
+	while ($position -lt $SectionKey.Length) {
+		$braceStart = $SectionKey.IndexOf('{', $position)
+
+		if ($braceStart -lt 0) {
+			$literal = $SectionKey.Substring($position)
+
+			if ($literal.Contains('}')) {
+				return [pscustomobject]@{
+					Supported = $false
+					Alternatives = @()
+				}
+			}
+
+			for ($alternativeIndex = 0; $alternativeIndex -lt $alternatives.Count; $alternativeIndex++) {
+				$alternatives[$alternativeIndex] = $alternatives[$alternativeIndex] + $literal
+			}
+
+			return [pscustomobject]@{
+				Supported = $true
+				Alternatives = $alternatives.ToArray()
+			}
+		}
+
+		# Reject unmatched or nested braces instead of guessing about editorconfig glob semantics.
+		$literal = $SectionKey.Substring($position, $braceStart - $position)
+
+		if ($literal.Contains('}')) {
+			return [pscustomobject]@{
+				Supported = $false
+				Alternatives = @()
+			}
+		}
+
+		$braceEnd = $SectionKey.IndexOf('}', $braceStart + 1)
+
+		if ($braceEnd -lt 0) {
+			return [pscustomobject]@{
+				Supported = $false
+				Alternatives = @()
+			}
+		}
+
+		$braceText = $SectionKey.Substring($braceStart + 1, $braceEnd - $braceStart - 1)
+
+		if ($braceText.Contains('{') -or $braceText.Contains('}')) {
+			return [pscustomobject]@{
+				Supported = $false
+				Alternatives = @()
+			}
+		}
+
+		$braceAlternatives = $braceText.Split(',')
+
+		if ($braceAlternatives.Count -lt 2) {
+			return [pscustomobject]@{
+				Supported = $false
+				Alternatives = @()
+			}
+		}
+
+		foreach ($braceAlternative in $braceAlternatives) {
+			if ([string]::IsNullOrEmpty($braceAlternative)) {
+				return [pscustomobject]@{
+					Supported = $false
+					Alternatives = @()
+				}
+			}
+		}
+
+		# Append the literal and every brace option to produce the next finite alternative set.
+		$expandedAlternatives = [System.Collections.Generic.List[string]]::new()
+
+		foreach ($alternative in $alternatives) {
+			foreach ($braceAlternative in $braceAlternatives) {
+				$expandedAlternatives.Add($alternative + $literal + $braceAlternative) | Out-Null
+			}
+		}
+
+		if ($expandedAlternatives.Count -gt 256) {
+			return [pscustomobject]@{
+				Supported = $false
+				Alternatives = @()
+			}
+		}
+
+		$alternatives = $expandedAlternatives
+		$position = $braceEnd + 1
+	}
+
+	return [pscustomobject]@{
+		Supported = $true
+		Alternatives = $alternatives.ToArray()
+	}
+}
+
+function TestEditorConfigSectionKeyCovered {
+	param(
+		[Parameter(Mandatory = $true)]
+		[string] $ManagedSectionKey,
+
+		[Parameter(Mandatory = $true)]
+		[string] $UnmanagedSectionKey
+	)
+
+	# Preserve exact-match behavior even for section keys that the subset logic does not expand.
+	if ($ManagedSectionKey -eq $UnmanagedSectionKey) {
+		return $true
+	}
+
+	$managedExpansion = ExpandEditorConfigSectionKey -SectionKey $ManagedSectionKey
+	$unmanagedExpansion = ExpandEditorConfigSectionKey -SectionKey $UnmanagedSectionKey
+
+	if (-not $managedExpansion.Supported -or -not $unmanagedExpansion.Supported) {
+		return $false
+	}
+
+	# Treat the unmanaged key as covered only when every finite alternative is explicitly managed.
+	$managedAlternatives = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+
+	foreach ($managedAlternative in $managedExpansion.Alternatives) {
+		$managedAlternatives.Add($managedAlternative) | Out-Null
+	}
+
+	foreach ($unmanagedAlternative in $unmanagedExpansion.Alternatives) {
+		if (-not $managedAlternatives.Contains($unmanagedAlternative)) {
+			return $false
+		}
+	}
+
+	return $true
+}
+
+function TestEditorConfigSectionHeaderCovered {
+	param(
+		[Parameter(Mandatory = $true)]
+		[string] $ManagedSectionHeader,
+
+		[Parameter(Mandatory = $true)]
+		[string] $UnmanagedSectionHeader
+	)
+
+	# Compare section keys after removing the editorconfig header brackets.
+	$managedSectionKey = GetEditorConfigSectionKey -SectionHeader $ManagedSectionHeader
+	$unmanagedSectionKey = GetEditorConfigSectionKey -SectionHeader $UnmanagedSectionHeader
+
+	if ($null -eq $managedSectionKey -or $null -eq $unmanagedSectionKey) {
+		return $false
+	}
+
+	return TestEditorConfigSectionKeyCovered -ManagedSectionKey $managedSectionKey -UnmanagedSectionKey $unmanagedSectionKey
+}
+
 function SetRedundantEditorConfigRuleRemoval {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -224,11 +403,18 @@ function SetRedundantEditorConfigRuleRemoval {
 		elseif ($IsRoot -and $line.SectionHeader -eq '[*]' -and $RemoveRootRuleNames.Contains($line.Key)) {
 			$removeLine = $true
 		}
-		elseif ($null -ne $line.SectionHeader -and $ManagedRules.ContainsKey($line.SectionHeader)) {
-			$sectionRules = $ManagedRules[$line.SectionHeader]
+		elseif ($null -ne $line.SectionHeader) {
+			foreach ($managedSectionHeader in $ManagedRules.Keys) {
+				if (-not (TestEditorConfigSectionHeaderCovered -ManagedSectionHeader $managedSectionHeader -UnmanagedSectionHeader $line.SectionHeader)) {
+					continue
+				}
 
-			if ($sectionRules.ContainsKey($line.Key) -and $sectionRules[$line.Key].Contains($line.Value)) {
-				$removeLine = $true
+				$sectionRules = $ManagedRules[$managedSectionHeader]
+
+				if ($sectionRules.ContainsKey($line.Key) -and $sectionRules[$line.Key].Contains($line.Value)) {
+					$removeLine = $true
+					break
+				}
 			}
 		}
 

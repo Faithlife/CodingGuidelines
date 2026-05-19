@@ -93,6 +93,121 @@ indent_size = 2
 		}
 	}
 
+	It 'removes redundant unmanaged rules from covered subset sections' {
+		$testDirectory = New-TemporaryDirectory
+
+		try {
+			# Arrange an isolated repository with a duplicate rule in a narrower unmanaged section.
+			Copy-TestConventionAssets -TestDirectory $testDirectory
+			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
+conventions:
+- path: ../conventions/editorconfig-section
+  settings:
+    name: csharp-files
+    text: |
+      [*.{cs,cshtml,razor}]
+      trim_trailing_whitespace = false
+"@, $utf8)
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.editorconfig'), @"
+[*.cs]
+trim_trailing_whitespace = false
+
+[*.vb]
+trim_trailing_whitespace = false
+"@, $utf8)
+			Initialize-TestRepository -Path $testDirectory
+
+			# Apply the convention under test twice to verify subset cleanup idempotency.
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
+			$content = Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
+
+			# Assert the covered subset section was removed while the uncovered duplicate remains.
+			(Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw) | Should -Be $content
+			$content | Should -Match '(?m)^\[\*\.\{cs,cshtml,razor\}\]\r?$'
+			$content | Should -Not -Match '(?m)^\[\*\.cs\]\r?$'
+			$content | Should -Match '(?m)^\[\*\.vb\]\r?$'
+			([regex]::Matches($content, '(?m)^trim_trailing_whitespace = false\r?$')).Count | Should -Be 2
+			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'keeps covered subset sections with remaining unmanaged rules' {
+		$testDirectory = New-TemporaryDirectory
+
+		try {
+			# Arrange an isolated repository with a brace-list subset that has one duplicated rule.
+			Copy-TestConventionAssets -TestDirectory $testDirectory
+			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
+conventions:
+- path: ../conventions/editorconfig-section
+  settings:
+    name: csharp-files
+    text: |
+      [*.{cs,cshtml,razor}]
+      trim_trailing_whitespace = false
+"@, $utf8)
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.editorconfig'), @"
+[*.{cs,razor}]
+trim_trailing_whitespace = false
+indent_size = 4
+"@, $utf8)
+			Initialize-TestRepository -Path $testDirectory
+
+			# Apply the convention under test.
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
+
+			# Assert only the redundant rule was removed from the subset section.
+			$content = Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw
+			$content | Should -Match '(?m)^\[\*\.\{cs,razor\}\]\r?$'
+			([regex]::Matches($content, '(?m)^trim_trailing_whitespace = false\r?$')).Count | Should -Be 1
+			$content | Should -Match '(?m)^indent_size = 4\r?$'
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'does not treat wildcard managed sections as covering narrower sections' {
+		$testDirectory = New-TemporaryDirectory
+
+		try {
+			# Arrange an isolated repository with a root-wide managed rule duplicated in a narrower section.
+			Copy-TestConventionAssets -TestDirectory $testDirectory
+			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
+conventions:
+- path: ../conventions/editorconfig-section
+  settings:
+    name: all-files
+    text: |
+      [*]
+      trim_trailing_whitespace = false
+"@, $utf8)
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.editorconfig'), @"
+[*.cs]
+trim_trailing_whitespace = false
+"@, $utf8)
+			Initialize-TestRepository -Path $testDirectory
+
+			# Apply the convention under test.
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
+
+			# Assert the narrower section remains because wildcard coverage is intentionally not inferred.
+			$content = Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw
+			$content | Should -Match '(?m)^\[\*\.cs\]\r?$'
+			([regex]::Matches($content, '(?m)^trim_trailing_whitespace = false\r?$')).Count | Should -Be 2
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
 	It 'does not remove redundant rules inside other managed sections' {
 		$testDirectory = New-TemporaryDirectory
 

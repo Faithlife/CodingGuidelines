@@ -12,6 +12,8 @@ Manages a named section within the repository-root `.editorconfig` file.
 
 If `.editorconfig` does not exist, the convention creates it with the managed section. If the named section already exists, the convention replaces only that section. Other non-redundant `.editorconfig` content is preserved.
 
+After writing the managed section, the convention removes duplicated unmanaged rules from matching sections and from sections that are conservatively recognized as subsets of managed section keys. For example, a managed `[*.{cs,cshtml,razor}]` section can remove the same rule from an unmanaged `[*.cs]` section. A managed `[*]` section is not treated as covering narrower sections for this cleanup.
+
 When the configured `text` contains a top-level `root = true` declaration, the convention treats the managed section as the root section and keeps it before other `.editorconfig` sections. It also removes unmanaged `root = true` declarations and removes configured `remove-root-rules` entries from unmanaged `[*]` sections.
 
 ## Example
