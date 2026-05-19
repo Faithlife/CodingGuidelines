@@ -287,6 +287,16 @@ function SetEmptyEditorConfigSectionRemoval {
 				$Lines[$sectionIndex].Remove = $true
 			}
 
+			# Remove separators that would otherwise become trailing blank lines.
+			if ($endIndex -eq $Lines.Count) {
+				$previousIndex = $startIndex - 1
+
+				while ($previousIndex -ge 0 -and -not $Lines[$previousIndex].IsManaged -and $Lines[$previousIndex].Text.Trim().Length -eq 0) {
+					$Lines[$previousIndex].Remove = $true
+					$previousIndex--
+				}
+			}
+
 			$changed = $true
 		}
 

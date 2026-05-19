@@ -100,4 +100,46 @@ insert_final_newline = true
 		}
 	}
 
+	It 'does not leave a trailing blank line when removing a final root-wide section' {
+		$testDirectory = New-TemporaryDirectory
+
+		try {
+			# Arrange a repository with a final unmanaged root-wide section delegated to the convention.
+			Copy-TestConventionAssets -TestDirectory $testDirectory
+			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
+conventions:
+- path: ../conventions/editorconfig-root
+"@, $utf8)
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.editorconfig'), @"
+# DO NOT EDIT: root convention
+root = true
+
+[*]
+charset = latin1
+# END DO NOT EDIT
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*]
+indent_size = 2
+indent_style = space
+tab_width = 2
+insert_final_newline = true
+"@, $utf8)
+			Initialize-TestRepository -Path $testDirectory
+
+			# Apply the convention under test.
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
+
+			# Assert the removed final section did not leave an extra blank line at the end of the file.
+			$content = Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw
+			$content | Should -Be "# DO NOT EDIT: root convention`nroot = true`n`n[*]`ncharset = utf-8`nend_of_line = lf`ntrim_trailing_whitespace = true`n# END DO NOT EDIT`n`n[*.md]`ntrim_trailing_whitespace = false`n"
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
 }
