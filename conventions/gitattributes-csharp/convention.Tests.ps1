@@ -39,8 +39,8 @@ conventions:
 			# Assert the generated file contains the managed C# section.
 			(Test-Path -LiteralPath $gitattributesPath) | Should -Be $true
 			$content | Should -Match "(?m)^# DO NOT EDIT: csharp convention\r?$"
-			$content | Should -Match "(?m)^# generated from https://github\.com/Faithlife/CodingGuidelines/blob/master/sections/csharp/gitattributes\.md\r?$"
 			$content | Should -Match "(?m)^\*\.cs text diff=csharp\r?$"
+			$content | Should -Match "(?m)^# END DO NOT EDIT\r?$"
 			$normalizedContent.Contains($expectedSection) | Should -Be $true
 		}
 		finally {
@@ -67,7 +67,7 @@ conventions:
 
 			# Assert the commit message and clean working tree match expectations.
 			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should -Be $initialHead
-			(@(Get-CommitSubjects -TestDirectory $testDirectory -Count 1))[0] | Should -Be 'Update C# gitattributes settings'
+			(@(Get-CommitSubjects -TestDirectory $testDirectory -Count 1))[0] | Should -Be 'Update .gitattributes for C#'
 			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0
 		}
 		finally {
