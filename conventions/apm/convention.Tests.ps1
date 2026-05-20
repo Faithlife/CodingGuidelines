@@ -81,7 +81,7 @@ exit 0
 		}
 	}
 
-	It 'runs apm install --target copilot by default' {
+	It 'runs apm install by default' {
 		# Set up a repository with apm.yml and a fake argument capture file.
 		$testDirectory = New-TemporaryDirectory
 		$toolDirectory = New-TemporaryDirectory
@@ -91,7 +91,7 @@ exit 0
 
 		try {
 			# Arrange a fake apm command that records its argument list.
-			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'apm.yml'), "packages: []`n", $utf8)
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'apm.yml'), "packages: []`ntargets:`n  - copilot`n", $utf8)
 			Initialize-TestRepository -Path $testDirectory
 			NewFakeApmCommand -ToolDirectory $toolDirectory -WindowsScript @'
 @echo off
@@ -109,7 +109,7 @@ exit 0
 
 			# Run the convention and assert it invokes apm with the default arguments.
 			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
-			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install --target copilot'
+			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install'
 		}
 		finally {
 			# Restore process state and remove temporary files.
@@ -121,19 +121,18 @@ exit 0
 		}
 	}
 
-	It 'adds --update only when the update setting is true' {
-		# Set up a repository with apm.yml and an explicit update request.
+	It 'adds a copilot target to apm.yml when targets are missing' {
+		# Set up a repository with an apm.yml that does not declare targets yet.
 		$testDirectory = New-TemporaryDirectory
 		$toolDirectory = New-TemporaryDirectory
 		$argumentsPath = Join-Path $toolDirectory 'apm-arguments.txt'
-		$inputPath = New-ConventionInputFile -Settings @{
-			update = $true
-		}
+		$manifestPath = Join-Path $testDirectory 'apm.yml'
+		$inputPath = New-ConventionInputFile -Settings @{}
 		$originalPath = $env:PATH
 
 		try {
 			# Arrange a fake apm command that records its argument list.
-			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'apm.yml'), "packages: []`n", $utf8)
+			[System.IO.File]::WriteAllText($manifestPath, "packages: []`n", $utf8)
 			Initialize-TestRepository -Path $testDirectory
 			NewFakeApmCommand -ToolDirectory $toolDirectory -WindowsScript @'
 @echo off
@@ -149,9 +148,12 @@ exit 0
 			$env:APM_ARGUMENTS_PATH = $argumentsPath
 			$env:PATH = $toolDirectory + [System.IO.Path]::PathSeparator + $originalPath
 
-			# Run the convention and assert the update flag is included only when requested.
+			# Run the convention twice and assert it adds the targets declaration only once.
 			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
-			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install --update --target copilot'
+			(Get-Content -LiteralPath $manifestPath -Raw) | Should -Be "packages: []`n`ntargets:`n  - copilot`n"
+			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
+			(Get-Content -LiteralPath $manifestPath -Raw) | Should -Be "packages: []`n`ntargets:`n  - copilot`n"
+			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install'
 		}
 		finally {
 			# Restore process state and remove temporary files.
@@ -163,11 +165,53 @@ exit 0
 		}
 	}
 
-	It 'passes configured install packages to apm install --target copilot' {
+	It 'runs apm update --yes after install when the update setting is true' {
+		# Set up a repository with apm.yml and an explicit update request.
+		$testDirectory = New-TemporaryDirectory
+		$toolDirectory = New-TemporaryDirectory
+		$argumentsPath = Join-Path $toolDirectory 'apm-arguments.txt'
+		$inputPath = New-ConventionInputFile -Settings @{
+			update = $true
+		}
+		$originalPath = $env:PATH
+
+		try {
+			# Arrange a fake apm command that records its argument list.
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'apm.yml'), "packages: []`ntargets:`n  - copilot`n", $utf8)
+			Initialize-TestRepository -Path $testDirectory
+			NewFakeApmCommand -ToolDirectory $toolDirectory -WindowsScript @'
+@echo off
+setlocal
+>> "%APM_ARGUMENTS_PATH%" echo %*
+exit /b 0
+'@ -BashScript @'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$APM_ARGUMENTS_PATH"
+exit 0
+'@
+
+			$env:APM_ARGUMENTS_PATH = $argumentsPath
+			$env:PATH = $toolDirectory + [System.IO.Path]::PathSeparator + $originalPath
+
+			# Run the convention and assert the update command is used after install.
+			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
+			Get-Content -LiteralPath $argumentsPath | Should -Be @('install', 'update --yes')
+		}
+		finally {
+			# Restore process state and remove temporary files.
+			$env:PATH = $originalPath
+			Remove-Item Env:APM_ARGUMENTS_PATH -ErrorAction SilentlyContinue
+			Remove-Item -LiteralPath $inputPath -Force
+			Remove-Item -LiteralPath $toolDirectory -Recurse -Force
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'passes configured install packages to apm install' {
 		# Set up convention input that includes configured apm packages.
 		$testDirectory = New-TemporaryDirectory
-		$toolDirectory = Join-Path $testDirectory 'tools'
-		$argumentsPath = Join-Path $testDirectory 'apm-arguments.txt'
+		$toolDirectory = New-TemporaryDirectory
+		$argumentsPath = Join-Path $toolDirectory 'apm-arguments.txt'
 		$inputPath = New-ConventionInputFile -Settings @{
 			install = @(
 				'richlander/dotnet-inspect/skills/dotnet-inspect'
@@ -178,7 +222,8 @@ exit 0
 
 		try {
 			# Arrange a fake apm command that records package arguments.
-			New-Item -ItemType Directory -Path $toolDirectory | Out-Null
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'apm.yml'), "packages: []`ntargets:`n  - copilot`n", $utf8)
+			Initialize-TestRepository -Path $testDirectory
 			NewFakeApmCommand -ToolDirectory $toolDirectory -WindowsScript @'
 @echo off
 setlocal
@@ -194,14 +239,73 @@ exit 0
 			$env:PATH = $toolDirectory + [System.IO.Path]::PathSeparator + $originalPath
 
 			# Run the convention and assert configured packages are appended.
-			{ & $conventionScriptPath $inputPath } | Should -Not -Throw
-			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install --target copilot richlander/dotnet-inspect/skills/dotnet-inspect microsoft/playwright-cli/skills/playwright-cli'
+			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
+			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install richlander/dotnet-inspect/skills/dotnet-inspect microsoft/playwright-cli/skills/playwright-cli'
 		}
 		finally {
 			# Restore process state and remove temporary files.
 			$env:PATH = $originalPath
 			Remove-Item Env:APM_ARGUMENTS_PATH -ErrorAction SilentlyContinue
 			Remove-Item -LiteralPath $inputPath -Force
+			Remove-Item -LiteralPath $toolDirectory -Recurse -Force
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'initializes apm.yml before installing configured packages and updating' {
+		# Set up convention input that needs a new APM manifest before install and update.
+		$testDirectory = New-TemporaryDirectory
+		$toolDirectory = New-TemporaryDirectory
+		$argumentsPath = Join-Path $toolDirectory 'apm-arguments.txt'
+		$manifestPath = Join-Path $testDirectory 'apm.yml'
+		$inputPath = New-ConventionInputFile -Settings @{
+			install = @(
+				'richlander/dotnet-inspect/skills/dotnet-inspect'
+			)
+			update = $true
+		}
+		$originalPath = $env:PATH
+
+		try {
+			# Arrange a fake apm command that creates the generated manifest during init.
+			Initialize-TestRepository -Path $testDirectory
+			NewFakeApmCommand -ToolDirectory $toolDirectory -WindowsScript @'
+@echo off
+setlocal
+>> "%APM_ARGUMENTS_PATH%" echo %*
+if "%1"=="init" (
+  > "%CD%\apm.yml" echo name: Generated
+  >> "%CD%\apm.yml" echo author: Generated Person
+  >> "%CD%\apm.yml" echo dependencies: {}
+)
+exit /b 0
+'@ -BashScript @'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$APM_ARGUMENTS_PATH"
+if [ "$1" = "init" ]; then
+cat > "$PWD/apm.yml" <<'EOF'
+name: Generated
+author: Generated Person
+dependencies: {}
+EOF
+fi
+exit 0
+'@
+
+			$env:APM_ARGUMENTS_PATH = $argumentsPath
+			$env:PATH = $toolDirectory + [System.IO.Path]::PathSeparator + $originalPath
+
+			# Run the convention and assert it initializes, cleans, targets, installs, and updates in order.
+			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
+			Get-Content -LiteralPath $argumentsPath | Should -Be @('init --yes', 'install richlander/dotnet-inspect/skills/dotnet-inspect', 'update --yes')
+			(Get-Content -LiteralPath $manifestPath -Raw) | Should -Be "name: Generated`ndependencies: {}`n`ntargets:`n  - copilot`n"
+		}
+		finally {
+			# Restore process state and remove temporary files.
+			$env:PATH = $originalPath
+			Remove-Item Env:APM_ARGUMENTS_PATH -ErrorAction SilentlyContinue
+			Remove-Item -LiteralPath $inputPath -Force
+			Remove-Item -LiteralPath $toolDirectory -Recurse -Force
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
 		}
 	}
@@ -218,7 +322,7 @@ exit 0
 		try {
 			# Arrange committed apm files and a fake command that modifies the lock file.
 			[System.IO.File]::WriteAllText($lockFilePath, $originalLockContent, $utf8)
-			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'apm.yml'), "packages: []`n", $utf8)
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'apm.yml'), "packages: []`ntargets:`n  - copilot`n", $utf8)
 			Initialize-TestRepository -Path $testDirectory
 
 			NewFakeApmCommand -ToolDirectory $toolDirectory -WindowsScript @'
@@ -260,7 +364,7 @@ exit 0
 			# Arrange committed files and a fake command that modifies both files.
 			[System.IO.File]::WriteAllText($lockFilePath, "packages:`n  sample: 1.0.0`n", $utf8)
 			[System.IO.File]::WriteAllText($packageFilePath, "{}`n", $utf8)
-			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'apm.yml'), "packages: []`n", $utf8)
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'apm.yml'), "packages: []`ntargets:`n  - copilot`n", $utf8)
 			Initialize-TestRepository -Path $testDirectory
 
 			NewFakeApmCommand -ToolDirectory $toolDirectory -WindowsScript @'

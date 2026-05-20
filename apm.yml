@@ -7,3 +7,5 @@ dependencies:
   - Faithlife/RepoConventions/skills/repo-conventions
   mcp: []
 scripts: {}
+targets:
+  - copilot
