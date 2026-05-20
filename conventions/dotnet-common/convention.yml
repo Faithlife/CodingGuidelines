@@ -1,5 +1,6 @@
 conventions:
   - path: ../gitattributes-lf
+  - path: ../copilot-lsp-csharp
   - path: ../dotnet-sdk-10
   - path: ../dotnet-slnx
   - path: ../editorconfig-root
