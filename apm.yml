@@ -4,6 +4,6 @@ description: APM project for CodingGuidelines
 author: Ed Ball
 dependencies:
   apm:
-  - Faithlife/RepoConventions/skills/create-repo-conventions
+  - Faithlife/RepoConventions/skills/repo-conventions
   mcp: []
 scripts: {}
