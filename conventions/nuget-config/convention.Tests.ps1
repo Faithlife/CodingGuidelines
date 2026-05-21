@@ -95,11 +95,11 @@ Describe 'nuget-config convention' {
 		}
 	}
 
-	It 'replaces an existing different nuget.config' {
+	It 'replaces packageSources and preserves all other sections' {
 		$testDirectory = New-TemporaryDirectory
 
 		try {
-			# Arrange a repository with a committed divergent NuGet config.
+			# Arrange a config like LogosCompilerService— custom mappings, old protocolVersion.
 			Initialize-TestRepository -Path $testDirectory
 			$nuGetConfigPath = Join-Path $testDirectory 'nuget.config'
 			$existingContent = @"
@@ -107,7 +107,19 @@ Describe 'nuget-config convention' {
 <configuration>
   <packageSources>
     <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+    <add key="Faithlife Azure" value="https://pkgs.dev.azure.com/Faithlife/Packages/_packaging/main/nuget/v3/index.json" protocolVersion="3" />
   </packageSources>
+  <packageSourceMapping>
+    <packageSource key="nuget.org">
+      <package pattern="*" />
+    </packageSource>
+    <packageSource key="Faithlife Azure">
+      <package pattern="Argus.*" />
+      <package pattern="Faithlife.*" />
+      <package pattern="OrdersApi.*" />
+      <package pattern="RoyaltyApi.*" />
+    </packageSource>
+  </packageSourceMapping>
 </configuration>
 "@
 			[System.IO.File]::WriteAllText($nuGetConfigPath, $existingContent, $utf8)
@@ -121,15 +133,20 @@ Describe 'nuget-config convention' {
 				Pop-Location
 			}
 
-			# Apply the convention and collect the modified config state.
+			# Apply the convention and inspect the result.
 			$output = InvokeNuGetConfigConvention -TestDirectory $testDirectory
 			$status = @(Get-GitStatusLines -TestDirectory $testDirectory)
+			$updatedDoc = [System.Xml.XmlDocument]::new()
+			$updatedDoc.LoadXml((Get-Content -LiteralPath $nuGetConfigPath -Raw))
 
-			# Assert the config was replaced with the published file.
-			(Get-Content -LiteralPath $nuGetConfigPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedNuGetConfigPath -Raw)
-			$status.Count | Should -Be 1
+			# Assert packageSources updated (clear added, no protocolVersion) and mapping preserved.
+			($null -ne $updatedDoc.DocumentElement.SelectSingleNode('packageSources/clear')) | Should -Be $true
+			($null -eq $updatedDoc.DocumentElement.SelectSingleNode('packageSources/add[@key="nuget.org"]/@protocolVersion')) | Should -Be $true
+			$azurePatterns = @($updatedDoc.DocumentElement.SelectNodes('packageSourceMapping/packageSource[@key="Faithlife Azure"]/package') | ForEach-Object { $_.GetAttribute('pattern') })
+			$azurePatterns | Should -Contain 'OrdersApi.*'
+			$azurePatterns | Should -Contain 'RoyaltyApi.*'
 			$status[0] | Should -Match '^ M nuget\.config$'
-			(@($output | ForEach-Object { $_.ToString() }) -contains "Replaced '$nuGetConfigPath' with the published NuGet config.") | Should -Be $true
+			(@($output | ForEach-Object { $_.ToString() }) -contains "Updated package sources in '$nuGetConfigPath'.") | Should -Be $true
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

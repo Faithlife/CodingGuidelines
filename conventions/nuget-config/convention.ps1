@@ -56,16 +56,77 @@ if ($existingNuGetConfigItem.Name -cne 'nuget.config') {
 	$existingNuGetConfigItem = Get-Item -LiteralPath $targetNuGetConfigPath
 }
 
-# Exit when the target already matches the published template.
-if (Test-FileContentMatches -ExpectedPath $sourceNuGetConfigPath -ActualPath $targetNuGetConfigPath) {
+# Load the published package sources and the existing NuGet config as XML documents.
+$sourceDoc = [System.Xml.XmlDocument]::new()
+$sourceDoc.Load($sourceNuGetConfigPath)
+$sourcePackageSources = $sourceDoc.DocumentElement.SelectSingleNode('packageSources')
+
+$targetContent = [System.IO.File]::ReadAllText($targetNuGetConfigPath)
+$targetDoc = [System.Xml.XmlDocument]::new()
+
+try {
+	$targetDoc.LoadXml($targetContent)
+}
+catch {
+	throw "Cannot update '$targetNuGetConfigPath' because it is not valid XML: $_"
+}
+
+$targetPackageSources = $targetDoc.DocumentElement.SelectSingleNode('packageSources')
+
+if ($null -eq $targetPackageSources) {
+	throw "Cannot update '$targetNuGetConfigPath' because it does not contain a <packageSources> element."
+}
+
+# Serialize a packageSources node to a canonical string for comparison.
+function ConvertPackageSourcesToString {
+	param(
+		[Parameter(Mandatory = $true)]
+		[System.Xml.XmlNode] $Node
+	)
+
+	$stringWriter = [System.IO.StringWriter]::new()
+	$settings = [System.Xml.XmlWriterSettings]::new()
+	$settings.Indent = $true
+	$settings.IndentChars = '  '
+	$settings.OmitXmlDeclaration = $true
+	$settings.NewLineChars = "`n"
+	$settings.NewLineHandling = [System.Xml.NewLineHandling]::Replace
+
+	$writer = [System.Xml.XmlWriter]::Create($stringWriter, $settings)
+	$Node.WriteTo($writer)
+	$writer.Flush()
+	return $stringWriter.ToString()
+}
+
+# Exit when the existing packageSources already matches the published template.
+$sourcePackageSourcesText = ConvertPackageSourcesToString -Node $sourcePackageSources
+$targetPackageSourcesText = ConvertPackageSourcesToString -Node $targetPackageSources
+
+if ($sourcePackageSourcesText -ceq $targetPackageSourcesText) {
 	return
 }
 
-# Replace stale NuGet config content with the published template.
-$copyResult = Copy-FileIfDifferent -SourcePath $sourceNuGetConfigPath -DestinationPath $targetNuGetConfigPath
+# Replace only the packageSources element, preserving all other sections.
+$importedPackageSources = $targetDoc.ImportNode($sourcePackageSources, $true)
+$targetDoc.DocumentElement.ReplaceChild($importedPackageSources, $targetPackageSources) | Out-Null
 
-if (-not $copyResult.Updated) {
-	throw "Expected '$targetNuGetConfigPath' to be replaced."
+$xmlSettings = [System.Xml.XmlWriterSettings]::new()
+$xmlSettings.Indent = $true
+$xmlSettings.IndentChars = '  '
+$xmlSettings.Encoding = $utf8
+$xmlSettings.NewLineChars = "`n"
+$xmlSettings.NewLineHandling = [System.Xml.NewLineHandling]::Replace
+
+# Write the updated document.
+$stream = [System.IO.MemoryStream]::new()
+$xmlWriter = [System.Xml.XmlWriter]::Create($stream, $xmlSettings)
+$targetDoc.Save($xmlWriter)
+$xmlWriter.Flush()
+$newContent = $utf8.GetString($stream.ToArray())
+
+if ($newContent -ceq $targetContent) {
+	return
 }
 
-Write-Host "Replaced '$targetNuGetConfigPath' with the published NuGet config."
+[System.IO.File]::WriteAllText($targetNuGetConfigPath, $newContent, $utf8)
+Write-Host "Updated package sources in '$targetNuGetConfigPath'."
