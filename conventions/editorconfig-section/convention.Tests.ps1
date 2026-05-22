@@ -93,6 +93,48 @@ indent_size = 2
 		}
 	}
 
+	It 'does not remove redundant unmanaged rules when the managed section is unchanged' {
+		$testDirectory = New-TemporaryDirectory
+
+		try {
+			# Arrange an isolated repository whose managed section is already current.
+			Copy-TestConventionAssets -TestDirectory $testDirectory
+			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
+conventions:
+- path: ../conventions/editorconfig-section
+  settings:
+    name: files
+    text: |
+      [*.md]
+      trim_trailing_whitespace = false
+"@, $utf8)
+			$expectedContent = @"
+# DO NOT EDIT: files convention
+[*.md]
+trim_trailing_whitespace = false
+# END DO NOT EDIT
+
+[*.md]
+trim_trailing_whitespace = false
+"@
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.editorconfig'), $expectedContent, $utf8)
+			Initialize-TestRepository -Path $testDirectory
+			$initialHead = Get-CommitId -TestDirectory $testDirectory
+
+			# Apply the convention under test.
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
+
+			# Assert the redundant unmanaged rule remains because the managed section did not change.
+			(Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw) | Should -Be $expectedContent
+			(Get-CommitId -TestDirectory $testDirectory) | Should -Be $initialHead
+			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
 	It 'removes redundant unmanaged rules from covered subset sections' {
 		$testDirectory = New-TemporaryDirectory
 

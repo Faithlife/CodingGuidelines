@@ -10,6 +10,8 @@ $OutputEncoding = $utf8
 # Load shared helpers for settings, paths, and line-ending detection.
 $helpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'Helpers.ps1'
 . $helpersPath
+$configTextSectionPath = Join-Path $PSScriptRoot '..' 'scripts' 'ConfigTextSection.psm1'
+Import-Module $configTextSectionPath
 
 function GetGitIgnoreSectionName {
 	param(
@@ -233,6 +235,18 @@ function InvokeGitIgnoreSectionCleanup {
 	}
 }
 
-# Clean up unmanaged .gitignore patterns after the composed section writer runs.
+# Write the managed .gitignore section using the shared section writer.
 $settings = Read-ConventionSettings -InputPath $args[0]
-InvokeGitIgnoreSectionCleanup -Settings $settings
+$sectionSettings = @{
+	path = '.gitignore'
+	name = $settings.name
+	text = $settings.text
+	'comment-prefix' = '#'
+	'comment-suffix' = ''
+}
+$sectionResult = Invoke-ConfigTextSection -Settings $sectionSettings -PassThru
+
+# Clean up unmanaged .gitignore patterns only when this apply changed the managed section.
+if ($sectionResult.Updated) {
+	InvokeGitIgnoreSectionCleanup -Settings $settings
+}

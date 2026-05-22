@@ -9,7 +9,7 @@ Manages a named section within the repository-root `.gitignore` file.
 
 ## Behavior
 
-If `.gitignore` does not exist, the convention creates it with the managed section. If the named section already exists, the convention replaces only that section. Other non-redundant `.gitignore` content is preserved. Unmanaged pattern lines that exactly match patterns in the managed section are removed after the section is written.
+If `.gitignore` does not exist, the convention creates it with the managed section. If the named section already exists, the convention replaces only that section. Other non-redundant `.gitignore` content is preserved. When an apply creates or replaces the managed section, unmanaged pattern lines that exactly match patterns in the managed section are removed. If the managed section is already current, unmanaged patterns are left unchanged.
 
 ## Example
 

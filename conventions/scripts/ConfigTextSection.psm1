@@ -504,7 +504,9 @@ function Set-ConfigTextSectionText {
 function Invoke-ConfigTextSection {
 	param(
 		[Parameter(Mandatory = $true)]
-		[System.Collections.IDictionary] $Settings
+		[System.Collections.IDictionary] $Settings,
+
+		[switch] $PassThru
 	)
 
 	# Require a target path before resolving any other configured behavior.
@@ -537,6 +539,13 @@ function Invoke-ConfigTextSection {
 
 	# Avoid rewriting files that already contain the desired managed section.
 	if ($newContent -ceq $existingContent) {
+		if ($PassThru) {
+			return [pscustomobject]@{
+				Updated = $false
+				TargetPath = $targetPath
+			}
+		}
+
 		return
 	}
 
@@ -550,6 +559,13 @@ function Invoke-ConfigTextSection {
 	[System.IO.File]::WriteAllText($targetPath, $newContent, $utf8)
 
 	Write-Host "Updated '$($configuredSection.Name)' section in '$targetDisplayPath'."
+
+	if ($PassThru) {
+		return [pscustomobject]@{
+			Updated = $true
+			TargetPath = $targetPath
+		}
+	}
 }
 
 Export-ModuleMember -Function @(

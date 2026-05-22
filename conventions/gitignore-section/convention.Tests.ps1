@@ -94,6 +94,48 @@ obj/
 		}
 	}
 
+	It 'does not remove redundant unmanaged patterns when the managed section is unchanged' {
+		$testDirectory = New-TemporaryDirectory
+
+		try {
+			# Arrange an isolated repository whose managed section is already current.
+			Copy-TestConventionAssets -TestDirectory $testDirectory
+			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
+conventions:
+- path: ../conventions/gitignore-section
+  settings:
+    name: build-output
+    text: |
+      bin/
+      obj/
+"@, $utf8)
+			$expectedContent = @"
+# DO NOT EDIT: build-output convention
+bin/
+obj/
+# END DO NOT EDIT
+
+bin/
+obj/
+"@
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.gitignore'), $expectedContent, $utf8)
+			Initialize-TestRepository -Path $testDirectory
+			$initialHead = Get-CommitId -TestDirectory $testDirectory
+
+			# Apply the convention under test.
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
+
+			# Assert the redundant unmanaged patterns remain because the managed section did not change.
+			(Get-Content -LiteralPath (Join-Path $testDirectory '.gitignore') -Raw) | Should -Be $expectedContent
+			(Get-CommitId -TestDirectory $testDirectory) | Should -Be $initialHead
+			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
 	It 'does not remove redundant patterns inside other managed sections' {
 		$testDirectory = New-TemporaryDirectory
 

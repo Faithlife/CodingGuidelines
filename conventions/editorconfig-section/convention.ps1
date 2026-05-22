@@ -629,7 +629,9 @@ $sectionSettings = @{
 	'comment-prefix' = '#'
 	'comment-suffix' = ''
 }
-Invoke-ConfigTextSection -Settings $sectionSettings
+$sectionResult = Invoke-ConfigTextSection -Settings $sectionSettings -PassThru
 
-# Clean up unmanaged .editorconfig rules after the managed section is written.
-InvokeEditorConfigSectionCleanup -Settings $settings
+# Clean up unmanaged .editorconfig rules only when this apply changed the managed section.
+if ($sectionResult.Updated) {
+	InvokeEditorConfigSectionCleanup -Settings $settings
+}
