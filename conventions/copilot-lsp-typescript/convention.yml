@@ -6,8 +6,8 @@ conventions:
     settings:
       servers:
         typescript:
-          command: typescript-language-server
-          args: [--stdio]
+          command: npx
+          args: [-y, typescript-language-server, --stdio]
           fileExtensions:
             .ts: typescript
             .tsx: typescriptreact
