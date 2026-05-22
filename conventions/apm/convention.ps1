@@ -51,11 +51,9 @@ function EnsureApmManifestTargets {
 		return
 	}
 
-	# Append the targets declaration while preserving all existing manifest content.
+	# Append the targets declaration after any existing manifest content.
 	$manifestText = [System.IO.File]::ReadAllText($apmManifestPath)
-	if ($manifestText.Length -gt 0 -and -not $manifestText.EndsWith("`n")) {
-		$manifestText += "`n"
-	}
+	$manifestText = $manifestText -replace "(?:\r?\n[ \t]*)+\z", ''
 	if ($manifestText.Length -gt 0) {
 		$manifestText += "`n"
 	}

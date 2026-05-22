@@ -150,15 +150,49 @@ exit 0
 
 			# Run the convention twice and assert it adds the targets declaration only once.
 			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
-			(Get-Content -LiteralPath $manifestPath -Raw) | Should -Be "packages: []`n`ntargets:`n  - copilot`n"
+			(Get-Content -LiteralPath $manifestPath -Raw) | Should -Be "packages: []`ntargets:`n  - copilot`n"
 			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
-			(Get-Content -LiteralPath $manifestPath -Raw) | Should -Be "packages: []`n`ntargets:`n  - copilot`n"
+			(Get-Content -LiteralPath $manifestPath -Raw) | Should -Be "packages: []`ntargets:`n  - copilot`n"
 			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install'
 		}
 		finally {
 			# Restore process state and remove temporary files.
 			$env:PATH = $originalPath
 			Remove-Item Env:APM_ARGUMENTS_PATH -ErrorAction SilentlyContinue
+			Remove-Item -LiteralPath $inputPath -Force
+			Remove-Item -LiteralPath $toolDirectory -Recurse -Force
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'strips trailing blank lines before adding targets to apm.yml' {
+		# Set up a repository with an apm.yml that ends with blank lines.
+		$testDirectory = New-TemporaryDirectory
+		$toolDirectory = New-TemporaryDirectory
+		$manifestPath = Join-Path $testDirectory 'apm.yml'
+		$inputPath = New-ConventionInputFile -Settings @{}
+		$originalPath = $env:PATH
+
+		try {
+			# Arrange a fake apm command and a manifest with trailing blank lines.
+			[System.IO.File]::WriteAllText($manifestPath, "packages: []`n`n`n", $utf8)
+			Initialize-TestRepository -Path $testDirectory
+			NewFakeApmCommand -ToolDirectory $toolDirectory -WindowsScript @'
+@echo off
+exit /b 0
+'@ -BashScript @'
+#!/usr/bin/env bash
+exit 0
+'@
+			$env:PATH = $toolDirectory + [System.IO.Path]::PathSeparator + $originalPath
+
+			# Run the convention and assert no blank line is left before targets.
+			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
+			(Get-Content -LiteralPath $manifestPath -Raw) | Should -Be "packages: []`ntargets:`n  - copilot`n"
+		}
+		finally {
+			# Restore process state and remove temporary files.
+			$env:PATH = $originalPath
 			Remove-Item -LiteralPath $inputPath -Force
 			Remove-Item -LiteralPath $toolDirectory -Recurse -Force
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -298,7 +332,7 @@ exit 0
 			# Run the convention and assert it initializes, cleans, targets, installs, and updates in order.
 			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
 			Get-Content -LiteralPath $argumentsPath | Should -Be @('init --yes', 'install richlander/dotnet-inspect/skills/dotnet-inspect', 'update --yes')
-			(Get-Content -LiteralPath $manifestPath -Raw) | Should -Be "name: Generated`ndependencies: {}`n`ntargets:`n  - copilot`n"
+			(Get-Content -LiteralPath $manifestPath -Raw) | Should -Be "name: Generated`ndependencies: {}`ntargets:`n  - copilot`n"
 		}
 		finally {
 			# Restore process state and remove temporary files.
