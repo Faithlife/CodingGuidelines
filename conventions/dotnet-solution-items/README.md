@@ -28,7 +28,7 @@ conventions:
   - path: Faithlife/CodingGuidelines/conventions/dotnet-solution-items
     settings:
       items:
-        - *
+        - "*"
         - .github/*
         - .github/workflows/*
 ```
