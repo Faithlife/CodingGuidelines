@@ -33,6 +33,7 @@
 | [dotnet-sdk-10](./conventions/dotnet-sdk-10/README.md) | Ensures the repository has a `global.json` that uses the .NET 10 SDK or later. |
 | [dotnet-slnx](./conventions/dotnet-slnx/README.md) | Ensures the repository uses `.slnx` solutions rather than `.sln`. |
 | [dotnet-solution-items](./conventions/dotnet-solution-items/README.md) | Updates .NET solution item entries with `dotnet-solution-items`. |
+| [dotnet-solution-items-common](./conventions/dotnet-solution-items-common/README.md) | Adds common repository files and GitHub configuration files as .NET solution items. |
 | [editorconfig-csharp](./conventions/editorconfig-csharp/README.md) | Ensures the repository-root `.editorconfig` contains the standard C# section from [files/.editorconfig](./conventions/editorconfig-csharp/files/.editorconfig). |
 | [editorconfig-json](./conventions/editorconfig-json/README.md) | Ensures the repository-root `.editorconfig` contains the managed JSON section from [files/.editorconfig](./conventions/editorconfig-json/files/.editorconfig). |
 | [editorconfig-md](./conventions/editorconfig-md/README.md) | Ensures the repository-root `.editorconfig` contains the managed Markdown section from [files/.editorconfig](./conventions/editorconfig-md/files/.editorconfig). |
@@ -41,6 +42,7 @@
 | [editorconfig-section](./conventions/editorconfig-section/README.md) | Manages a named section within the repository-root `.editorconfig` file. |
 | [editorconfig-yaml](./conventions/editorconfig-yaml/README.md) | Ensures the repository-root `.editorconfig` contains the managed YAML section from [files/.editorconfig](./conventions/editorconfig-yaml/files/.editorconfig). |
 | [faithlife-auto-apply-conventions](./conventions/faithlife-auto-apply-conventions/README.md) | Ensures that `.github/conventions.yml` starts with the marker used by RepoConventionsApplier. |
+| [faithlife-dotnet-library](./conventions/faithlife-dotnet-library/README.md) | Applies the standard conventions for Faithlife .NET library repositories. |
 | [faithlife-dotnet-library-build](./conventions/faithlife-dotnet-library-build/README.md) | Creates or refreshes Faithlife .NET library build project files under `tools/Build`. |
 | [faithlife-dotnet-library-workflow](./conventions/faithlife-dotnet-library-workflow/README.md) | Installs the published Faithlife .NET library workflows at `.github/workflows/ci.yml` and `.github/workflows/copilot-setup-steps.yml`. |
 | [faithlife-license-mit](./conventions/faithlife-license-mit/README.md) | Applies [license-mit](./conventions/license-mit/README.md) with `copyright-holder` set to `Faithlife`. |

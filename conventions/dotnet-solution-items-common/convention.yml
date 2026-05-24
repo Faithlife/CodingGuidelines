@@ -1,0 +1,7 @@
+conventions:
+  - path: ../dotnet-solution-items
+    settings:
+      items:
+        - "*"
+        - .github/*
+        - .github/workflows/*

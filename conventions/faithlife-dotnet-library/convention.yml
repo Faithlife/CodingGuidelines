@@ -1,0 +1,7 @@
+conventions:
+  - path: ../faithlife-auto-apply-conventions
+  - path: ../dotnet-common
+  - path: ../faithlife-dotnet-library-build
+  - path: ../faithlife-dotnet-library-workflow
+  - path: ../faithlife-license-mit
+  - path: ../dotnet-solution-items-common
