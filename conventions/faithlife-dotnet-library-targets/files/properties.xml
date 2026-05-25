@@ -1,0 +1,5 @@
+<PropertyGroup>
+  <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  <CentralPackageFloatingVersionsEnabled>true</CentralPackageFloatingVersionsEnabled>
+</PropertyGroup>

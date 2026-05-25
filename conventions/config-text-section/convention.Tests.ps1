@@ -164,6 +164,52 @@ Describe 'config-text-section convention' {
 		}
 	}
 
+	It 'inserts sections before the closing root element when the target is XML and is idempotent' {
+		# Set up an MSBuild file with repository-local content outside the managed section.
+		$testDirectory = New-TemporaryDirectory
+
+		try {
+			$targetPath = Join-Path $testDirectory 'Directory.Build.props'
+			[System.IO.File]::WriteAllText($targetPath, "<Project>`n  <PropertyGroup>`n    <RepositoryName>Example</RepositoryName>`n  </PropertyGroup>`n</Project>`n", $utf8)
+
+			# Run the convention so the XML target shape inserts the section inside Project.
+			InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = '/Directory.Build.props'; name = 'package-props'; text = "<PropertyGroup>`n  <VersionPrefix>1.2.3</VersionPrefix>`n</PropertyGroup>"; 'comment-prefix' = '<!--'; 'comment-suffix' = '-->' }
+
+			# Assert the managed section is indented before the root close and surrounding content remains.
+			$expectedContent = "<Project>`n  <PropertyGroup>`n    <RepositoryName>Example</RepositoryName>`n  </PropertyGroup>`n  <!-- DO NOT EDIT: package-props convention -->`n  <PropertyGroup>`n    <VersionPrefix>1.2.3</VersionPrefix>`n  </PropertyGroup>`n  <!-- END DO NOT EDIT -->`n</Project>`n"
+			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be $expectedContent
+
+			# Re-run the convention and assert it is idempotent.
+			$secondOutput = InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = '/Directory.Build.props'; name = 'package-props'; text = "<PropertyGroup>`n  <VersionPrefix>1.2.3</VersionPrefix>`n</PropertyGroup>"; 'comment-prefix' = '<!--'; 'comment-suffix' = '-->' }
+			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be $expectedContent
+			@($secondOutput).Count | Should -Be 0
+		}
+		finally {
+			# Remove the isolated repository after the test completes.
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'replaces an existing indented XML managed section' {
+		# Set up an MSBuild file with an outdated XML managed section.
+		$testDirectory = New-TemporaryDirectory
+
+		try {
+			$targetPath = Join-Path $testDirectory 'Directory.Build.props'
+			[System.IO.File]::WriteAllText($targetPath, "<Project>`n  <!-- DO NOT EDIT: package-props convention -->`n  <PropertyGroup>`n    <VersionPrefix>1.0.0</VersionPrefix>`n  </PropertyGroup>`n  <!-- END DO NOT EDIT -->`n  <PropertyGroup>`n    <RepositoryName>Example</RepositoryName>`n  </PropertyGroup>`n</Project>`n", $utf8)
+
+			# Run the convention to replace only the matching managed XML section.
+			InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = '/Directory.Build.props'; name = 'package-props'; text = "<PropertyGroup>`n  <VersionPrefix>2.0.0</VersionPrefix>`n</PropertyGroup>"; 'comment-prefix' = '<!--'; 'comment-suffix' = '-->' }
+
+			# Assert the section was replaced in place and unmanaged XML is preserved.
+			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "<Project>`n  <!-- DO NOT EDIT: package-props convention -->`n  <PropertyGroup>`n    <VersionPrefix>2.0.0</VersionPrefix>`n  </PropertyGroup>`n  <!-- END DO NOT EDIT -->`n  <PropertyGroup>`n    <RepositoryName>Example</RepositoryName>`n  </PropertyGroup>`n</Project>`n"
+		}
+		finally {
+			# Remove the isolated repository after the test completes.
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
 	It 'fails on duplicate managed sections for the same name' {
 		# Set up a file with two managed sections that share one name.
 		$testDirectory = New-TemporaryDirectory

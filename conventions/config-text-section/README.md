@@ -12,7 +12,7 @@ Manages one named text section in a repository file.
 
 ## Behavior
 
-If the target file does not exist, the convention creates it with the managed section. If the named section already exists, the convention replaces only that section. Other file content is preserved.
+If the target file does not exist, the convention creates it with the managed section. If the target file contains a closing XML element, new sections are inserted before the closing root element and indented two spaces. If the named section already exists, the convention replaces only that section. Other file content is preserved.
 
 ## Example
 

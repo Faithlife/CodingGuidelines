@@ -1,0 +1,8 @@
+commit:
+  message: Update common .gitignore
+
+conventions:
+  - path: ../gitignore-section
+    settings:
+      name: gitignore-common
+      text: ${{ readText("files/.gitignore") }}

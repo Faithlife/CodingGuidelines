@@ -1,0 +1,11 @@
+commit:
+  message: Update Directory.Build.props
+
+conventions:
+  - path: ../config-text-section
+    settings:
+      path: /Directory.Build.props
+      name: faithlife-dotnet-library-props
+      text: ${{ readText("files/properties.xml") }}
+      comment-prefix: '<!--'
+      comment-suffix: '-->'

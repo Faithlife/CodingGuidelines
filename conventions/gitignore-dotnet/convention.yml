@@ -1,0 +1,8 @@
+commit:
+  message: Update .gitignore for .NET
+
+conventions:
+  - path: ../gitignore-section
+    settings:
+      name: gitignore-dotnet
+      text: ${{ readText("files/.gitignore") }}

@@ -1,0 +1,6 @@
+.vs/
+.idea/
+*.cache
+*.user
+*.userprefs
+_ReSharper*

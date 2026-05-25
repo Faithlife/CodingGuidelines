@@ -7,7 +7,7 @@ Applies the standard conventions for Faithlife .NET library repositories.
 
 ## Behavior
 
-The convention prepares a .NET repository for Faithlife library development by enabling automatic convention application, applying shared .NET repository defaults, installing the Faithlife build project and workflows, applying the Faithlife MIT license, and adding common solution items.
+The convention prepares a .NET repository for Faithlife library development by enabling automatic convention application, applying shared .NET repository defaults, installing standard NuGet infrastructure, installing the Faithlife build project and workflows, applying the Faithlife MIT license, and adding common solution items.
 
 ## Example
 

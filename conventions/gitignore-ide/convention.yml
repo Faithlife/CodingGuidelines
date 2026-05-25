@@ -1,0 +1,8 @@
+commit:
+  message: Update .gitignore for IDEs
+
+conventions:
+  - path: ../gitignore-section
+    settings:
+      name: gitignore-ide
+      text: ${{ readText("files/.gitignore") }}
