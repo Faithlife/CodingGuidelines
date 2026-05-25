@@ -154,6 +154,7 @@ Authoring expectations:
 - Use a non-zero exit code only when the convention genuinely cannot complete.
 - Avoid interactive prompts, editor launches, global machine-local state, and hidden credentials.
 - Prefer deterministic file writes, stable ordering, and stable line endings.
+- When the script has nothing to do, usually emit no output; already-compliant repositories are the most common case.
 - Emit focused output that explains what changed or why the convention cannot continue.
 - If the convention naturally consists of multiple meaningful steps, the script may create its own commits with informative messages.
 
