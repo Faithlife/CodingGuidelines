@@ -1,0 +1,5 @@
+conventions:
+  - path: ../gitignore-section
+    settings:
+      name: gitignore-dotnet
+      text: ${{ readText("files/.gitignore") }}

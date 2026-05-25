@@ -1,0 +1,17 @@
+# Contributing
+
+## Publishing
+
+To publish an official release:
+
+* Update the `<VersionPrefix>` in [`Directory.Build.props`](Directory.Build.props).
+* Add a corresponding section to the top of [`ReleaseNotes.md`](ReleaseNotes.md).
+* Push or create a PR for review.
+
+### Prereleases
+
+Certain changes can be hard to unit test and are better tested in a real consumer project. In this case, you can publish a beta version of the library for testing.
+
+To publish a beta, add a `<VersionSuffix>` below `<VersionPrefix>` in [`Directory.Build.props`](Directory.Build.props), e.g., `beta.1`. Publish as above.
+
+When beta testing is done, delete the `<VersionSuffix>` and publish again.

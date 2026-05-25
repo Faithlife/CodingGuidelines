@@ -85,6 +85,39 @@ function Get-ConfigTextSectionCommentSuffix {
 	return $CommentSuffixSetting
 }
 
+function Get-ConfigTextSectionMode {
+	param(
+		[AllowNull()]
+		[object] $ModeSetting
+	)
+
+	# Default to the existing append-at-end text behavior.
+	if ($null -eq $ModeSetting) {
+		return 'text'
+	}
+
+	# Restrict modes to known insertion policies.
+	if ($ModeSetting -isnot [string] -or ($ModeSetting -ne 'text' -and $ModeSetting -ne 'xml')) {
+		throw "The 'mode' setting must be 'text' or 'xml'."
+	}
+
+	return $ModeSetting
+}
+
+function Get-ConfigTextSectionIndent {
+	param(
+		[Parameter(Mandatory = $true)]
+		[string] $Mode
+	)
+
+	# XML sections are nested one level inside the root element.
+	if ($Mode -eq 'xml') {
+		return '  '
+	}
+
+	return ''
+}
+
 function Get-ConfigTextSectionMarkerCommentSuffixText {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -139,13 +172,14 @@ function Get-ConfigTextSectionText {
 	}
 
 	# Build marker patterns using the configured comment delimiters.
-	$openingPattern = '^' + [System.Text.RegularExpressions.Regex]::Escape($CommentPrefix) + ' DO NOT EDIT: .+ convention' + [System.Text.RegularExpressions.Regex]::Escape($CommentSuffix) + '$'
+	$openingPattern = '^\s*' + [System.Text.RegularExpressions.Regex]::Escape($CommentPrefix) + ' DO NOT EDIT: .+ convention' + [System.Text.RegularExpressions.Regex]::Escape($CommentSuffix) + '$'
 	$closingLine = "$CommentPrefix END DO NOT EDIT$CommentSuffix"
+	$closingPattern = '^\s*' + [System.Text.RegularExpressions.Regex]::Escape($closingLine) + '$'
 	$textLines = ($TextSetting -replace "`r`n", "`n" -replace "`r", "`n") -split "`n", 0, 'SimpleMatch'
 
 	# Reject embedded managed markers so generated sections cannot nest.
 	foreach ($line in $textLines) {
-		if ($line -eq $closingLine -or $line -match $openingPattern) {
+		if ($line -match $closingPattern -or $line -match $openingPattern) {
 			throw "The 'text' setting must not contain managed section marker lines."
 		}
 	}
@@ -175,6 +209,7 @@ function Get-ConfigTextSection {
 	# Normalize and validate each configured section field before use.
 	$commentPrefix = Get-ConfigTextSectionCommentPrefix -CommentPrefixSetting $Settings['comment-prefix']
 	$commentSuffix = Get-ConfigTextSectionMarkerCommentSuffixText -CommentSuffix (Get-ConfigTextSectionCommentSuffix -CommentSuffixSetting $Settings['comment-suffix'])
+	$mode = Get-ConfigTextSectionMode -ModeSetting $Settings['mode']
 	$name = Get-ConfigTextSectionName -NameSetting $Settings.name
 	$text = Get-ConfigTextSectionText -TextSetting $Settings.text -CommentPrefix $commentPrefix -CommentSuffix $commentSuffix
 
@@ -184,6 +219,8 @@ function Get-ConfigTextSection {
 		Text = $text
 		CommentPrefix = $commentPrefix
 		CommentSuffix = $commentSuffix
+		Mode = $mode
+		Indent = Get-ConfigTextSectionIndent -Mode $mode
 	}
 }
 
@@ -286,8 +323,9 @@ function Get-ConfigTextSectionRecords {
 	)
 
 	# Match markers for the configured comment syntax in the target file.
-	$openingPattern = '^' + [System.Text.RegularExpressions.Regex]::Escape($CommentPrefix) + ' DO NOT EDIT: (?<Name>.+) convention' + [System.Text.RegularExpressions.Regex]::Escape($CommentSuffix) + '$'
+	$openingPattern = '^\s*' + [System.Text.RegularExpressions.Regex]::Escape($CommentPrefix) + ' DO NOT EDIT: (?<Name>.+) convention' + [System.Text.RegularExpressions.Regex]::Escape($CommentSuffix) + '$'
 	$closingLine = "$CommentPrefix END DO NOT EDIT$CommentSuffix"
+	$closingPattern = '^\s*' + [System.Text.RegularExpressions.Regex]::Escape($closingLine) + '$'
 	$blocks = [System.Collections.Generic.List[object]]::new()
 	$currentBlock = $null
 
@@ -300,7 +338,7 @@ function Get-ConfigTextSectionRecords {
 			}
 
 			# Close the active block at the end of the closing marker line.
-			if ($line.Text -eq $closingLine) {
+			if ($line.Text -match $closingPattern) {
 				$blocks.Add([pscustomobject]@{
 					Name = $currentBlock.Name
 					StartIndex = $currentBlock.StartIndex
@@ -314,7 +352,7 @@ function Get-ConfigTextSectionRecords {
 		}
 
 		# A closing marker without an active block cannot be reconciled safely.
-		if ($line.Text -eq $closingLine) {
+		if ($line.Text -match $closingPattern) {
 			throw "Found an unexpected '$closingLine' marker in '$TargetPath'."
 		}
 
@@ -391,12 +429,23 @@ function New-ConfigTextSectionText {
 		[string] $CommentSuffix,
 
 		[Parameter(Mandatory = $true)]
-		[string] $LineEnding
+		[string] $LineEnding,
+
+		[Parameter(Mandatory = $true)]
+		[AllowEmptyString()]
+		[string] $Indent
 	)
 
 	# Normalize the body before wrapping it in managed section markers.
 	$normalizedText = ConvertTo-ConfigTextSectionLineEndings -Text $Text -LineEnding $LineEnding
-	$blockText = "$CommentPrefix DO NOT EDIT: $Name convention$CommentSuffix$LineEnding$normalizedText"
+	if (-not [string]::IsNullOrEmpty($Indent)) {
+		$normalizedText = $Indent + $normalizedText.Replace($LineEnding, $LineEnding + $Indent)
+		if ($normalizedText.EndsWith($Indent, [System.StringComparison]::Ordinal)) {
+			$normalizedText = $normalizedText.Substring(0, $normalizedText.Length - $Indent.Length)
+		}
+	}
+
+	$blockText = "$Indent$CommentPrefix DO NOT EDIT: $Name convention$CommentSuffix$LineEnding$normalizedText"
 
 	# Ensure the closing marker starts on its own line.
 	if (-not $normalizedText.EndsWith($LineEnding, [System.StringComparison]::Ordinal)) {
@@ -404,7 +453,7 @@ function New-ConfigTextSectionText {
 	}
 
 	# Append the closing marker without forcing an extra newline.
-	$blockText += "$CommentPrefix END DO NOT EDIT$CommentSuffix"
+	$blockText += "$Indent$CommentPrefix END DO NOT EDIT$CommentSuffix"
 	return $blockText
 }
 
@@ -437,6 +486,42 @@ function Add-ConfigTextSectionSeparator {
 	return $Content + $LineEnding + $LineEnding
 }
 
+function Add-ConfigTextSectionXmlBlock {
+	param(
+		[Parameter(Mandatory = $true)]
+		[AllowEmptyString()]
+		[string] $Content,
+
+		[Parameter(Mandatory = $true)]
+		[string] $ManagedSection,
+
+		[Parameter(Mandatory = $true)]
+		[string] $LineEnding
+	)
+
+	# Insert new XML managed blocks before the closing root element when possible.
+	$closingMatches = [System.Text.RegularExpressions.Regex]::Matches($Content, '(?m)^\s*</[^>]+>\s*$')
+	if ($closingMatches.Count -eq 0) {
+		$newContent = Add-ConfigTextSectionSeparator -Content $Content -LineEnding $LineEnding
+		$newContent += $ManagedSection
+		if (-not $newContent.EndsWith($LineEnding, [System.StringComparison]::Ordinal)) {
+			$newContent += $LineEnding
+		}
+
+		return $newContent
+	}
+
+	$closingMatch = $closingMatches[$closingMatches.Count - 1]
+	$prefix = $Content.Substring(0, $closingMatch.Index)
+	$suffix = $Content.Substring($closingMatch.Index)
+
+	if (-not [string]::IsNullOrEmpty($prefix) -and -not $prefix.EndsWith($LineEnding, [System.StringComparison]::Ordinal)) {
+		$prefix += $LineEnding
+	}
+
+	return $prefix + $ManagedSection + $LineEnding + $suffix
+}
+
 function Set-ConfigTextSectionText {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -454,7 +539,7 @@ function Set-ConfigTextSectionText {
 	)
 
 	# Build the desired managed block and locate matching blocks in current content.
-	$managedSection = New-ConfigTextSectionText -Name $Section.Name -Text $Section.Text -CommentPrefix $Section.CommentPrefix -CommentSuffix $Section.CommentSuffix -LineEnding $LineEnding
+	$managedSection = New-ConfigTextSectionText -Name $Section.Name -Text $Section.Text -CommentPrefix $Section.CommentPrefix -CommentSuffix $Section.CommentSuffix -LineEnding $LineEnding -Indent $Section.Indent
 	$blocks = Get-ConfigTextSectionRecords -Content $Content -CommentPrefix $Section.CommentPrefix -CommentSuffix $Section.CommentSuffix -TargetPath $TargetPath
 	$namedBlocks = @($blocks | Where-Object { $_.Name -eq $Section.Name })
 
@@ -486,13 +571,18 @@ function Set-ConfigTextSectionText {
 		}
 	}
 
-	# Append a new managed block when no existing block with this name exists.
-	$newContent = Add-ConfigTextSectionSeparator -Content $Content -LineEnding $LineEnding
-	$newContent += $managedSection
+	# Insert a new managed block when no existing block with this name exists.
+	if ($Section.Mode -eq 'xml') {
+		$newContent = Add-ConfigTextSectionXmlBlock -Content $Content -ManagedSection $managedSection -LineEnding $LineEnding
+	}
+	else {
+		$newContent = Add-ConfigTextSectionSeparator -Content $Content -LineEnding $LineEnding
+		$newContent += $managedSection
 
-	# End newly written files with the selected line ending.
-	if (-not $newContent.EndsWith($LineEnding, [System.StringComparison]::Ordinal)) {
-		$newContent += $LineEnding
+		# End newly written files with the selected line ending.
+		if (-not $newContent.EndsWith($LineEnding, [System.StringComparison]::Ordinal)) {
+			$newContent += $LineEnding
+		}
 	}
 
 	return [pscustomobject]@{

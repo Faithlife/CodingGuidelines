@@ -44,11 +44,17 @@
 | [faithlife-auto-apply-conventions](./conventions/faithlife-auto-apply-conventions/README.md) | Ensures that `.github/conventions.yml` starts with the marker used by RepoConventionsApplier. |
 | [faithlife-dotnet-library](./conventions/faithlife-dotnet-library/README.md) | Applies the standard conventions for Faithlife .NET library repositories. |
 | [faithlife-dotnet-library-build](./conventions/faithlife-dotnet-library-build/README.md) | Creates or refreshes Faithlife .NET library build project files under `tools/Build`. |
+| [faithlife-dotnet-library-contributing](./conventions/faithlife-dotnet-library-contributing/README.md) | Publishes shared package repository contributor guidance to `CONTRIBUTING.md`. |
+| [faithlife-dotnet-library-props](./conventions/faithlife-dotnet-library-props/README.md) | Manages shared package repository properties in `Directory.Build.props`. |
+| [faithlife-dotnet-library-targets](./conventions/faithlife-dotnet-library-targets/README.md) | Manages shared central package management settings in `Directory.Packages.props`. |
 | [faithlife-dotnet-library-workflow](./conventions/faithlife-dotnet-library-workflow/README.md) | Installs the published Faithlife .NET library workflows at `.github/workflows/ci.yml` and `.github/workflows/copilot-setup-steps.yml`. |
 | [faithlife-license-mit](./conventions/faithlife-license-mit/README.md) | Applies [license-mit](./conventions/license-mit/README.md) with `copyright-holder` set to `Faithlife`. |
 | [gitattributes-csharp](./conventions/gitattributes-csharp/README.md) | Ensures the repository-root `.gitattributes` contains the standard C# section from [files/.gitattributes](./conventions/gitattributes-csharp/files/.gitattributes). |
 | [gitattributes-lf](./conventions/gitattributes-lf/README.md) | Ensures the repository-root `.gitattributes` starts with `* text=auto eol=lf`. |
 | [gitattributes-section](./conventions/gitattributes-section/README.md) | Manages a named section within the repository-root `.gitattributes` file. |
+| [gitignore-common](./conventions/gitignore-common/README.md) | Manages common operating-system and log-file ignore patterns in `.gitignore`. |
+| [gitignore-dotnet](./conventions/gitignore-dotnet/README.md) | Manages .NET build-output ignore patterns in `.gitignore`. |
+| [gitignore-ide](./conventions/gitignore-ide/README.md) | Manages editor and IDE state ignore patterns in `.gitignore`. |
 | [gitignore-section](./conventions/gitignore-section/README.md) | Manages a named section within the repository-root `.gitignore` file. |
 | [license-mit](./conventions/license-mit/README.md) | Ensures the repository-root `LICENSE` file contains the published MIT license from [files/LICENSE](./conventions/license-mit/files/LICENSE). |
 | [nuget-config](./conventions/nuget-config/README.md) | Creates or replaces the repository-root `nuget.config` from [files/nuget.config](./conventions/nuget-config/files/nuget.config). |

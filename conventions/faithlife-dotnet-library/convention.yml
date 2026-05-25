@@ -1,6 +1,19 @@
 conventions:
   - path: ../faithlife-auto-apply-conventions
   - path: ../dotnet-common
+  - path: ../nuget-config
+  - path: ../gitignore-common
+  - path: ../gitignore-dotnet
+  - path: ../gitignore-ide
+  - path: ../faithlife-dotnet-library-contributing
+  - path: ../faithlife-dotnet-library-targets
+  - path: ../faithlife-dotnet-library-props
+    settings:
+      version-prefix: ${{ settings.version-prefix }}
+      package-validation-baseline-version: ${{ settings.package-validation-baseline-version }}
+      nullable: ${{ settings.nullable }}
+      package-validation: ${{ settings.package-validation }}
+      no-warn: ${{ settings.no-warn }}
   - path: ../faithlife-dotnet-library-build
   - path: ../faithlife-dotnet-library-workflow
   - path: ../faithlife-license-mit

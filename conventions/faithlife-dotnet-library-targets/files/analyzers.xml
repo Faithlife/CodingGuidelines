@@ -1,0 +1,5 @@
+<ItemGroup>
+  <GlobalPackageReference Include="Faithlife.Analyzers" Version="1.*" />
+  <GlobalPackageReference Include="NUnit.Analyzers" Version="4.*" />
+  <GlobalPackageReference Include="StyleCop.Analyzers" Version="1.*-*" />
+</ItemGroup>
