@@ -78,7 +78,7 @@ Rationale:
 - It includes auto-apply, `dotnet-common`, generated build project files, generated workflows, MIT license, and common solution items.
 - It also avoids copy-pasting the same child convention list across repositories.
 
-Open question: should repositories currently using the expanded child list be migrated to the composite convention immediately, or only as they otherwise change? The composite currently includes `dotnet-solution-items-common`, which the expanded list does not include in most repositories.
+Migrate repositories currently using the expanded child list to the composite convention immediately. The composite currently includes `dotnet-solution-items-common`, which the expanded list does not include in most repositories; that should be accepted as part of the shared baseline.
 
 Add `nuget-config` to `faithlife-dotnet-library` so the package repository composite owns the root NuGet source configuration.
 
@@ -91,13 +91,11 @@ Standardize on:
 - `tools/Build/Build.csproj` targeting `net10.0`.
 - `dotnet-common`, `dotnet-sdk-10`, `dotnet-slnx`, and `faithlife-dotnet-library-build` as the owning conventions.
 
-Initial targets:
+Initial target:
 
-- Evaluate `FaithlifeTesting` for migration from no `global.json`, `.sln`, and `net5.0` build project.
+- Migrate `FaithlifeTesting` from no `global.json`, `.sln`, and `net5.0` build project to the .NET 10 convention baseline.
 
-Open questions:
-
-- Should `FaithlifeTesting` preserve `build.cmd` and `build.sh` wrappers for compatibility, or should it move fully to the standard `build.ps1` entry point?
+`FaithlifeTesting` should move fully to the standard `build.ps1` entry point rather than preserving `build.cmd` or `build.sh` compatibility wrappers.
 
 ### Build And Publish Infrastructure
 
@@ -107,37 +105,30 @@ Standardize on:
 - Generated `tools/Build/Build.cs` and `Build.csproj` from `faithlife-dotnet-library-build`.
 - Generated `.github/workflows/ci.yml` and `.github/workflows/copilot-setup-steps.yml` from `faithlife-dotnet-library-workflow`.
 - Package publish through the shared `build.ps1 publish --skip package --trigger publish-nuget-output` workflow path.
-- `NuGet/login@v1` and the generated workflow's `NUGET_API_KEY` handoff, unless a repository has a documented exception.
+- `NuGet/login@v1` and the generated workflow's `NUGET_API_KEY` handoff. There are no known in-scope repository exceptions; standardization work should remove direct `NUGET_API_KEY` secret usage and legacy `BUILD_BOT_PASSWORD` publishing paths as repositories move to the generated workflow.
 
 Initial targets:
 
 - Replace `FaithlifeTesting/.github/workflows/build.yaml` with generated `ci.yml` after confirming its test/build matrix needs.
-
-Open questions:
-
-- Should generated publish use only `NuGet/login`, or should some repositories keep direct `NUGET_API_KEY` secrets during migration?
-- Should legacy `BUILD_BOT_PASSWORD` publishing paths be removed everywhere once workflows are generated?
 
 ### Central Package Management
 
 Standardize on `Directory.Packages.props` with:
 
 - `<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>`.
+- `<CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>`.
+- `<CentralPackageFloatingVersionsEnabled>true</CentralPackageFloatingVersionsEnabled>`.
 - `PackageVersion` entries for project and test dependencies.
 - `GlobalPackageReference` entries for analyzers and build-wide tooling where appropriate.
-- Current shared analyzer versions, including `StyleCop.Analyzers` `1.2.0-beta.556` and a consistent `Faithlife.Analyzers` version.
+- Shared analyzer versions matching the `RepoConventions` standard: `Faithlife.Analyzers` `1.*`, `NUnit.Analyzers` `4.*`, and `StyleCop.Analyzers` `1.*-*`.
 
 Initial targets:
 
 - Add `Directory.Packages.props` to `FaithlifeFakeData`, `FaithlifeReflection`, `FaithlifeTesting`, and `Parsing`.
 - Move analyzer package references out of `Directory.Build.props` in repositories that still keep them there.
-- Normalize `Faithlife.Analyzers` versions across repositories that already use central package management.
+- Normalize analyzer versions across repositories that already use central package management.
 
-Open questions:
-
-- Should central package management be enforced by a new CodingGuidelines convention, or should it remain a manual per-repository migration because package versions are repository-specific?
-- Should a convention manage only the shared `GlobalPackageReference` analyzer block while leaving `PackageVersion` entries local?
-- What should the approved `Faithlife.Analyzers` version be across the package repositories?
+Do not create a CodingGuidelines convention for `Directory.Packages.props` in this plan. Package versions are repository-specific enough that central package management should be migrated manually for now.
 
 ### Directory.Build.props
 
@@ -148,14 +139,14 @@ Common desired properties:
 - `VersionPrefix` remains repository-specific.
 - `PackageValidationBaselineVersion` is used for every public library package; for first-time enablement, set it to the current `VersionPrefix` so baseline validation is disabled until the next version bump.
 - `LangVersion` is pinned to the same newest C# version supported by the approved SDK across all repositories.
-- `Nullable` is current and intentional.
-- `ImplicitUsings` is enabled unless there is a compatibility reason not to.
+- `Nullable` is `enable` for every in-scope package repository. Current gaps are `DapperUtility` and `FaithlifeTesting`.
+- `ImplicitUsings` is enabled for every in-scope package repository. Current gap is `FaithlifeTesting`.
 - `TreatWarningsAsErrors` is true.
 - `NeutralLanguage` is `en-US`.
 - `DebugType` is `embedded` where supported.
 - `GitHubOrganization` and `RepositoryName` are used to construct repository URLs.
 - `PackageLicenseExpression` is `MIT`.
-- `PackageProjectUrl`, `PackageReleaseNotes`, and `RepositoryUrl` follow the same URL pattern, with `RepositoryUrl` not using a `.git` suffix.
+- `PackageProjectUrl`, `PackageReleaseNotes`, and `RepositoryUrl` follow the same repository URL pattern. `PackageProjectUrl` should point to the GitHub repository, not `faithlife.github.io`, and `RepositoryUrl` should not use a `.git` suffix.
 - `Authors` is `Faithlife`.
 - Automatic MSBuild properties provided by `Faithlife.Build` are not duplicated in `Directory.Build.props`; this includes `AllowedOutputExtensionsInPackageBuildOutputFolder`, `AssemblyVersion`, `ContinuousIntegrationBuild`, and `PublishRepositoryUrl`, plus SDK-provided Source Link properties such as `EmbedUntrackedFiles` and `SourceLinkGitHubHost`.
 - `EnableNETAnalyzers`, `AnalysisLevel`, and `EnforceCodeStyleInBuild` are enabled consistently.
@@ -169,11 +160,7 @@ Initial targets:
 
 - Align newer repositories that already look similar: `EditorConfigFix`, `RepoConventions`, and `SolutionItems`.
 - Bring `DapperUtility`, `FaithlifeDataAnnotations`, `FindReplaceCode`, `FaithlifeBuild`, `FaithlifeAnalyzers`, `FaithlifeFakeData`, `FaithlifeReflection`, and `Parsing` toward the same property order and common property set.
-- Treat `FaithlifeTesting` as a later migration because changing language version, nullability, debug symbols, and package compatibility settings may expose source-level work.
-
-Open questions:
-
-- Should nullable be `enable` for every package repo, with source fixes scheduled separately, or should legacy packages be allowed to keep `disable`?
+- Bring `FaithlifeTesting` into the same property standard now; source fixes can be handled before pushing the repository migration.
 
 ### NuGet Package Metadata
 
@@ -189,10 +176,10 @@ Standardize package project metadata so every published package has:
 
 Initial targets:
 
-- Add missing package readme metadata to `FaithlifeAnalyzers` and `FaithlifeTesting` packages if desired.
+- Add missing package readme metadata to `FaithlifeAnalyzers` and `FaithlifeTesting` packages.
 - Add or verify descriptions for packages where the inventory found missing descriptions, notably `Faithlife.Testing.RabbitMq` and `Faithlife.FindReplaceCode.Tool`.
 
-Open question: should analyzer packages, test helper packages, and command-line tool packages all use the same NuGet README policy?
+Analyzer packages, test helper packages, and command-line tool packages should all use the same NuGet README policy.
 
 ### Common Root Files
 
@@ -209,16 +196,35 @@ Standardize files already covered by conventions:
 Consider extending conventions for files not currently covered by the composite package baseline:
 
 - `nuget.config`, by adding the existing `nuget-config` convention to `faithlife-dotnet-library`.
-- `.gitignore`, by creating a convention that manages a standard package-repository section rather than replacing repository-specific ignore rules.
-- `CONTRIBUTING.md`, if it should be shared across package repositories.
-- `Directory.Packages.props`, by creating a convention that manages shared analyzer `GlobalPackageReference` entries while leaving repository-specific `PackageVersion` items local.
-- `Directory.Build.props`, by creating a settings-driven convention that owns the common property block and accepts repository-specific settings such as version, package validation baseline, nullable mode, and any temporary warning suppressions.
+- `.gitignore`, by creating a convention that manages the standard package-repository entries proposed below rather than replacing repository-specific ignore rules.
+- `CONTRIBUTING.md`, by creating or reusing a convention that installs the shared package repository contribution guidance.
+- Root `.DotSettings` and `.DotSettings.user` files should be deleted from the in-scope repositories rather than standardized.
+- `AGENTS.md` should be ignored for now unless a repository already has local guidance that needs to remain.
 
-Open questions:
+Do not create CodingGuidelines conventions for `Directory.Packages.props` or `Directory.Build.props` in this plan. Their standards should be documented here and applied manually during repository migrations.
 
-- Should `CONTRIBUTING.md` become convention-managed for package repositories?
-- Should root `.DotSettings` files be standardized, ignored, or left repository-specific? Several repositories have `.DotSettings.user`, and only a few have shared `.DotSettings`.
-- Should every repository have an `AGENTS.md`, or should agent guidance stay centralized in CodingGuidelines unless a repository has real local exceptions?
+Proposed `.gitignore` package repository section:
+
+```gitignore
+.vs/
+.idea/
+artifacts/
+bin/
+obj/
+release/
+
+*.cache
+*.log
+*.ncrunchproject
+*.ncrunchsolution
+*.user
+*.userprefs
+launchSettings.json
+nCrunchTemp*
+_ReSharper*
+.DS_Store
+Thumbs.db
+```
 
 ## Work Plan
 
@@ -226,7 +232,7 @@ Open questions:
 
 - Use the composite `faithlife-dotnet-library` convention as the approved package repository declaration shape.
 - Add `nuget-config` to `faithlife-dotnet-library`.
-- Create or update conventions for the proposed shared analyzer package references, `.gitignore` section, and common `Directory.Build.props` section.
+- Create or update conventions for the proposed `.gitignore` section and shared `CONTRIBUTING.md`.
 - Document the approved package repository standard in CodingGuidelines so future repos have one source of truth.
 
 Validation:
@@ -255,6 +261,7 @@ Work:
 - Migrate expanded convention declarations to the approved standard.
 - Apply `faithlife-dotnet-library` or the approved child convention set.
 - Add missing `Directory.Packages.props` files where source-level dependency changes are minimal.
+- Normalize analyzer package versions to the `RepoConventions` standard.
 - Normalize `.editorconfig`, `.gitattributes`, `nuget.config`, and solution items through conventions.
 - Normalize shared `Directory.Build.props` properties that do not require source changes.
 - Update package metadata gaps such as missing readmes or descriptions.
@@ -270,27 +277,29 @@ Validation per repository:
 
 Work:
 
-- Add `global.json` and `.github/conventions.yml` if the .NET 10 baseline is accepted.
+- Add `global.json` and `.github/conventions.yml` for the .NET 10 baseline.
 - Move from `.sln` to `.slnx`.
-- Replace `build.cmd`/`build.sh` with standard `build.ps1`, or keep thin compatibility wrappers if needed.
+- Replace `build.cmd` and `build.sh` with the standard `build.ps1` entry point.
 - Regenerate `tools/Build` for `net10.0`.
 - Replace legacy `build.yaml` with generated `ci.yml` and `copilot-setup-steps.yml`.
 - Add `Directory.Packages.props` and move analyzer references out of `Directory.Build.props`.
-- Decide separately whether nullable and language-version changes are allowed to cause source work.
+- Enable nullable and implicit usings as part of the repository migration.
 
 Validation:
 
-- Run package build on Windows and Linux if wrappers are preserved.
+- Run package build on Windows and Linux through `build.ps1`.
 - Verify all three packages still produce `.nupkg` files.
 
 ## Tracking Checklist
 
 - [ ] Add `nuget-config` to the `faithlife-dotnet-library` composite convention.
-- [ ] Create or update a convention for shared analyzer `GlobalPackageReference` entries.
 - [ ] Create or update a convention-managed package repository `.gitignore` section.
-- [ ] Create or update a settings-driven convention for the common `Directory.Build.props` property block.
-- [ ] Decide whether nullable should be `enable` for every in-scope package repository.
-- [ ] Decide whether `FaithlifeTesting` should keep compatibility `build.cmd` and `build.sh` wrappers.
+- [ ] Create or update a convention-managed package repository `CONTRIBUTING.md`.
+- [ ] Add or update manual `Directory.Packages.props` files using the `RepoConventions` analyzer version standard.
+- [ ] Normalize `PackageProjectUrl` to GitHub repository URLs, including `FaithlifeBuild`.
+- [ ] Enable nullable in `DapperUtility` and `FaithlifeTesting`.
+- [ ] Enable implicit usings in `FaithlifeTesting`.
+- [ ] Replace `FaithlifeTesting` `build.cmd` and `build.sh` with the standard `build.ps1` entry point.
 - [ ] Update CodingGuidelines conventions and docs for the approved standard.
 - [ ] Apply the standard to repositories already close to baseline.
 - [ ] Migrate `FaithlifeTesting`.
