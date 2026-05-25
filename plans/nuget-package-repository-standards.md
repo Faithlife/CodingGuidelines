@@ -347,12 +347,14 @@ Validation:
 - [x] Create or update `gitignore-common`, `gitignore-dotnet`, and `gitignore-ide` conventions.
 - [x] Create or update a convention-managed package repository `CONTRIBUTING.md`.
 - [x] Prototype `faithlife-dotnet-library-targets` and `faithlife-dotnet-library-props` conventions with targeted XML updates.
-- [ ] Add or update `Directory.Packages.props` files using the `RepoConventions` analyzer version standard.
-- [ ] Normalize `PackageProjectUrl` to GitHub repository URLs, including `FaithlifeBuild`.
-- [ ] Enable nullable in `DapperUtility` and `FaithlifeTesting`.
-- [ ] Enable implicit usings in `FaithlifeTesting`.
-- [ ] Replace `FaithlifeTesting` `build.cmd` and `build.sh` with the standard `build.ps1` entry point.
+- [x] Add or update `Directory.Packages.props` files using the `RepoConventions` analyzer version standard.
+- [x] Normalize `PackageProjectUrl` to GitHub repository URLs, including `FaithlifeBuild`.
+- [x] Enable nullable in `DapperUtility` and `FaithlifeTesting`.
+- [x] Enable implicit usings in `FaithlifeTesting`.
+- [x] Replace `FaithlifeTesting` `build.cmd` and `build.sh` with the standard `build.ps1` entry point.
 - [x] Update CodingGuidelines conventions and docs for the approved standard.
-- [ ] Apply the standard to repositories already close to baseline.
-- [ ] Migrate `FaithlifeTesting`.
-- [ ] Verify every in-scope repository can restore, build, test, package, and publish through its approved path.
+- [x] Apply the standard to repositories already close to baseline.
+- [x] Migrate `FaithlifeTesting`.
+- [x] Verify every in-scope repository can restore, build, test, and package through its approved path.
+
+Local validation did not run the publish target; package validation confirmed that every in-scope repository produces its expected `.nupkg` artifacts.
