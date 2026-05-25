@@ -1,3 +1,6 @@
+commit:
+  message: Update Directory.Packages.props for .NET library
+
 conventions:
   - path: ../config-text-section
     settings:

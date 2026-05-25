@@ -1,3 +1,6 @@
+commit:
+  message: Update .gitignore for IDE files
+
 conventions:
   - path: ../gitignore-section
     settings:

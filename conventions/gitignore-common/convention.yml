@@ -1,3 +1,6 @@
+commit:
+  message: Update common .gitignore
+
 conventions:
   - path: ../gitignore-section
     settings:
