@@ -82,6 +82,8 @@ Migrate repositories currently using the expanded child list to the composite co
 
 Add `nuget-config` to `faithlife-dotnet-library` so the package repository composite owns the root NuGet source configuration.
 
+Consider adding a sibling composite convention named `faithlife-dotnet-tool` for .NET tool packages. It should reuse the package repository infrastructure from `faithlife-dotnet-library` but document and validate the metadata differences that matter for executable tool packages.
+
 ### SDK And Solution Format
 
 Standardize on:
@@ -128,7 +130,7 @@ Initial targets:
 - Move analyzer package references out of `Directory.Build.props` in repositories that still keep them there.
 - Normalize analyzer versions across repositories that already use central package management.
 
-Do not create a CodingGuidelines convention for `Directory.Packages.props` in this plan. Package versions are repository-specific enough that central package management should be migrated manually for now.
+Use Phase 2 to prototype whether a targeted convention can safely manage this common `Directory.Packages.props` baseline. Package versions remain repository-specific and should stay local unless a convention later supports precise opt-in settings.
 
 ### Directory.Build.props
 
@@ -181,6 +183,33 @@ Initial targets:
 
 Analyzer packages, test helper packages, and command-line tool packages should all use the same NuGet README policy.
 
+### .NET Tool Packages
+
+In-scope .NET tool packages:
+
+- `EditorConfigFix`
+- `FindReplaceCode`
+- `RepoConventions`
+- `SolutionItems`
+
+Propose a `faithlife-dotnet-tool` composite convention if the tool-specific expectations remain stable after migration. It should build on the package repository baseline instead of creating a separate build or workflow path.
+
+Tool package standards:
+
+- `OutputType` is `Exe`.
+- `IsPackable` is true in the package project.
+- `PackAsTool` is true.
+- `ToolCommandName` or `AssemblyName` supplies the installed command name intentionally.
+- `Description`, `PackageTags`, `PackageReadmeFile`, and `RewritePackageReadmeLinks` are set consistently.
+- Tool packages target runnable frameworks, not compatibility-only TFMs such as `netstandard2.0`.
+- Tool package README content documents the installed command and basic invocation.
+
+Potential differences from library packages:
+
+- Public API package validation is less useful for command-line tools than for library packages. Keep package validation for package shape, but consider whether API baseline validation should be required for tools.
+- Tool packages should not inherit any library-specific expectation to keep `netstandard` target frameworks.
+- Package ID naming is currently inconsistent: `FindReplaceCode` uses `Faithlife.FindReplaceCode.Tool`, while the other tool repositories rely on the project/package name. Decide whether tool package IDs should use a shared naming convention before a convention validates this.
+
 ### Common Root Files
 
 Standardize files already covered by conventions:
@@ -196,43 +225,95 @@ Standardize files already covered by conventions:
 Consider extending conventions for files not currently covered by the composite package baseline:
 
 - `nuget.config`, by adding the existing `nuget-config` convention to `faithlife-dotnet-library`.
-- `.gitignore`, by creating a convention that manages the standard package-repository entries proposed below rather than replacing repository-specific ignore rules.
+- `.gitignore`, by creating category conventions that each apply `gitignore-section` with a focused section.
 - `CONTRIBUTING.md`, by creating or reusing a convention that installs the shared package repository contribution guidance.
 - Root `.DotSettings` and `.DotSettings.user` files should be deleted from the in-scope repositories rather than standardized.
-- `AGENTS.md` should be ignored for now unless a repository already has local guidance that needs to remain.
+- Shared agent guidance should be handled deliberately after Phase 1 decides whether the best delivery mechanism is `AGENTS.md`, instruction files, skills, or a combination.
 
-Do not create CodingGuidelines conventions for `Directory.Packages.props` or `Directory.Build.props` in this plan. Their standards should be documented here and applied manually during repository migrations.
+Create a separate phase to evaluate CodingGuidelines conventions for `Directory.Packages.props` and `Directory.Build.props`. Their standards are partly common and partly repository-specific, so the first pass should prototype targeted XML updates instead of rewriting whole files.
 
-Proposed `.gitignore` package repository section:
+Proposed `.gitignore` conventions:
+
+- `gitignore-common`: operating-system and editor noise that is safe across repository types.
+- `gitignore-dotnet`: .NET build and package output directories.
+- `gitignore-csharp-ide`: Visual Studio, Rider/ReSharper, and local C# developer state.
+- `gitignore-ncrunch`: NCrunch project, solution, and temp files.
+
+`gitignore-common` section:
 
 ```gitignore
-.vs/
-.idea/
+.DS_Store
+Thumbs.db
+*.log
+```
+
+`gitignore-dotnet` section:
+
+```gitignore
 artifacts/
 bin/
 obj/
 release/
+```
 
+`gitignore-csharp-ide` section:
+
+```gitignore
+.vs/
+.idea/
 *.cache
-*.log
-*.ncrunchproject
-*.ncrunchsolution
 *.user
 *.userprefs
 launchSettings.json
-nCrunchTemp*
 _ReSharper*
-.DS_Store
-Thumbs.db
 ```
+
+`gitignore-ncrunch` section:
+
+```gitignore
+*.ncrunchproject
+*.ncrunchsolution
+nCrunchTemp*
+```
+
+Potentially problematic entries:
+
+- `*.log` is broad and could hide intentional log fixtures. Keep it in `gitignore-common` only if the repositories do not keep sample logs.
+- `*.cache` is broad and could hide checked-in cache fixtures or benchmark data. It belongs in `gitignore-csharp-ide`, not `gitignore-common`, because current usage appears tied to local tooling.
+- `launchSettings.json` is sometimes useful to commit for web applications. It is acceptable for these package repositories, but should not be applied to all .NET repositories without review.
+- `release/` matches the current Faithlife package output directory, but it would be a poor global convention for repositories that keep source or documentation under a `release` folder.
+- `.idea/` may conflict with repositories that intentionally share JetBrains project configuration. These package repositories do not appear to do that today.
+
+### Agent Instructions And Skills
+
+Existing AGENTS files contain several instructions useful across multiple in-scope repositories:
+
+- For C# analyzer or style issues, try `dotnet format` on touched files or projects before manual formatting fixes.
+- Keep C# files to one top-level type each.
+- Place private fields and constants at the bottom of C# classes.
+- Keep raw C# multiline strings consistently indented to match surrounding code.
+- Prefer csproj-based `InternalsVisibleTo` items for test visibility.
+- Prefer integration-style tests over mocks when behavior can be exercised with temporary files, processes, or git repositories.
+- Run `./build.ps1 test` before the final commit for repository changes.
+
+Proposed shared agent work:
+
+- Create a shared package repository instruction file or convention-managed `AGENTS.md` section for the common C# and test guidance above.
+- Keep the `RepoConventions.Tests` quiet-test warning local to `RepoConventions`; it is useful, but not broadly true.
+- Keep the `faithlife-dotnet-library-build` `Build.csproj.xml` warning local to that convention directory.
+- Move CodingGuidelines-specific PowerShell, Pester, convention README, and convention authoring guidance into a reusable skill for repositories that author CodingGuidelines/RepoConventions conventions, rather than copying those rules into every package repository.
+- Consider a `faithlife-dotnet-package-repo` skill for recurring package migration work: central package management, package metadata, build workflow migration, and package validation baselines.
 
 ## Work Plan
 
 ### Phase 1: Define The Standard In CodingGuidelines
 
 - Use the composite `faithlife-dotnet-library` convention as the approved package repository declaration shape.
+- Decide whether to introduce `faithlife-dotnet-tool` as a sibling composite for tool packages, and document any package metadata differences from library packages.
 - Add `nuget-config` to `faithlife-dotnet-library`.
-- Create or update conventions for the proposed `.gitignore` section and shared `CONTRIBUTING.md`.
+- Create or update category conventions for `gitignore-common`, `gitignore-dotnet`, `gitignore-csharp-ide`, and `gitignore-ncrunch`.
+- Create or update a convention for shared package repository `CONTRIBUTING.md`.
+- Decide whether to manage shared package repository agent instructions with `AGENTS.md` sections, instruction files, skills, or a combination.
 - Document the approved package repository standard in CodingGuidelines so future repos have one source of truth.
 
 Validation:
@@ -240,7 +321,31 @@ Validation:
 - Run the narrow CodingGuidelines convention tests for any changed conventions.
 - Run `conventions/RunAllTests.ps1` if convention behavior changes broadly.
 
-### Phase 2: Normalize Repositories Already Close To The Baseline
+### Phase 2: Prototype Directory.Build.props And Directory.Packages.props Conventions
+
+Work:
+
+- Prototype a `directory-packages-common` convention that updates XML rather than replacing the file.
+- Have the package convention manage only the common property group and shared analyzer `GlobalPackageReference` items: central package management, transitive pinning, floating versions, `Faithlife.Analyzers` `1.*`, `NUnit.Analyzers` `4.*`, and `StyleCop.Analyzers` `1.*-*`.
+- Leave repository-specific `PackageVersion` items local to each repository.
+- Prototype a `directory-build-dotnet-package` convention that updates known common MSBuild properties without reordering or replacing unrelated repository-specific content.
+- Support settings for repository-specific values such as `VersionPrefix`, `PackageValidationBaselineVersion`, `RepositoryName`, nullable migration status, package validation policy, and temporary warning suppressions.
+- Decide whether a separate `directory-build-dotnet-tool` convention is needed, or whether `faithlife-dotnet-tool` should apply the same common convention plus tool-specific package metadata validation.
+
+Risks and constraints:
+
+- XML updates must preserve comments, item groups, conditions, and repository-specific custom properties.
+- `Directory.Build.props` controls source-visible compiler behavior, so applying its convention can create source fixes; this is acceptable for the plan but should be validated repository by repository.
+- A convention that rewrites whole MSBuild files would create excessive churn and should be avoided.
+- Package version entries are too repository-specific for a shared convention unless the convention supports a precise opt-in settings model.
+
+Validation:
+
+- Add convention tests with representative `Directory.Build.props` and `Directory.Packages.props` fixtures.
+- Run the narrow convention tests first.
+- Apply the prototype to one tool package repository and one library package repository before broad rollout.
+
+### Phase 3: Normalize Repositories Already Close To The Baseline
 
 Target repositories:
 
@@ -273,7 +378,7 @@ Validation per repository:
 - Run `./build.ps1 test --skip build`.
 - Run `./build.ps1 package --skip test`.
 
-### Phase 3: Migrate FaithlifeTesting
+### Phase 4: Migrate FaithlifeTesting
 
 Work:
 
@@ -293,9 +398,12 @@ Validation:
 ## Tracking Checklist
 
 - [ ] Add `nuget-config` to the `faithlife-dotnet-library` composite convention.
-- [ ] Create or update a convention-managed package repository `.gitignore` section.
+- [ ] Decide whether to add `faithlife-dotnet-tool` for in-scope tool packages.
+- [ ] Create or update `gitignore-common`, `gitignore-dotnet`, `gitignore-csharp-ide`, and `gitignore-ncrunch` conventions.
 - [ ] Create or update a convention-managed package repository `CONTRIBUTING.md`.
-- [ ] Add or update manual `Directory.Packages.props` files using the `RepoConventions` analyzer version standard.
+- [ ] Decide how to share common package repository agent instructions and convention-authoring skills.
+- [ ] Prototype `Directory.Packages.props` and `Directory.Build.props` conventions with targeted XML updates.
+- [ ] Add or update `Directory.Packages.props` files using the `RepoConventions` analyzer version standard.
 - [ ] Normalize `PackageProjectUrl` to GitHub repository URLs, including `FaithlifeBuild`.
 - [ ] Enable nullable in `DapperUtility` and `FaithlifeTesting`.
 - [ ] Enable implicit usings in `FaithlifeTesting`.
