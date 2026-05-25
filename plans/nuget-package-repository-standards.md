@@ -144,7 +144,7 @@ Common desired properties:
 - `TreatWarningsAsErrors` is true.
 - `NeutralLanguage` is `en-US`.
 - `DebugType` is `embedded` where supported.
-- `GitHubOrganization` and `RepositoryName` are used to construct repository URLs, but they remain repository-local properties outside the managed `dotnet-build-props` section.
+- `GitHubOrganization` and `RepositoryName` are used to construct repository URLs, but they remain repository-local properties outside the managed `faithlife-dotnet-library-props` section.
 - `PackageLicenseExpression` is `MIT`.
 - `PackageProjectUrl`, `PackageReleaseNotes`, and `RepositoryUrl` follow the same repository URL pattern. `PackageProjectUrl` should point to the GitHub repository, not `faithlife.github.io`, and `RepositoryUrl` should not use a `.git` suffix.
 - `Authors` is `Faithlife`.
@@ -199,7 +199,7 @@ Consider extending conventions for files not currently covered by the composite 
 - `.gitignore`, by creating category conventions that each apply `gitignore-section` with a focused section.
 - `CONTRIBUTING.md`, by creating or reusing a convention that installs the shared package repository contribution guidance.
 - Root `.DotSettings` and `.DotSettings.user` files should be deleted from the in-scope repositories rather than standardized.
-- Shared agent guidance should be handled deliberately after Phase 1 decides whether the best delivery mechanism is `AGENTS.md`, instruction files, skills, or a combination.
+- Do not standardize agent instructions or skills yet.
 
 Create a separate phase to evaluate CodingGuidelines conventions for `Directory.Packages.props` and `Directory.Build.props`. Their standards are partly common and partly repository-specific, so the first pass should prototype targeted XML updates instead of rewriting whole files.
 
@@ -247,26 +247,6 @@ Potentially problematic entries:
 - `.idea/` may conflict with repositories that intentionally share JetBrains project configuration. These package repositories do not appear to do that today.
 - NCrunch entries should be removed from standardized `.gitignore` files instead of moved into a convention.
 
-### Agent Instructions And Skills
-
-Existing AGENTS files contain several instructions useful across multiple in-scope repositories:
-
-- For C# analyzer or style issues, try `dotnet format` on touched files or projects before manual formatting fixes.
-- Keep C# files to one top-level type each.
-- Place private fields and constants at the bottom of C# classes.
-- Keep raw C# multiline strings consistently indented to match surrounding code.
-- Prefer csproj-based `InternalsVisibleTo` items for test visibility.
-- Prefer integration-style tests over mocks when behavior can be exercised with temporary files, processes, or git repositories.
-- Run `./build.ps1 test` before the final commit for repository changes.
-
-Proposed shared agent work:
-
-- Create a shared package repository instruction file or convention-managed `AGENTS.md` section for the common C# and test guidance above.
-- Keep the `RepoConventions.Tests` quiet-test warning local to `RepoConventions`; it is useful, but not broadly true.
-- Keep the `faithlife-dotnet-library-build` `Build.csproj.xml` warning local to that convention directory.
-- Move CodingGuidelines-specific PowerShell, Pester, convention README, and convention authoring guidance into a reusable skill for repositories that author CodingGuidelines/RepoConventions conventions, rather than copying those rules into every package repository.
-- Consider a `faithlife-dotnet-package-repo` skill for recurring package migration work: central package management, package metadata, build workflow migration, and package validation baselines.
-
 ## Work Plan
 
 ### Phase 1: Define The Standard In CodingGuidelines
@@ -275,7 +255,6 @@ Proposed shared agent work:
 - Add `nuget-config` to `faithlife-dotnet-library`.
 - Create or update category conventions for `gitignore-common`, `gitignore-dotnet`, and `gitignore-ide`.
 - Create or update a convention for shared package repository `CONTRIBUTING.md`.
-- Decide whether to manage shared package repository agent instructions with `AGENTS.md` sections, instruction files, skills, or a combination.
 - Document the approved package repository standard in CodingGuidelines so future repos have one source of truth.
 
 Validation:
@@ -287,21 +266,23 @@ Validation:
 
 Work:
 
-- Prototype a `directory-packages-common` convention that updates XML rather than replacing the file.
-- Have the package convention manage only the common property group and shared analyzer `GlobalPackageReference` items: central package management, transitive pinning, floating versions, `Faithlife.Analyzers` `1.*`, `NUnit.Analyzers` `4.*`, and `StyleCop.Analyzers` `1.*-*`.
+- Prototype a `faithlife-dotnet-library-targets` convention that inserts or replaces managed XML sections in `Directory.Packages.props`.
+- Have `faithlife-dotnet-library-targets` manage a `PropertyGroup` containing central package management, transitive pinning, and floating versions.
+- Have `faithlife-dotnet-library-targets` manage an `ItemGroup` containing shared analyzer `GlobalPackageReference` items: `Faithlife.Analyzers` `1.*`, `NUnit.Analyzers` `4.*`, and `StyleCop.Analyzers` `1.*-*`.
 - Leave repository-specific `PackageVersion` items local to each repository.
-- Prototype a `dotnet-build-props` convention that inserts or replaces one managed `PropertyGroup` element containing the common package repository MSBuild properties.
+- Do not spend migration effort deleting unmanaged elements that the managed sections make obsolete; the convention mainly needs to update its sections once they exist.
+- Prototype a `faithlife-dotnet-library-props` convention that inserts or replaces one managed `PropertyGroup` element containing the common package repository MSBuild properties.
 - The managed `PropertyGroup` should contain all properties listed in the `Directory.Build.props` common desired properties section except `GitHubOrganization` and `RepositoryName`.
 - Keep `GitHubOrganization` and `RepositoryName` outside the managed `PropertyGroup`; the managed properties can still reference them.
 - Support settings for repository-specific values such as `VersionPrefix`, `PackageValidationBaselineVersion`, nullable migration status, package validation policy, and temporary warning suppressions.
-- Extend the standard managed-section code with an XML mode that can insert the managed section before the closing root XML tag, use XML comments for markers, and indent the inserted block two spaces inside `<Project>`.
+- Extend the standard managed-section code with an XML mode that can insert managed XML sections before the closing root XML tag, use XML comments for markers, and indent inserted blocks two spaces inside `<Project>`.
 
 Risks and constraints:
 
 - XML updates must preserve comments, item groups, conditions, repository-specific custom properties, and repository-local property groups such as the one containing `GitHubOrganization` and `RepositoryName`.
 - `Directory.Build.props` controls source-visible compiler behavior, so applying its convention can create source fixes; this is acceptable for the plan but should be validated repository by repository.
 - A convention that rewrites whole MSBuild files would create excessive churn and should be avoided; the managed XML section should be the only content the convention owns.
-- Package version entries are too repository-specific for a shared convention unless the convention supports a precise opt-in settings model.
+- `PackageVersion` entries are too repository-specific for shared management and should remain outside the convention-controlled sections.
 
 Validation:
 
@@ -364,8 +345,7 @@ Validation:
 - [ ] Add `nuget-config` to the `faithlife-dotnet-library` composite convention.
 - [ ] Create or update `gitignore-common`, `gitignore-dotnet`, and `gitignore-ide` conventions.
 - [ ] Create or update a convention-managed package repository `CONTRIBUTING.md`.
-- [ ] Decide how to share common package repository agent instructions and convention-authoring skills.
-- [ ] Prototype `directory-packages-common` and `dotnet-build-props` conventions with targeted XML updates.
+- [ ] Prototype `faithlife-dotnet-library-targets` and `faithlife-dotnet-library-props` conventions with targeted XML updates.
 - [ ] Add or update `Directory.Packages.props` files using the `RepoConventions` analyzer version standard.
 - [ ] Normalize `PackageProjectUrl` to GitHub repository URLs, including `FaithlifeBuild`.
 - [ ] Enable nullable in `DapperUtility` and `FaithlifeTesting`.
