@@ -6,7 +6,6 @@ conventions:
   - path: ../gitignore-dotnet
   - path: ../gitignore-ide
   - path: ../faithlife-dotnet-library-contributing
-  - path: ../faithlife-dotnet-library-targets
   - path: ../faithlife-dotnet-library-props
   - path: ../faithlife-dotnet-library-build
   - path: ../faithlife-dotnet-library-workflow

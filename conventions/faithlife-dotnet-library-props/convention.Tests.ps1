@@ -31,12 +31,12 @@ conventions:
 	}
 
 	It 'creates a managed property group that leaves repository-specific values unmanaged and is idempotent' {
-		# Set up an MSBuild file with local repository identity and release metadata.
+		# Set up MSBuild files with local repository identity, release metadata, and repository-owned package versions.
 		$testDirectory = New-TemporaryDirectory
 
 		try {
-			$targetPath = Join-Path $testDirectory 'Directory.Build.props'
-			[System.IO.File]::WriteAllText($targetPath, @'
+			$buildPropsPath = Join-Path $testDirectory 'Directory.Build.props'
+			[System.IO.File]::WriteAllText($buildPropsPath, @'
 <Project>
   <PropertyGroup>
     <VersionPrefix>1.2.3</VersionPrefix>
@@ -51,28 +51,43 @@ conventions:
   </PropertyGroup>
 </Project>
 '@.Replace("`r`n", "`n"), $utf8)
+			$packagePropsPath = Join-Path $testDirectory 'Directory.Packages.props'
+			[System.IO.File]::WriteAllText($packagePropsPath, @'
+<Project>
+  <ItemGroup>
+    <PackageVersion Include="Example" Version="1.0.0" />
+  </ItemGroup>
+</Project>
+'@.Replace("`r`n", "`n"), $utf8)
 
-			# Apply the packaged convention and capture the generated managed section.
+			# Apply the packaged convention and capture the generated managed sections.
 			InitializePropsConventionTestRepository -TestDirectory $testDirectory
 			Initialize-TestRepository -Path $testDirectory
 			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
-			$content = Get-Content -LiteralPath $targetPath -Raw
+			$buildPropsContent = Get-Content -LiteralPath $buildPropsPath -Raw
+			$packagePropsContent = Get-Content -LiteralPath $packagePropsPath -Raw
 
-			# Assert local repository properties remain outside the managed section.
-			$content | Should -Match '<GitHubOrganization>Faithlife</GitHubOrganization>'
-			$content | Should -Match '<RepositoryName>Example</RepositoryName>'
-			$content | Should -Match '<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>'
-			$content | Should -Match '<VersionPrefix>1.2.3</VersionPrefix>'
-			$content | Should -Match '<PackageValidationBaselineVersion>1.2.0</PackageValidationBaselineVersion>'
-			$content | Should -Match '<NoWarn>\$\(NoWarn\);1591;1998</NoWarn>'
-			$content | Should -Match '(?s)<!-- DO NOT EDIT: faithlife-dotnet-library-props convention -->.*<Nullable>enable</Nullable>.*<RepositoryUrl>https://github.com/\$\(GitHubOrganization\)/\$\(RepositoryName\)</RepositoryUrl>.*<EnableStrictModeForCompatibleTfms>true</EnableStrictModeForCompatibleTfms>.*<DisablePackageBaselineValidation Condition=" \$\(PackageValidationBaselineVersion\) == \$\(VersionPrefix\) or \$\(PackageValidationBaselineVersion\) == ''0.0.0'' ">true</DisablePackageBaselineValidation>.*<NuGetAuditLevel>low</NuGetAuditLevel>.*<!-- END DO NOT EDIT -->'
-			$content | Should -Not -Match '(?s)<!-- DO NOT EDIT: faithlife-dotnet-library-props convention -->.*<VersionPrefix>'
-			$content | Should -Not -Match '(?s)<!-- DO NOT EDIT: faithlife-dotnet-library-props convention -->.*<PackageValidationBaselineVersion>'
-			$content | Should -Not -Match '(?s)<!-- DO NOT EDIT: faithlife-dotnet-library-props convention -->.*<NoWarn>'
+			# Assert local repository properties remain outside the managed build props section.
+			$buildPropsContent | Should -Match '<GitHubOrganization>Faithlife</GitHubOrganization>'
+			$buildPropsContent | Should -Match '<RepositoryName>Example</RepositoryName>'
+			$buildPropsContent | Should -Match '<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>'
+			$buildPropsContent | Should -Match '<VersionPrefix>1.2.3</VersionPrefix>'
+			$buildPropsContent | Should -Match '<PackageValidationBaselineVersion>1.2.0</PackageValidationBaselineVersion>'
+			$buildPropsContent | Should -Match '<NoWarn>\$\(NoWarn\);1591;1998</NoWarn>'
+			$buildPropsContent | Should -Match '(?s)<!-- DO NOT EDIT: faithlife-dotnet-library-props convention -->.*<Nullable>enable</Nullable>.*<RepositoryUrl>https://github.com/\$\(GitHubOrganization\)/\$\(RepositoryName\)</RepositoryUrl>.*<EnableStrictModeForCompatibleTfms>true</EnableStrictModeForCompatibleTfms>.*<DisablePackageBaselineValidation Condition=" \$\(PackageValidationBaselineVersion\) == \$\(VersionPrefix\) or \$\(PackageValidationBaselineVersion\) == ''0.0.0'' ">true</DisablePackageBaselineValidation>.*<NuGetAuditLevel>low</NuGetAuditLevel>.*<!-- END DO NOT EDIT -->'
+			$buildPropsContent | Should -Not -Match '(?s)<!-- DO NOT EDIT: faithlife-dotnet-library-props convention -->.*<VersionPrefix>'
+			$buildPropsContent | Should -Not -Match '(?s)<!-- DO NOT EDIT: faithlife-dotnet-library-props convention -->.*<PackageValidationBaselineVersion>'
+			$buildPropsContent | Should -Not -Match '(?s)<!-- DO NOT EDIT: faithlife-dotnet-library-props convention -->.*<NoWarn>'
+
+			# Assert repository-owned package versions remain outside the managed package props sections.
+			$packagePropsContent | Should -Match '<PackageVersion Include="Example" Version="1.0.0" />'
+			$packagePropsContent | Should -Match '(?s)<!-- DO NOT EDIT: faithlife-dotnet-library-props/properties convention -->.*<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>.*<CentralPackageFloatingVersionsEnabled>true</CentralPackageFloatingVersionsEnabled>.*<!-- END DO NOT EDIT -->'
+			$packagePropsContent | Should -Match '(?s)<!-- DO NOT EDIT: faithlife-dotnet-library-props/analyzers convention -->.*<GlobalPackageReference Include="Faithlife.Analyzers" Version="1\.\*" />.*<GlobalPackageReference Include="NUnit.Analyzers" Version="4\.\*" />.*<GlobalPackageReference Include="StyleCop.Analyzers" Version="1\.\*-\*" />.*<!-- END DO NOT EDIT -->'
 
 			# Re-run the packaged convention and assert it is idempotent.
 			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
-			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be $content
+			(Get-Content -LiteralPath $buildPropsPath -Raw) | Should -Be $buildPropsContent
+			(Get-Content -LiteralPath $packagePropsPath -Raw) | Should -Be $packagePropsContent
 			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0
 		}
 		finally {
@@ -86,22 +101,27 @@ conventions:
 		$testDirectory = New-TemporaryDirectory
 
 		try {
-			$targetPath = Join-Path $testDirectory 'Directory.Build.props'
-			[System.IO.File]::WriteAllText($targetPath, "<Project>`n</Project>`n", $utf8)
+			$buildPropsPath = Join-Path $testDirectory 'Directory.Build.props'
+			$packagePropsPath = Join-Path $testDirectory 'Directory.Packages.props'
+			[System.IO.File]::WriteAllText($buildPropsPath, "<Project>`n</Project>`n", $utf8)
+			[System.IO.File]::WriteAllText($packagePropsPath, "<Project>`n</Project>`n", $utf8)
 
 			# Apply the packaged convention with no settings.
 			InitializePropsConventionTestRepository -TestDirectory $testDirectory
 			Initialize-TestRepository -Path $testDirectory
 			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
-			$content = Get-Content -LiteralPath $targetPath -Raw
+			$buildPropsContent = Get-Content -LiteralPath $buildPropsPath -Raw
+			$packagePropsContent = Get-Content -LiteralPath $packagePropsPath -Raw
 
 			# Assert the fixed managed properties are present and repository-specific values are absent.
-			$content | Should -Match '<Nullable>enable</Nullable>'
-			$content | Should -Match '<EnableStrictModeForCompatibleTfms>true</EnableStrictModeForCompatibleTfms>'
-			$content | Should -Match '<DisablePackageBaselineValidation Condition=" \$\(PackageValidationBaselineVersion\) == \$\(VersionPrefix\) or \$\(PackageValidationBaselineVersion\) == ''0.0.0'' ">true</DisablePackageBaselineValidation>'
-			$content | Should -Not -Match '<VersionPrefix>'
-			$content | Should -Not -Match 'PackageValidationBaselineVersion</PackageValidationBaselineVersion>'
-			$content | Should -Not -Match 'NoWarn'
+			$buildPropsContent | Should -Match '<Nullable>enable</Nullable>'
+			$buildPropsContent | Should -Match '<EnableStrictModeForCompatibleTfms>true</EnableStrictModeForCompatibleTfms>'
+			$buildPropsContent | Should -Match '<DisablePackageBaselineValidation Condition=" \$\(PackageValidationBaselineVersion\) == \$\(VersionPrefix\) or \$\(PackageValidationBaselineVersion\) == ''0.0.0'' ">true</DisablePackageBaselineValidation>'
+			$buildPropsContent | Should -Not -Match '<VersionPrefix>'
+			$buildPropsContent | Should -Not -Match 'PackageValidationBaselineVersion</PackageValidationBaselineVersion>'
+			$buildPropsContent | Should -Not -Match 'NoWarn'
+			$packagePropsContent | Should -Match '<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>'
+			$packagePropsContent | Should -Match '<GlobalPackageReference Include="Faithlife.Analyzers" Version="1\.\*" />'
 		}
 		finally {
 			# Remove the isolated repository after the test completes.
@@ -115,6 +135,7 @@ conventions:
 
 		try {
 			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'Directory.Build.props'), "<Project>`n</Project>`n", $utf8)
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'Directory.Packages.props'), "<Project>`n</Project>`n", $utf8)
 			InitializePropsConventionTestRepository -TestDirectory $testDirectory
 			Initialize-TestRepository -Path $testDirectory
 			$initialHead = Get-CommitId -TestDirectory $testDirectory
@@ -124,7 +145,7 @@ conventions:
 
 			# Assert the commit message and clean working tree match expectations.
 			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should -Be $initialHead
-			(@(Get-CommitSubjects -TestDirectory $testDirectory -Count 1))[0] | Should -Be 'Update Directory.Build.props'
+			(@(Get-CommitSubjects -TestDirectory $testDirectory -Count 1))[0] | Should -Be 'Update .NET library props'
 			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0
 		}
 		finally {

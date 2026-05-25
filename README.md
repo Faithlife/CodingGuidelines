@@ -45,8 +45,7 @@
 | [faithlife-dotnet-library](./conventions/faithlife-dotnet-library/README.md) | Applies the standard conventions for Faithlife .NET library repositories. |
 | [faithlife-dotnet-library-build](./conventions/faithlife-dotnet-library-build/README.md) | Creates or refreshes Faithlife .NET library build project files under `tools/Build`. |
 | [faithlife-dotnet-library-contributing](./conventions/faithlife-dotnet-library-contributing/README.md) | Publishes shared package repository contributor guidance to `CONTRIBUTING.md`. |
-| [faithlife-dotnet-library-props](./conventions/faithlife-dotnet-library-props/README.md) | Manages shared package repository properties in `Directory.Build.props`. |
-| [faithlife-dotnet-library-targets](./conventions/faithlife-dotnet-library-targets/README.md) | Manages shared central package management settings in `Directory.Packages.props`. |
+| [faithlife-dotnet-library-props](./conventions/faithlife-dotnet-library-props/README.md) | Manages shared package repository properties and central package management settings. |
 | [faithlife-dotnet-library-workflow](./conventions/faithlife-dotnet-library-workflow/README.md) | Installs the published Faithlife .NET library workflows at `.github/workflows/ci.yml` and `.github/workflows/copilot-setup-steps.yml`. |
 | [faithlife-license-mit](./conventions/faithlife-license-mit/README.md) | Applies [license-mit](./conventions/license-mit/README.md) with `copyright-holder` set to `Faithlife`. |
 | [gitattributes-csharp](./conventions/gitattributes-csharp/README.md) | Ensures the repository-root `.gitattributes` contains the standard C# section from [files/.gitattributes](./conventions/gitattributes-csharp/files/.gitattributes). |

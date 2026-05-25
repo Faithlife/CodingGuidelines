@@ -266,9 +266,9 @@ Validation:
 
 Work:
 
-- Prototype a `faithlife-dotnet-library-targets` convention that inserts or replaces managed XML sections in `Directory.Packages.props`.
-- Have `faithlife-dotnet-library-targets` manage a `PropertyGroup` containing central package management, transitive pinning, and floating versions.
-- Have `faithlife-dotnet-library-targets` manage an `ItemGroup` containing shared analyzer `GlobalPackageReference` items: `Faithlife.Analyzers` `1.*`, `NUnit.Analyzers` `4.*`, and `StyleCop.Analyzers` `1.*-*`.
+- Extend `faithlife-dotnet-library-props` to insert or replace managed XML sections in `Directory.Packages.props`.
+- Have `faithlife-dotnet-library-props` manage a `PropertyGroup` containing central package management, transitive pinning, and floating versions.
+- Have `faithlife-dotnet-library-props` manage an `ItemGroup` containing shared analyzer `GlobalPackageReference` items: `Faithlife.Analyzers` `1.*`, `NUnit.Analyzers` `4.*`, and `StyleCop.Analyzers` `1.*-*`.
 - Leave repository-specific `PackageVersion` items local to each repository.
 - Do not spend migration effort deleting unmanaged elements that the managed sections make obsolete; the convention mainly needs to update its sections once they exist.
 - Prototype a `faithlife-dotnet-library-props` convention that inserts or replaces one managed `PropertyGroup` element containing the common package repository MSBuild properties.
@@ -346,7 +346,7 @@ Validation:
 - [x] Add `nuget-config` to the `faithlife-dotnet-library` composite convention.
 - [x] Create or update `gitignore-common`, `gitignore-dotnet`, and `gitignore-ide` conventions.
 - [x] Create or update a convention-managed package repository `CONTRIBUTING.md`.
-- [x] Prototype `faithlife-dotnet-library-targets` and `faithlife-dotnet-library-props` conventions with targeted XML updates.
+- [x] Prototype `faithlife-dotnet-library-props` with targeted XML updates for `Directory.Build.props` and `Directory.Packages.props`.
 - [x] Add or update `Directory.Packages.props` files using the `RepoConventions` analyzer version standard.
 - [x] Normalize `PackageProjectUrl` to GitHub repository URLs, including `FaithlifeBuild`.
 - [x] Enable nullable in `DapperUtility` and `FaithlifeTesting`.
