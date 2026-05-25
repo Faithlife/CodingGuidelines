@@ -35,7 +35,7 @@ Describe 'faithlife-dotnet-library-props convention' {
 		}
 	}
 
-	It 'creates a managed property group from existing repository values and is idempotent' {
+	It 'creates a managed property group that leaves repository-specific values unmanaged and is idempotent' {
 		# Set up an MSBuild file with local repository identity and release metadata.
 		$testDirectory = New-TemporaryDirectory
 
@@ -65,7 +65,13 @@ Describe 'faithlife-dotnet-library-props convention' {
 			$content | Should -Match '<GitHubOrganization>Faithlife</GitHubOrganization>'
 			$content | Should -Match '<RepositoryName>Example</RepositoryName>'
 			$content | Should -Match '<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>'
-			$content | Should -Match '(?s)<!-- DO NOT EDIT: faithlife-dotnet-library-props convention -->.*<VersionPrefix>1.2.3</VersionPrefix>.*<PackageValidationBaselineVersion>1.2.0</PackageValidationBaselineVersion>.*<Nullable>disable</Nullable>.*<NoWarn>\$\(NoWarn\);1591;1998</NoWarn>.*<RepositoryUrl>https://github.com/\$\(GitHubOrganization\)/\$\(RepositoryName\)</RepositoryUrl>.*<NuGetAuditLevel>low</NuGetAuditLevel>.*<!-- END DO NOT EDIT -->'
+			$content | Should -Match '<VersionPrefix>1.2.3</VersionPrefix>'
+			$content | Should -Match '<PackageValidationBaselineVersion>1.2.0</PackageValidationBaselineVersion>'
+			$content | Should -Match '<NoWarn>\$\(NoWarn\);1591;1998</NoWarn>'
+			$content | Should -Match '(?s)<!-- DO NOT EDIT: faithlife-dotnet-library-props convention -->.*<Nullable>enable</Nullable>.*<RepositoryUrl>https://github.com/\$\(GitHubOrganization\)/\$\(RepositoryName\)</RepositoryUrl>.*<EnableStrictModeForCompatibleTfms>true</EnableStrictModeForCompatibleTfms>.*<DisablePackageBaselineValidation Condition=" \$\(PackageValidationBaselineVersion\) == \$\(VersionPrefix\) or \$\(PackageValidationBaselineVersion\) == ''0.0.0'' ">true</DisablePackageBaselineValidation>.*<NuGetAuditLevel>low</NuGetAuditLevel>.*<!-- END DO NOT EDIT -->'
+			$content | Should -Not -Match '(?s)<!-- DO NOT EDIT: faithlife-dotnet-library-props convention -->.*<VersionPrefix>'
+			$content | Should -Not -Match '(?s)<!-- DO NOT EDIT: faithlife-dotnet-library-props convention -->.*<PackageValidationBaselineVersion>'
+			$content | Should -Not -Match '(?s)<!-- DO NOT EDIT: faithlife-dotnet-library-props convention -->.*<NoWarn>'
 			$output[-1].ToString() | Should -Be "Updated 'faithlife-dotnet-library-props' section in 'Directory.Build.props'."
 
 			# Re-run the convention and assert it is idempotent.
@@ -79,23 +85,25 @@ Describe 'faithlife-dotnet-library-props convention' {
 		}
 	}
 
-	It 'uses settings for new repositories and can omit package validation properties' {
-		# Set up a minimal MSBuild file that relies on convention settings.
+	It 'creates the fixed managed property group in a minimal MSBuild file' {
+		# Set up a minimal MSBuild file with no repository-specific properties.
 		$testDirectory = New-TemporaryDirectory
 
 		try {
 			$targetPath = Join-Path $testDirectory 'Directory.Build.props'
 			[System.IO.File]::WriteAllText($targetPath, "<Project>`n</Project>`n", $utf8)
 
-			# Run the convention with explicit settings for values not present in the file.
-			InvokeFaithlifeDotnetLibraryPropsConvention -TestDirectory $testDirectory -Settings @{ 'version-prefix' = '2.0.0'; nullable = 'enable'; 'package-validation' = $false }
+			# Run the convention with no settings.
+			InvokeFaithlifeDotnetLibraryPropsConvention -TestDirectory $testDirectory
 			$content = Get-Content -LiteralPath $targetPath -Raw
 
-			# Assert setting values are used and package validation properties are omitted.
-			$content | Should -Match '<VersionPrefix>2.0.0</VersionPrefix>'
+			# Assert the fixed managed properties are present and repository-specific values are absent.
 			$content | Should -Match '<Nullable>enable</Nullable>'
-			$content | Should -Not -Match 'PackageValidationBaselineVersion'
-			$content | Should -Not -Match 'EnableStrictModeForCompatibleTfms'
+			$content | Should -Match '<EnableStrictModeForCompatibleTfms>true</EnableStrictModeForCompatibleTfms>'
+			$content | Should -Match '<DisablePackageBaselineValidation Condition=" \$\(PackageValidationBaselineVersion\) == \$\(VersionPrefix\) or \$\(PackageValidationBaselineVersion\) == ''0.0.0'' ">true</DisablePackageBaselineValidation>'
+			$content | Should -Not -Match '<VersionPrefix>'
+			$content | Should -Not -Match 'PackageValidationBaselineVersion</PackageValidationBaselineVersion>'
+			$content | Should -Not -Match 'NoWarn'
 		}
 		finally {
 			# Remove the isolated repository after the test completes.
@@ -103,19 +111,4 @@ Describe 'faithlife-dotnet-library-props convention' {
 		}
 	}
 
-	It 'requires version-prefix when no existing VersionPrefix exists' {
-		# Set up a minimal MSBuild file without release metadata.
-		$testDirectory = New-TemporaryDirectory
-
-		try {
-			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'Directory.Build.props'), "<Project>`n</Project>`n", $utf8)
-
-			# Assert missing release metadata is rejected.
-			{ InvokeFaithlifeDotnetLibraryPropsConvention -TestDirectory $testDirectory } | Should -Throw "The 'version-prefix' setting is required when Directory.Build.props does not contain VersionPrefix."
-		}
-		finally {
-			# Remove the isolated repository after the test completes.
-			Remove-Item -LiteralPath $testDirectory -Recurse -Force
-		}
-	}
 }

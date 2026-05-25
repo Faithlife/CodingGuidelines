@@ -164,7 +164,7 @@ Describe 'config-text-section convention' {
 		}
 	}
 
-	It 'inserts XML sections before the closing root element and is idempotent' {
+	It 'inserts sections before the closing root element when the target is XML and is idempotent' {
 		# Set up an MSBuild file with repository-local content outside the managed section.
 		$testDirectory = New-TemporaryDirectory
 
@@ -172,15 +172,15 @@ Describe 'config-text-section convention' {
 			$targetPath = Join-Path $testDirectory 'Directory.Build.props'
 			[System.IO.File]::WriteAllText($targetPath, "<Project>`n  <PropertyGroup>`n    <RepositoryName>Example</RepositoryName>`n  </PropertyGroup>`n</Project>`n", $utf8)
 
-			# Run the convention with XML mode so the section is inserted inside Project.
-			InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = '/Directory.Build.props'; name = 'package-props'; text = "<PropertyGroup>`n  <VersionPrefix>1.2.3</VersionPrefix>`n</PropertyGroup>"; 'comment-prefix' = '<!--'; 'comment-suffix' = '-->'; mode = 'xml' }
+			# Run the convention so the XML target shape inserts the section inside Project.
+			InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = '/Directory.Build.props'; name = 'package-props'; text = "<PropertyGroup>`n  <VersionPrefix>1.2.3</VersionPrefix>`n</PropertyGroup>"; 'comment-prefix' = '<!--'; 'comment-suffix' = '-->' }
 
 			# Assert the managed section is indented before the root close and surrounding content remains.
 			$expectedContent = "<Project>`n  <PropertyGroup>`n    <RepositoryName>Example</RepositoryName>`n  </PropertyGroup>`n  <!-- DO NOT EDIT: package-props convention -->`n  <PropertyGroup>`n    <VersionPrefix>1.2.3</VersionPrefix>`n  </PropertyGroup>`n  <!-- END DO NOT EDIT -->`n</Project>`n"
 			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be $expectedContent
 
 			# Re-run the convention and assert it is idempotent.
-			$secondOutput = InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = '/Directory.Build.props'; name = 'package-props'; text = "<PropertyGroup>`n  <VersionPrefix>1.2.3</VersionPrefix>`n</PropertyGroup>"; 'comment-prefix' = '<!--'; 'comment-suffix' = '-->'; mode = 'xml' }
+			$secondOutput = InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = '/Directory.Build.props'; name = 'package-props'; text = "<PropertyGroup>`n  <VersionPrefix>1.2.3</VersionPrefix>`n</PropertyGroup>"; 'comment-prefix' = '<!--'; 'comment-suffix' = '-->' }
 			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be $expectedContent
 			@($secondOutput).Count | Should -Be 0
 		}
@@ -199,7 +199,7 @@ Describe 'config-text-section convention' {
 			[System.IO.File]::WriteAllText($targetPath, "<Project>`n  <!-- DO NOT EDIT: package-props convention -->`n  <PropertyGroup>`n    <VersionPrefix>1.0.0</VersionPrefix>`n  </PropertyGroup>`n  <!-- END DO NOT EDIT -->`n  <PropertyGroup>`n    <RepositoryName>Example</RepositoryName>`n  </PropertyGroup>`n</Project>`n", $utf8)
 
 			# Run the convention to replace only the matching managed XML section.
-			InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = '/Directory.Build.props'; name = 'package-props'; text = "<PropertyGroup>`n  <VersionPrefix>2.0.0</VersionPrefix>`n</PropertyGroup>"; 'comment-prefix' = '<!--'; 'comment-suffix' = '-->'; mode = 'xml' }
+			InvokeConfigTextSectionConvention -TestDirectory $testDirectory -Settings @{ path = '/Directory.Build.props'; name = 'package-props'; text = "<PropertyGroup>`n  <VersionPrefix>2.0.0</VersionPrefix>`n</PropertyGroup>"; 'comment-prefix' = '<!--'; 'comment-suffix' = '-->' }
 
 			# Assert the section was replaced in place and unmanaged XML is preserved.
 			(Get-Content -LiteralPath $targetPath -Raw) | Should -Be "<Project>`n  <!-- DO NOT EDIT: package-props convention -->`n  <PropertyGroup>`n    <VersionPrefix>2.0.0</VersionPrefix>`n  </PropertyGroup>`n  <!-- END DO NOT EDIT -->`n  <PropertyGroup>`n    <RepositoryName>Example</RepositoryName>`n  </PropertyGroup>`n</Project>`n"

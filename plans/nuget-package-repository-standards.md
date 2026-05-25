@@ -272,10 +272,11 @@ Work:
 - Leave repository-specific `PackageVersion` items local to each repository.
 - Do not spend migration effort deleting unmanaged elements that the managed sections make obsolete; the convention mainly needs to update its sections once they exist.
 - Prototype a `faithlife-dotnet-library-props` convention that inserts or replaces one managed `PropertyGroup` element containing the common package repository MSBuild properties.
-- The managed `PropertyGroup` should contain all properties listed in the `Directory.Build.props` common desired properties section except `GitHubOrganization` and `RepositoryName`.
-- Keep `GitHubOrganization` and `RepositoryName` outside the managed `PropertyGroup`; the managed properties can still reference them.
-- Support settings for repository-specific values such as `VersionPrefix`, `PackageValidationBaselineVersion`, nullable migration status, package validation policy, and temporary warning suppressions.
-- Extend the standard managed-section code with an XML mode that can insert managed XML sections before the closing root XML tag, use XML comments for markers, and indent inserted blocks two spaces inside `<Project>`.
+- The managed `PropertyGroup` should contain the common properties listed in the `Directory.Build.props` common desired properties section except `VersionPrefix`, `PackageValidationBaselineVersion`, `NoWarn`, `GitHubOrganization`, and `RepositoryName`.
+- Keep `VersionPrefix`, `PackageValidationBaselineVersion`, `NoWarn`, `GitHubOrganization`, and `RepositoryName` outside the managed `PropertyGroup`; the managed properties can still reference them.
+- Always enable nullable in the managed section; individual projects can override it when necessary.
+- Always include the package validation properties in the managed section; they are ignored when no package project enables package validation.
+- Extend the standard managed-section code so a target file with a closing XML element gets managed XML sections inserted before the closing root XML tag, uses XML comments for markers, and indents inserted blocks two spaces inside `<Project>`.
 
 Risks and constraints:
 

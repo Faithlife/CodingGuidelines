@@ -6,7 +6,6 @@ conventions:
       text: ${{ readText("files/properties.xml") }}
       comment-prefix: '<!--'
       comment-suffix: '-->'
-      mode: xml
   - path: ../config-text-section
     settings:
       path: /Directory.Packages.props
@@ -14,4 +13,3 @@ conventions:
       text: ${{ readText("files/analyzers.xml") }}
       comment-prefix: '<!--'
       comment-suffix: '-->'
-      mode: xml

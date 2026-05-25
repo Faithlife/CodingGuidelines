@@ -85,39 +85,6 @@ function Get-ConfigTextSectionCommentSuffix {
 	return $CommentSuffixSetting
 }
 
-function Get-ConfigTextSectionMode {
-	param(
-		[AllowNull()]
-		[object] $ModeSetting
-	)
-
-	# Default to the existing append-at-end text behavior.
-	if ($null -eq $ModeSetting) {
-		return 'text'
-	}
-
-	# Restrict modes to known insertion policies.
-	if ($ModeSetting -isnot [string] -or ($ModeSetting -ne 'text' -and $ModeSetting -ne 'xml')) {
-		throw "The 'mode' setting must be 'text' or 'xml'."
-	}
-
-	return $ModeSetting
-}
-
-function Get-ConfigTextSectionIndent {
-	param(
-		[Parameter(Mandatory = $true)]
-		[string] $Mode
-	)
-
-	# XML sections are nested one level inside the root element.
-	if ($Mode -eq 'xml') {
-		return '  '
-	}
-
-	return ''
-}
-
 function Get-ConfigTextSectionMarkerCommentSuffixText {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -209,7 +176,6 @@ function Get-ConfigTextSection {
 	# Normalize and validate each configured section field before use.
 	$commentPrefix = Get-ConfigTextSectionCommentPrefix -CommentPrefixSetting $Settings['comment-prefix']
 	$commentSuffix = Get-ConfigTextSectionMarkerCommentSuffixText -CommentSuffix (Get-ConfigTextSectionCommentSuffix -CommentSuffixSetting $Settings['comment-suffix'])
-	$mode = Get-ConfigTextSectionMode -ModeSetting $Settings['mode']
 	$name = Get-ConfigTextSectionName -NameSetting $Settings.name
 	$text = Get-ConfigTextSectionText -TextSetting $Settings.text -CommentPrefix $commentPrefix -CommentSuffix $commentSuffix
 
@@ -219,8 +185,6 @@ function Get-ConfigTextSection {
 		Text = $text
 		CommentPrefix = $commentPrefix
 		CommentSuffix = $commentSuffix
-		Mode = $mode
-		Indent = Get-ConfigTextSectionIndent -Mode $mode
 	}
 }
 
@@ -486,6 +450,17 @@ function Add-ConfigTextSectionSeparator {
 	return $Content + $LineEnding + $LineEnding
 }
 
+function Get-ConfigTextSectionClosingXmlElementMatches {
+	param(
+		[Parameter(Mandatory = $true)]
+		[AllowEmptyString()]
+		[string] $Content
+	)
+
+	# Any standalone closing XML element means new managed sections belong inside the root.
+	return [System.Text.RegularExpressions.Regex]::Matches($Content, '(?m)^\s*</[^>]+>\s*$')
+}
+
 function Add-ConfigTextSectionXmlBlock {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -500,7 +475,7 @@ function Add-ConfigTextSectionXmlBlock {
 	)
 
 	# Insert new XML managed blocks before the closing root element when possible.
-	$closingMatches = [System.Text.RegularExpressions.Regex]::Matches($Content, '(?m)^\s*</[^>]+>\s*$')
+	$closingMatches = @(Get-ConfigTextSectionClosingXmlElementMatches -Content $Content)
 	if ($closingMatches.Count -eq 0) {
 		$newContent = Add-ConfigTextSectionSeparator -Content $Content -LineEnding $LineEnding
 		$newContent += $ManagedSection
@@ -539,7 +514,9 @@ function Set-ConfigTextSectionText {
 	)
 
 	# Build the desired managed block and locate matching blocks in current content.
-	$managedSection = New-ConfigTextSectionText -Name $Section.Name -Text $Section.Text -CommentPrefix $Section.CommentPrefix -CommentSuffix $Section.CommentSuffix -LineEnding $LineEnding -Indent $Section.Indent
+	$isXml = @(Get-ConfigTextSectionClosingXmlElementMatches -Content $Content).Count -gt 0
+	$indent = if ($isXml) { '  ' } else { '' }
+	$managedSection = New-ConfigTextSectionText -Name $Section.Name -Text $Section.Text -CommentPrefix $Section.CommentPrefix -CommentSuffix $Section.CommentSuffix -LineEnding $LineEnding -Indent $indent
 	$blocks = Get-ConfigTextSectionRecords -Content $Content -CommentPrefix $Section.CommentPrefix -CommentSuffix $Section.CommentSuffix -TargetPath $TargetPath
 	$namedBlocks = @($blocks | Where-Object { $_.Name -eq $Section.Name })
 
@@ -572,7 +549,7 @@ function Set-ConfigTextSectionText {
 	}
 
 	# Insert a new managed block when no existing block with this name exists.
-	if ($Section.Mode -eq 'xml') {
+	if ($isXml) {
 		$newContent = Add-ConfigTextSectionXmlBlock -Content $Content -ManagedSection $managedSection -LineEnding $LineEnding
 	}
 	else {
