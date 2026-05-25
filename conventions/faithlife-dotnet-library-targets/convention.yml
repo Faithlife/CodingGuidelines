@@ -1,5 +1,5 @@
 commit:
-  message: Update Directory.Packages.props for .NET library
+  message: Update Directory.Packages.props
 
 conventions:
   - path: ../config-text-section

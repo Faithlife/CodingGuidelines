@@ -1,5 +1,5 @@
 commit:
-  message: Update .gitignore for IDE files
+  message: Update .gitignore for IDEs
 
 conventions:
   - path: ../gitignore-section

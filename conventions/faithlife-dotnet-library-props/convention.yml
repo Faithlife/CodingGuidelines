@@ -1,5 +1,5 @@
 commit:
-  message: Update Directory.Build.props for .NET library
+  message: Update Directory.Build.props
 
 conventions:
   - path: ../config-text-section
