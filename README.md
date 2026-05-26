@@ -34,8 +34,6 @@
 | [dotnet-sdk](./conventions/dotnet-sdk/README.md) | Ensures the repository has a `global.json` that uses the specified .NET SDK major version or later. |
 | [dotnet-sdk-10](./conventions/dotnet-sdk-10/README.md) | Ensures the repository has a `global.json` that uses the .NET 10 SDK or later. |
 | [dotnet-slnx](./conventions/dotnet-slnx/README.md) | Ensures the repository uses `.slnx` solutions rather than `.sln`. |
-| [dotnet-solution-items](./conventions/dotnet-solution-items/README.md) | Updates .NET solution item entries with `dotnet-solution-items`. |
-| [dotnet-solution-items-common](./conventions/dotnet-solution-items-common/README.md) | Adds common repository files and GitHub configuration files as .NET solution items. |
 | [editorconfig-csharp](./conventions/editorconfig-csharp/README.md) | Ensures the repository-root `.editorconfig` contains the standard C# section from [files/.editorconfig](./conventions/editorconfig-csharp/files/.editorconfig). |
 | [editorconfig-json](./conventions/editorconfig-json/README.md) | Ensures the repository-root `.editorconfig` contains the managed JSON section from [files/.editorconfig](./conventions/editorconfig-json/files/.editorconfig). |
 | [editorconfig-md](./conventions/editorconfig-md/README.md) | Ensures the repository-root `.editorconfig` contains the managed Markdown section from [files/.editorconfig](./conventions/editorconfig-md/files/.editorconfig). |
