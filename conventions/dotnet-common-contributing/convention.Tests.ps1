@@ -7,8 +7,8 @@ $utf8 = [System.Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding = $utf8
 $OutputEncoding = $utf8
 
-# Define the Pester suite for the faithlife-dotnet-library-contributing convention.
-Describe 'faithlife-dotnet-library-contributing convention' {
+# Define the Pester suite for the dotnet-common-contributing convention.
+Describe 'dotnet-common-contributing convention' {
 	BeforeAll {
 		# Load the convention script and shared test helpers.
 		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'

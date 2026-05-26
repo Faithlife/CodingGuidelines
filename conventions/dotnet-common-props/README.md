@@ -1,4 +1,4 @@
-# faithlife-dotnet-library-props
+# dotnet-common-props
 
 Manages shared package repository properties in `Directory.Build.props` and central package management settings in `Directory.Packages.props`.
 
@@ -12,5 +12,5 @@ It also writes managed XML sections in `Directory.Packages.props` for central pa
 
 ```yaml
 conventions:
-  - path: Faithlife/CodingGuidelines/conventions/faithlife-dotnet-library-props
+  - path: Faithlife/CodingGuidelines/conventions/dotnet-common-props
 ```

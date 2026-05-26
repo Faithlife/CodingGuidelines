@@ -1,4 +1,4 @@
-# faithlife-dotnet-library-contributing
+# dotnet-common-contributing
 
 Publishes shared package repository contributor guidance to `CONTRIBUTING.md`.
 
@@ -10,5 +10,5 @@ This convention publishes shared release and prerelease guidance for Faithlife .
 
 ```yaml
 conventions:
-  - path: Faithlife/CodingGuidelines/conventions/faithlife-dotnet-library-contributing
+  - path: Faithlife/CodingGuidelines/conventions/dotnet-common-contributing
 ```

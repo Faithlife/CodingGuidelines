@@ -7,8 +7,8 @@ $utf8 = [System.Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding = $utf8
 $OutputEncoding = $utf8
 
-# Define the Pester suite for the faithlife-dotnet-library-props convention.
-Describe 'faithlife-dotnet-library-props convention' {
+# Define the Pester suite for the dotnet-common-props convention.
+Describe 'dotnet-common-props convention' {
 	BeforeAll {
 		# Load shared test helpers for temporary repositories and convention execution.
 		$script:testHelpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'TestHelpers.ps1'
@@ -25,7 +25,7 @@ Describe 'faithlife-dotnet-library-props convention' {
 			[System.IO.Directory]::CreateDirectory((Join-Path $TestDirectory '.github')) | Out-Null
 			[System.IO.File]::WriteAllText((Join-Path $TestDirectory '.github/conventions.yml'), @"
 conventions:
-- path: ../conventions/faithlife-dotnet-library-props
+- path: ../conventions/dotnet-common-props
 "@, $utf8)
 		}
 	}
@@ -74,15 +74,15 @@ conventions:
 			$buildPropsContent | Should -Match '<VersionPrefix>1.2.3</VersionPrefix>'
 			$buildPropsContent | Should -Match '<PackageValidationBaselineVersion>1.2.0</PackageValidationBaselineVersion>'
 			$buildPropsContent | Should -Match '<NoWarn>\$\(NoWarn\);1591;1998</NoWarn>'
-			$buildPropsContent | Should -Match '(?s)<!-- DO NOT EDIT: faithlife-dotnet-library-props convention -->.*<Nullable>enable</Nullable>.*<RepositoryUrl>https://github.com/\$\(GitHubOrganization\)/\$\(RepositoryName\)</RepositoryUrl>.*<EnableStrictModeForCompatibleTfms>true</EnableStrictModeForCompatibleTfms>.*<DisablePackageBaselineValidation Condition=" \$\(PackageValidationBaselineVersion\) == \$\(VersionPrefix\) or \$\(PackageValidationBaselineVersion\) == ''0.0.0'' ">true</DisablePackageBaselineValidation>.*<NuGetAuditLevel>low</NuGetAuditLevel>.*<!-- END DO NOT EDIT -->'
-			$buildPropsContent | Should -Not -Match '(?s)<!-- DO NOT EDIT: faithlife-dotnet-library-props convention -->.*<VersionPrefix>'
-			$buildPropsContent | Should -Not -Match '(?s)<!-- DO NOT EDIT: faithlife-dotnet-library-props convention -->.*<PackageValidationBaselineVersion>'
-			$buildPropsContent | Should -Not -Match '(?s)<!-- DO NOT EDIT: faithlife-dotnet-library-props convention -->.*<NoWarn>'
+			$buildPropsContent | Should -Match '(?s)<!-- DO NOT EDIT: dotnet-common-props convention -->.*<Nullable>enable</Nullable>.*<RepositoryUrl>https://github.com/\$\(GitHubOrganization\)/\$\(RepositoryName\)</RepositoryUrl>.*<EnableStrictModeForCompatibleTfms>true</EnableStrictModeForCompatibleTfms>.*<DisablePackageBaselineValidation Condition=" \$\(PackageValidationBaselineVersion\) == \$\(VersionPrefix\) or \$\(PackageValidationBaselineVersion\) == ''0.0.0'' ">true</DisablePackageBaselineValidation>.*<NuGetAuditLevel>low</NuGetAuditLevel>.*<!-- END DO NOT EDIT -->'
+			$buildPropsContent | Should -Not -Match '(?s)<!-- DO NOT EDIT: dotnet-common-props convention -->.*<VersionPrefix>'
+			$buildPropsContent | Should -Not -Match '(?s)<!-- DO NOT EDIT: dotnet-common-props convention -->.*<PackageValidationBaselineVersion>'
+			$buildPropsContent | Should -Not -Match '(?s)<!-- DO NOT EDIT: dotnet-common-props convention -->.*<NoWarn>'
 
 			# Assert repository-owned package versions remain outside the managed package props sections.
 			$packagePropsContent | Should -Match '<PackageVersion Include="Example" Version="1.0.0" />'
-			$packagePropsContent | Should -Match '(?s)<!-- DO NOT EDIT: faithlife-dotnet-library-props/properties convention -->.*<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>.*<CentralPackageFloatingVersionsEnabled>true</CentralPackageFloatingVersionsEnabled>.*<!-- END DO NOT EDIT -->'
-			$packagePropsContent | Should -Match '(?s)<!-- DO NOT EDIT: faithlife-dotnet-library-props/analyzers convention -->.*<GlobalPackageReference Include="Faithlife.Analyzers" Version="1\.\*" />.*<GlobalPackageReference Include="NUnit.Analyzers" Version="4\.\*" />.*<GlobalPackageReference Include="StyleCop.Analyzers" Version="1\.\*-\*" />.*<!-- END DO NOT EDIT -->'
+			$packagePropsContent | Should -Match '(?s)<!-- DO NOT EDIT: dotnet-common-props/properties convention -->.*<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>.*<CentralPackageFloatingVersionsEnabled>true</CentralPackageFloatingVersionsEnabled>.*<!-- END DO NOT EDIT -->'
+			$packagePropsContent | Should -Match '(?s)<!-- DO NOT EDIT: dotnet-common-props/analyzers convention -->.*<GlobalPackageReference Include="Faithlife.Analyzers" Version="1\.\*" />.*<GlobalPackageReference Include="NUnit.Analyzers" Version="4\.\*" />.*<GlobalPackageReference Include="StyleCop.Analyzers" Version="1\.\*-\*" />.*<!-- END DO NOT EDIT -->'
 
 			# Re-run the packaged convention and assert it is idempotent.
 			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw

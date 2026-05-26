@@ -29,6 +29,8 @@
 | [copilot-lsp-csharp](./conventions/copilot-lsp-csharp/README.md) | Applies the published C# GitHub Copilot CLI LSP server configuration. |
 | [copilot-lsp-typescript](./conventions/copilot-lsp-typescript/README.md) | This [convention](https://github.com/Faithlife/RepoConventions) applies the published TypeScript GitHub Copilot CLI LSP server configuration. |
 | [dotnet-common](./conventions/dotnet-common/README.md) | Applies conventions common to repositories that build a .NET solution. |
+| [dotnet-common-contributing](./conventions/dotnet-common-contributing/README.md) | Publishes shared package repository contributor guidance to `CONTRIBUTING.md`. |
+| [dotnet-common-props](./conventions/dotnet-common-props/README.md) | Manages shared package repository properties in `Directory.Build.props` and central package management settings in `Directory.Packages.props`. |
 | [dotnet-sdk](./conventions/dotnet-sdk/README.md) | Ensures the repository has a `global.json` that uses the specified .NET SDK major version or later. |
 | [dotnet-sdk-10](./conventions/dotnet-sdk-10/README.md) | Ensures the repository has a `global.json` that uses the .NET 10 SDK or later. |
 | [dotnet-slnx](./conventions/dotnet-slnx/README.md) | Ensures the repository uses `.slnx` solutions rather than `.sln`. |
@@ -44,8 +46,6 @@
 | [faithlife-auto-apply-conventions](./conventions/faithlife-auto-apply-conventions/README.md) | Ensures that `.github/conventions.yml` starts with the marker used by RepoConventionsApplier. |
 | [faithlife-dotnet-library](./conventions/faithlife-dotnet-library/README.md) | Applies the standard conventions for Faithlife .NET library repositories. |
 | [faithlife-dotnet-library-build](./conventions/faithlife-dotnet-library-build/README.md) | Creates or refreshes Faithlife .NET library build project files under `tools/Build`. |
-| [faithlife-dotnet-library-contributing](./conventions/faithlife-dotnet-library-contributing/README.md) | Publishes shared package repository contributor guidance to `CONTRIBUTING.md`. |
-| [faithlife-dotnet-library-props](./conventions/faithlife-dotnet-library-props/README.md) | Manages shared package repository properties and central package management settings. |
 | [faithlife-dotnet-library-workflow](./conventions/faithlife-dotnet-library-workflow/README.md) | Installs the published Faithlife .NET library workflows at `.github/workflows/ci.yml` and `.github/workflows/copilot-setup-steps.yml`. |
 | [faithlife-license-mit](./conventions/faithlife-license-mit/README.md) | Applies [license-mit](./conventions/license-mit/README.md) with `copyright-holder` set to `Faithlife`. |
 | [gitattributes-csharp](./conventions/gitattributes-csharp/README.md) | Ensures the repository-root `.gitattributes` contains the standard C# section from [files/.gitattributes](./conventions/gitattributes-csharp/files/.gitattributes). |
