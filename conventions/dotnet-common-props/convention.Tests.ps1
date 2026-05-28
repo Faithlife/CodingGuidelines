@@ -74,10 +74,14 @@ conventions:
 			$buildPropsContent | Should -Match '<VersionPrefix>1.2.3</VersionPrefix>'
 			$buildPropsContent | Should -Match '<PackageValidationBaselineVersion>1.2.0</PackageValidationBaselineVersion>'
 			$buildPropsContent | Should -Match '<NoWarn>\$\(NoWarn\);1591;1998</NoWarn>'
+			$buildPropsContent | Should -Match ([regex]::Escape('<PackageProjectUrl Condition=" ''$(PackageProjectUrl)'' == '''' ">https://github.com/$(GitHubOrganization)/$(RepositoryName)</PackageProjectUrl>'))
+			$buildPropsContent | Should -Match ([regex]::Escape('<PackageReleaseNotes Condition=" ''$(PackageReleaseNotes)'' == '''' ">https://github.com/$(GitHubOrganization)/$(RepositoryName)/blob/master/ReleaseNotes.md</PackageReleaseNotes>'))
+			$buildPropsContent | Should -Match ([regex]::Escape('<Authors Condition=" ''$(Authors)'' == '''' ">$(GitHubOrganization)</Authors>'))
 			$buildPropsContent | Should -Match '(?s)<!-- DO NOT EDIT: dotnet-common-props convention -->.*<Nullable>enable</Nullable>.*<RepositoryUrl>https://github.com/\$\(GitHubOrganization\)/\$\(RepositoryName\)\.git</RepositoryUrl>.*<EnableStrictModeForCompatibleTfms>true</EnableStrictModeForCompatibleTfms>.*<DisablePackageBaselineValidation Condition=" \$\(PackageValidationBaselineVersion\) == \$\(VersionPrefix\) or \$\(PackageValidationBaselineVersion\) == ''0.0.0'' ">true</DisablePackageBaselineValidation>.*<NuGetAuditLevel>low</NuGetAuditLevel>.*<!-- END DO NOT EDIT -->'
 			$buildPropsContent | Should -Not -Match '(?s)<!-- DO NOT EDIT: dotnet-common-props convention -->.*<VersionPrefix>'
 			$buildPropsContent | Should -Not -Match '(?s)<!-- DO NOT EDIT: dotnet-common-props convention -->.*<PackageValidationBaselineVersion>'
 			$buildPropsContent | Should -Not -Match '(?s)<!-- DO NOT EDIT: dotnet-common-props convention -->.*<NoWarn>'
+			$buildPropsContent | Should -Not -Match '(?s)<!-- DO NOT EDIT: dotnet-common-props convention -->.*<PackageLicenseExpression>'
 
 			# Assert repository-owned package versions remain outside the managed package props sections.
 			$packagePropsContent | Should -Match '<PackageVersion Include="Example" Version="1.0.0" />'
@@ -115,11 +119,13 @@ conventions:
 
 			# Assert the fixed managed properties are present and repository-specific values are absent.
 			$buildPropsContent | Should -Match '<Nullable>enable</Nullable>'
+			$buildPropsContent | Should -Match ([regex]::Escape('<Authors Condition=" ''$(Authors)'' == '''' ">$(GitHubOrganization)</Authors>'))
 			$buildPropsContent | Should -Match '<EnableStrictModeForCompatibleTfms>true</EnableStrictModeForCompatibleTfms>'
 			$buildPropsContent | Should -Match '<DisablePackageBaselineValidation Condition=" \$\(PackageValidationBaselineVersion\) == \$\(VersionPrefix\) or \$\(PackageValidationBaselineVersion\) == ''0.0.0'' ">true</DisablePackageBaselineValidation>'
 			$buildPropsContent | Should -Not -Match '<VersionPrefix>'
 			$buildPropsContent | Should -Not -Match 'PackageValidationBaselineVersion</PackageValidationBaselineVersion>'
 			$buildPropsContent | Should -Not -Match 'NoWarn'
+			$buildPropsContent | Should -Not -Match '<PackageLicenseExpression>'
 			$packagePropsContent | Should -Match '<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>'
 			$packagePropsContent | Should -Match '<GlobalPackageReference Include="Faithlife.Analyzers" Version="1\.\*" />'
 		}
