@@ -4,7 +4,7 @@ Manages shared package repository properties in `Directory.Build.props` and cent
 
 ## Behavior
 
-This convention writes one managed XML property group before the closing `Project` element in `Directory.Build.props`. Repository-specific `VersionPrefix`, `PackageValidationBaselineVersion`, `NoWarn`, `GitHubOrganization`, and `RepositoryName` properties remain outside the managed section. Nullable is enabled in the managed section, and individual projects can override it when necessary.
+This convention writes one managed XML property group before the closing `Project` element in `Directory.Build.props`. Repository-specific `VersionPrefix`, `PackageValidationBaselineVersion`, `NoWarn`, `GitHubOrganization`, `RepositoryName`, and package license properties remain outside the managed section. Package project URL, package release notes, and authors default from the repository identity only when the repository has not already set them. Nullable is enabled in the managed section, and individual projects can override it when necessary.
 
 It also writes managed XML sections in `Directory.Packages.props` for central package management properties and shared analyzer `GlobalPackageReference` items. Repository-specific `PackageVersion` items remain outside the managed sections so libraries can own their dependency versions.
 
