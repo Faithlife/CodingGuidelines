@@ -91,7 +91,7 @@ exit 0
 
 		try {
 			# Arrange a fake apm command that records its argument list.
-			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'apm.yml'), "packages: []`ntargets:`n  - copilot`n", $utf8)
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'apm.yml'), "packages: []`ntargets:`n- copilot`n", $utf8)
 			Initialize-TestRepository -Path $testDirectory
 			NewFakeApmCommand -ToolDirectory $toolDirectory -WindowsScript @'
 @echo off
@@ -150,9 +150,9 @@ exit 0
 
 			# Run the convention twice and assert it adds the targets declaration only once.
 			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
-			(Get-Content -LiteralPath $manifestPath -Raw) | Should -Be "packages: []`ntargets:`n  - copilot`n"
+			(Get-Content -LiteralPath $manifestPath -Raw) | Should -Be "packages: []`ntargets:`n- copilot`n"
 			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
-			(Get-Content -LiteralPath $manifestPath -Raw) | Should -Be "packages: []`ntargets:`n  - copilot`n"
+			(Get-Content -LiteralPath $manifestPath -Raw) | Should -Be "packages: []`ntargets:`n- copilot`n"
 			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install'
 		}
 		finally {
@@ -188,7 +188,7 @@ exit 0
 
 			# Run the convention and assert no blank line is left before targets.
 			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
-			(Get-Content -LiteralPath $manifestPath -Raw) | Should -Be "packages: []`ntargets:`n  - copilot`n"
+			(Get-Content -LiteralPath $manifestPath -Raw) | Should -Be "packages: []`ntargets:`n- copilot`n"
 		}
 		finally {
 			# Restore process state and remove temporary files.
@@ -211,7 +211,7 @@ exit 0
 
 		try {
 			# Arrange a fake apm command that records its argument list.
-			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'apm.yml'), "packages: []`ntargets:`n  - copilot`n", $utf8)
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'apm.yml'), "packages: []`ntargets:`n- copilot`n", $utf8)
 			Initialize-TestRepository -Path $testDirectory
 			NewFakeApmCommand -ToolDirectory $toolDirectory -WindowsScript @'
 @echo off
@@ -256,7 +256,7 @@ exit 0
 
 		try {
 			# Arrange a fake apm command that records package arguments.
-			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'apm.yml'), "packages: []`ntargets:`n  - copilot`n", $utf8)
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'apm.yml'), "packages: []`ntargets:`n- copilot`n", $utf8)
 			Initialize-TestRepository -Path $testDirectory
 			NewFakeApmCommand -ToolDirectory $toolDirectory -WindowsScript @'
 @echo off
@@ -332,7 +332,7 @@ exit 0
 			# Run the convention and assert it initializes, cleans, targets, installs, and updates in order.
 			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
 			Get-Content -LiteralPath $argumentsPath | Should -Be @('init --yes', 'install richlander/dotnet-inspect/skills/dotnet-inspect', 'update --yes')
-			(Get-Content -LiteralPath $manifestPath -Raw) | Should -Be "name: Generated`ndependencies: {}`ntargets:`n  - copilot`n"
+			(Get-Content -LiteralPath $manifestPath -Raw) | Should -Be "name: Generated`ndependencies: {}`ntargets:`n- copilot`n"
 		}
 		finally {
 			# Restore process state and remove temporary files.
@@ -356,7 +356,7 @@ exit 0
 		try {
 			# Arrange committed apm files and a fake command that modifies the lock file.
 			[System.IO.File]::WriteAllText($lockFilePath, $originalLockContent, $utf8)
-			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'apm.yml'), "packages: []`ntargets:`n  - copilot`n", $utf8)
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'apm.yml'), "packages: []`ntargets:`n- copilot`n", $utf8)
 			Initialize-TestRepository -Path $testDirectory
 
 			NewFakeApmCommand -ToolDirectory $toolDirectory -WindowsScript @'
@@ -398,7 +398,7 @@ exit 0
 			# Arrange committed files and a fake command that modifies both files.
 			[System.IO.File]::WriteAllText($lockFilePath, "packages:`n  sample: 1.0.0`n", $utf8)
 			[System.IO.File]::WriteAllText($packageFilePath, "{}`n", $utf8)
-			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'apm.yml'), "packages: []`ntargets:`n  - copilot`n", $utf8)
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'apm.yml'), "packages: []`ntargets:`n- copilot`n", $utf8)
 			Initialize-TestRepository -Path $testDirectory
 
 			NewFakeApmCommand -ToolDirectory $toolDirectory -WindowsScript @'

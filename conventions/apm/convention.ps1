@@ -45,7 +45,7 @@ function EnsureApmManifestTargets {
 	}
 
 	# Add the default Copilot target to a new or existing APM manifest.
-	$targetText = "targets:`n  - copilot`n"
+	$targetText = "targets:`n- copilot`n"
 	if (-not (Test-Path -LiteralPath $apmManifestPath)) {
 		[System.IO.File]::WriteAllText($apmManifestPath, $targetText, $utf8)
 		return
