@@ -197,7 +197,7 @@ Describe 'update-nuget-packages convention' {
 			(Get-Content -LiteralPath $untrackedProjectPath -Raw) | Should -Match 'Version="12\.0\.1"'
 			$status | Should -Contain ' M .config/dotnet-tools.json'
 			$status | Should -Contain ' M src/App/App.csproj'
-			(@($output | ForEach-Object { $_.ToString() }) -join "`n") | Should -Be "2 packages updated:`n- dotnet-format`n- Newtonsoft.Json"
+			(@($output | ForEach-Object { $_.ToString() }) -join "`n") | Should -Be "2 packages updated:`n- dotnet-format 6.0.0 (from 5.0.0)`n- Newtonsoft.Json 13.0.1 (from 12.0.1)"
 
 			AddAndCommitPaths -TestDirectory $testDirectory -Paths @('.config/dotnet-tools.json', 'src/App/App.csproj') -Message 'Update package files'
 			$secondOutput = InvokeUpdateNugetPackagesConvention -TestDirectory $testDirectory -Settings @{

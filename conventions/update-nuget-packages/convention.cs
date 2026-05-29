@@ -55,7 +55,7 @@ internal sealed class UpdateNugetPackagesApp
 		}
 
 		var replacementsByFile = new Dictionary<string, List<Replacement>>(StringComparer.Ordinal);
-		var updatedPackages = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+		var updatedPackageSummaries = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
 
 		foreach (var (relativePath, references) in referencesByFile.OrderBy(x => x.Key, StringComparer.Ordinal))
 		{
@@ -81,7 +81,8 @@ internal sealed class UpdateNugetPackagesApp
 					continue;
 				}
 
-				var replacement = new Replacement(reference.SpanStart, reference.SpanLength, reference.CurrentVersion, selectedVersion.ToNormalizedString(), reference.Line, reference.PackageId);
+				var selectedVersionText = selectedVersion.ToNormalizedString();
+				var replacement = new Replacement(reference.SpanStart, reference.SpanLength, reference.CurrentVersion, selectedVersionText, reference.Line, reference.PackageId);
 				if (!replacementsByFile.TryGetValue(relativePath, out var fileReplacements))
 				{
 					fileReplacements = new List<Replacement>();
@@ -89,7 +90,7 @@ internal sealed class UpdateNugetPackagesApp
 				}
 
 				fileReplacements.Add(replacement);
-				updatedPackages.Add(reference.PackageId);
+				updatedPackageSummaries.Add(string.Create(CultureInfo.InvariantCulture, $"{reference.PackageId} {selectedVersionText} (from {reference.CurrentVersion})"));
 			}
 		}
 
@@ -103,11 +104,11 @@ internal sealed class UpdateNugetPackagesApp
 				content.Write(updatedText);
 		}
 
-		if (updatedPackages.Count != 0)
+		if (updatedPackageSummaries.Count != 0)
 		{
-			Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"{updatedPackages.Count} packages updated:"));
-			foreach (var packageId in updatedPackages)
-				Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"- {packageId}"));
+			Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"{updatedPackageSummaries.Count} packages updated:"));
+			foreach (var packageSummary in updatedPackageSummaries)
+				Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"- {packageSummary}"));
 		}
 	}
 
