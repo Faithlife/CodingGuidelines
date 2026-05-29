@@ -1,0 +1,6 @@
+commit:
+  message: Update NuGet packages
+
+pull-request:
+  labels:
+    - dependencies
