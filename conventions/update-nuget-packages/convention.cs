@@ -10,7 +10,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Xml;
 
@@ -56,8 +55,7 @@ internal sealed class UpdateNugetPackagesApp
 		}
 
 		var replacementsByFile = new Dictionary<string, List<Replacement>>(StringComparer.Ordinal);
-		var updates = new List<UpdateRecord>();
-		var skipped = new List<SkipRecord>();
+		var updatedPackages = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
 
 		foreach (var (relativePath, references) in referencesByFile.OrderBy(x => x.Key, StringComparer.Ordinal))
 		{
@@ -65,7 +63,6 @@ internal sealed class UpdateNugetPackagesApp
 			{
 				if (!NuGetVersion.TryParse(reference.CurrentVersion, out var currentVersion) || currentVersion is null)
 				{
-					skipped.Add(new SkipRecord(relativePath, reference.Line, reference.PackageId, reference.CurrentVersion, "unsupported-version"));
 					continue;
 				}
 
@@ -73,7 +70,6 @@ internal sealed class UpdateNugetPackagesApp
 
 				if (rule.VersionPolicy == VersionPolicy.NoUpdate)
 				{
-					skipped.Add(new SkipRecord(relativePath, reference.Line, reference.PackageId, reference.CurrentVersion, "no-update-rule"));
 					continue;
 				}
 
@@ -82,7 +78,6 @@ internal sealed class UpdateNugetPackagesApp
 
 				if (selectedVersion is null)
 				{
-					skipped.Add(new SkipRecord(relativePath, reference.Line, reference.PackageId, reference.CurrentVersion, "no-eligible-version"));
 					continue;
 				}
 
@@ -94,11 +89,10 @@ internal sealed class UpdateNugetPackagesApp
 				}
 
 				fileReplacements.Add(replacement);
-				updates.Add(new UpdateRecord(relativePath, reference.Line, reference.PackageId, reference.CurrentVersion, selectedVersion.ToNormalizedString()));
+				updatedPackages.Add(reference.PackageId);
 			}
 		}
 
-		var changedFiles = new List<string>();
 		foreach (var (relativePath, replacements) in replacementsByFile.OrderBy(x => x.Key, StringComparer.Ordinal))
 		{
 			var absolutePath = Path.Combine(repositoryRoot, relativePath);
@@ -106,13 +100,15 @@ internal sealed class UpdateNugetPackagesApp
 			var updatedText = ReplacementEngine.Apply(content.Text, replacements);
 
 			if (!string.Equals(content.Text, updatedText, StringComparison.Ordinal))
-			{
 				content.Write(updatedText);
-				changedFiles.Add(relativePath);
-			}
 		}
 
-		Console.WriteLine(JsonSerializer.Serialize(new Summary(changedFiles, updates, skipped, cutoffUtc), SummaryJsonContext.Default.Summary));
+		if (updatedPackages.Count != 0)
+		{
+			Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"{updatedPackages.Count} packages updated:"));
+			foreach (var packageId in updatedPackages)
+				Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"- {packageId}"));
+		}
 	}
 
 	private static bool IsSupportedPath(string relativePath)
@@ -356,14 +352,6 @@ internal enum VersionPolicy
 
 internal sealed record VersionReference(string RelativePath, string PackageId, string CurrentVersion, int SpanStart, int SpanLength, int Line, string Kind);
 internal sealed record Replacement(int Start, int Length, string OldText, string NewText, int Line, string PackageId);
-internal sealed record UpdateRecord(string file, int line, string package, string from, string to);
-internal sealed record SkipRecord(string file, int line, string package, string version, string reason);
-internal sealed record Summary(List<string> changedFiles, List<UpdateRecord> updated, List<SkipRecord> skipped, DateTimeOffset cutoffUtc);
-[JsonSourceGenerationOptions(WriteIndented = true)]
-[JsonSerializable(typeof(Summary))]
-internal sealed partial class SummaryJsonContext : JsonSerializerContext
-{
-}
 
 internal sealed record CandidateVersion(NuGetVersion Version, DateTimeOffset? PublishedUtc, bool Listed);
 
