@@ -28,15 +28,19 @@ dnx repo-conventions validate [options]
 
 ## `add`
 
-`repo-conventions add` appends one or more convention paths to the configuration file. If the file is missing, it creates it. If a path is already present, it leaves the file unchanged for that path. New paths are validated before the configuration file is changed. If settings are required, add them by hand to the configuration file.
+`repo-conventions add` appends one or more convention paths to the configuration file. If the file is missing, it creates it. New paths are validated before the configuration file is changed. If a path is already present with the same reference configuration, it leaves the file unchanged for that path. If a path is already present with different reference configuration, the command fails without changing the file.
 
 Examples:
 
 ```pwsh
-dnx repo-conventions add Faithlife/CodingGuidelines/conventions/dotnet-sdk
-dnx repo-conventions add ./conventions/local-policy
-dnx repo-conventions add ./conventions/dotnet-sdk ./conventions/github-actions
+dnx repo-conventions add Faithlife/CodingGuidelines/conventions/dotnet-sdk-10
+dnx repo-conventions add Faithlife/CodingGuidelines/conventions/gitattributes-lf
+dnx repo-conventions add /.github/conventions/local-policy
+dnx repo-conventions add Faithlife/CodingGuidelines/conventions/dotnet-sdk-10 Faithlife/CodingGuidelines/conventions/github-actions
+dnx repo-conventions add Faithlife/CodingGuidelines/conventions/write-file --with "{settings: {file: docs/example.md, overwrite: false}}"
 ```
+
+Use `--with <yaml>` with one convention path to add reference-level `settings`, `commit`, or `pull-request` configuration. The value must be a YAML mapping fragment and must not include `path`.
 
 `add` requires the target repository path to be a Git repository root. When `--commit`, `--apply`, and `--open-pr` are not used, it can run when the target repository has tracked or untracked file changes.
 
@@ -47,11 +51,12 @@ Additional `add` options:
 | `--commit` | Commit newly added convention references. Requires a clean repository. |
 | `--apply` | Commit newly added convention references, then apply all conventions. Requires a clean repository. |
 | `--open-pr` | Commit newly added convention references, apply all conventions, and open or update a pull request. Requires a clean repository. |
+| `--with <yaml>` | YAML configuration for one convention reference. Supported top-level keys are `settings`, `commit`, and `pull-request`. |
 
 With `--open-pr`, `add` commits any newly added convention references, applies the resulting configuration, commits convention changes, and opens or updates a pull request:
 
 ```pwsh
-dnx repo-conventions add ./conventions/local-policy --open-pr
+dnx repo-conventions add /.github/conventions/local-policy --open-pr
 ```
 
 ## `apply`

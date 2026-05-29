@@ -44,6 +44,21 @@ Use `convention.yml` when a convention composes other conventions, provides defa
 
 Composition-only conventions must include a `conventions` sequence. Executable conventions that also contain `convention.ps1` may omit `conventions` and include only `commit` or `pull-request` settings.
 
+Minimal executable convention with a default commit message:
+
+```yaml
+commit:
+  message: Normalize repository files
+```
+
+Minimal composite convention:
+
+```yaml
+conventions:
+  - path: /conventions/dotnet-sdk-10
+  - path: /conventions/dotnet-slnx
+```
+
 Example:
 
 ```yaml
@@ -57,16 +72,14 @@ pull-request:
   merge-method: squash
 
 conventions:
-  - path: ../dotnet-sdk
-    settings:
-      version: 10
-  - path: ../dotnet-slnx
+  - path: /conventions/dotnet-sdk-10
+  - path: /conventions/dotnet-slnx
 ```
 
 Guidelines:
 
 - Keep child conventions in the order they should be applied.
-- Use explicit local relative paths, such as `../dotnet-sdk`, for conventions published from the same repository.
+- Prefer repository-root-relative local paths, such as `/conventions/dotnet-sdk-10`, for conventions published from the same repository.
 - Keep settings JSON-compatible: objects, arrays, strings, numbers, booleans, or null.
 - Keep settings shallow unless nesting communicates a real domain boundary.
 - Avoid formatting-only churn in generated files unless formatting is the purpose of the convention.
@@ -87,7 +100,7 @@ Composite conventions can map parent settings into child settings with expressio
 
 ```yaml
 conventions:
-  - path: ../dotnet-sdk
+  - path: /conventions/dotnet-sdk
     settings:
       version: ${{ settings.sdk.version }}
 ```
@@ -98,13 +111,29 @@ conventions:
 - Missing values are omitted from object properties and array items. If the missing expression is embedded in a larger string, it contributes an empty string.
 - If an array expression is used as an array item, its items are spliced into the destination array.
 
+Simple mapping examples:
+
+```yaml
+conventions:
+  - path: /conventions/dotnet-sdk
+    settings:
+      version: ${{ settings.sdkVersion }}
+  - path: /conventions/write-readme
+    settings:
+      title: ${{ settings.name }}
+      heading: "Repository: ${{ settings.name }}"
+      labels:
+        - standard
+        - ${{ settings.extraLabels }}
+```
+
 `readText("path")`:
 
 ```yaml
 conventions:
-  - path: ../write-file
+  - path: /conventions/write-file
     settings:
-      body: ${{ readText("./body.txt") }}
+      body: ${{ readText("/conventions/write-file/body.txt") }}
 ```
 
 - Reads UTF-8 text from a file. A UTF-8 BOM is ignored.
