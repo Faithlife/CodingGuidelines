@@ -17,9 +17,36 @@ Supported path forms:
 | `../relative/path` | Resolve relative to the YAML file that contains the reference. The result must stay inside that YAML file's repository. |
 | `/root/relative/path` | Resolve from the root of the repository that contains the YAML file. |
 
+Path examples:
+
+```yaml
+conventions:
+  - path: Faithlife/CodingGuidelines/conventions/dotnet-sdk-10@v1.2.3
+  - path: Faithlife/CodingGuidelines/conventions/gitattributes-lf
+  - path: /.github/conventions/local-policy
+  - path: /conventions/root-policy
+```
+
 Local paths must stay inside the repository that contains the YAML file. This rule applies to conventions checked into the target repository and to convention repositories cloned from GitHub.
 
 `settings` is passed to the convention as JSON-compatible data. Use YAML objects, arrays, strings, numbers, booleans, or null values. Each convention documents the settings it accepts.
+
+Settings examples:
+
+```yaml
+conventions:
+  - path: Faithlife/CodingGuidelines/conventions/example
+    settings:
+      name: RepoConventions
+      version: 10
+      enabled: true
+      labels:
+        - automation
+        - conventions
+      metadata:
+        owner: Faithlife
+      optionalNote: null
+```
 
 ## Commit Settings
 
@@ -40,6 +67,15 @@ Behavior:
 - When adjacent automatic commits in the same run use the same message, RepoConventions amends the previous automatic commit instead of creating a second adjacent commit with the same message.
 
 Use a custom `message` when the convention has a stable, recognizable purpose. Prefer a concise imperative subject, such as `Update .NET SDK version` or `Refresh generated CI files`.
+
+Example:
+
+```yaml
+conventions:
+  - path: Faithlife/CodingGuidelines/conventions/generated-files
+    commit:
+      message: Refresh generated files
+```
 
 ## Pull Request Settings
 
@@ -77,3 +113,26 @@ CLI flags override configured pull request settings for a single run:
 - `--merge-method merge|squash|rebase` overrides `merge-method`.
 
 If a requested merge method is disabled or rejected by GitHub, RepoConventions tries other allowed methods, preferring `squash` as the first fallback. If auto-merge was enabled by configuration and cannot be enabled, the command reports the failure but still succeeds. If `--auto-merge` was provided explicitly and auto-merge cannot be enabled, the command fails.
+
+Top-level pull request example:
+
+```yaml
+pull-request:
+  labels:
+    - automation
+  reviewers:
+    - octocat
+  draft: true
+```
+
+Convention-specific pull request example:
+
+```yaml
+conventions:
+  - path: Faithlife/CodingGuidelines/conventions/dependency-updates
+    pull-request:
+      labels:
+        - dependencies
+      auto-merge: true
+      merge-method: squash
+```
