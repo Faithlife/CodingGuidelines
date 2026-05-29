@@ -27,7 +27,7 @@ Describe 'update-nuget-packages convention' {
 				New-Item -ItemType Directory -Path $directory -Force | Out-Null
 			}
 
-			Write-Utf8NoBomFile -Path $Path -Content $Content
+			[System.IO.File]::WriteAllText($Path, $Content, $utf8)
 		}
 
 		function script:WriteMetadataFile {
@@ -138,7 +138,7 @@ Describe 'update-nuget-packages convention' {
 	}
 
 	It 'updates tracked package references and dotnet tools without touching untracked files' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			Initialize-TestRepository -Path $testDirectory
@@ -215,7 +215,7 @@ Describe 'update-nuget-packages convention' {
 	}
 
 	It 'honors version and prerelease rules' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			Initialize-TestRepository -Path $testDirectory
@@ -289,7 +289,7 @@ Describe 'update-nuget-packages convention' {
 	}
 
 	It 'updates UTF-8 BOM XML project files' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			Initialize-TestRepository -Path $testDirectory
@@ -326,7 +326,7 @@ Describe 'update-nuget-packages convention' {
 	}
 
 	It 'uses Tuesday as the publish cooldown boundary' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			Initialize-TestRepository -Path $testDirectory
@@ -363,7 +363,7 @@ Describe 'update-nuget-packages convention' {
 	}
 
 	It 'updates same-file properties and MSBuild SDK references' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			Initialize-TestRepository -Path $testDirectory
@@ -407,7 +407,7 @@ Describe 'update-nuget-packages convention' {
 	}
 
 	It 'uses package sources from nuget.config' {
-		$testDirectory = New-TestDirectory
+		$testDirectory = New-TemporaryDirectory
 
 		try {
 			Initialize-TestRepository -Path $testDirectory
