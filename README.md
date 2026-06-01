@@ -54,4 +54,5 @@
 | [license-mit](./conventions/license-mit/README.md) | Ensures the repository-root `LICENSE` file contains the published MIT license from [files/LICENSE](./conventions/license-mit/files/LICENSE). |
 | [nuget-config](./conventions/nuget-config/README.md) | Creates or replaces the repository-root `nuget.config` from [files/nuget.config](./conventions/nuget-config/files/nuget.config). |
 | [prettierignore-section](./conventions/prettierignore-section/README.md) | Manages a named section within the repository-root `.prettierignore` file when the repository appears to use [Prettier](https://prettier.io). |
+| [update-nuget-packages](./conventions/update-nuget-packages/README.md) | Updates git-tracked NuGet package references, MSBuild SDK references, and local .NET tool manifest versions by replacing only version text spans in supported project and manifest files. |
 <!-- END DO NOT EDIT -->
