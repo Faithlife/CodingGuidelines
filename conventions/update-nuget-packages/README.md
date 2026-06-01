@@ -11,7 +11,7 @@ Rule properties:
 - `packages`: Required string or string array of package ID patterns. Patterns support case-insensitive `*` and `?` wildcards.
 - `version`: Optional string, default `update-major`. Valid policy values are `update-major`, `update-minor`, `update-patch`, and `no-update`. A specific version such as `7.0.0` updates only to that exact version. A NuGet version range such as `[7.0.0, 8.0.0)` updates only to versions inside that range.
 - `include-prerelease`: Optional boolean, default `false`. When true, prerelease candidates are eligible.
-- `prerelease-channel`: Optional string. When set, prerelease candidates must use the specified prerelease label.
+- `prerelease-channel`: Optional string. When set, candidates must be prerelease versions that use the specified prerelease label. This setting takes precedence over `include-prerelease`.
 
 ## Behavior
 
@@ -41,6 +41,5 @@ conventions:
         - packages: Microsoft.Extensions.*
           version: '[8.0.0, 9.0.0)'
         - packages: StackExchange.Redis
-          include-prerelease: true
           prerelease-channel: faithlife
 ```

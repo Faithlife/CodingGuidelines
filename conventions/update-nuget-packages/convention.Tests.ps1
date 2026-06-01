@@ -232,6 +232,7 @@ Describe 'update-nuget-packages convention' {
     <PackageVersion Include="No.Package" Version="1.0.0" />
     <PackageVersion Include="Pre.Package" Version="1.0.0" />
     <PackageVersion Include="NoPre.Package" Version="1.0.0" />
+		<PackageVersion Include="ChannelOnly.Package" Version="1.0.0" />
   </ItemGroup>
 </Project>
 '@
@@ -259,6 +260,11 @@ Describe 'update-nuget-packages convention' {
 				'No.Package' = @(@{ version = '9.0.0'; publishedUtc = '2026-05-10T00:00:00Z'; listed = $true })
 				'Pre.Package' = @(@{ version = '2.0.0-alpha.1'; publishedUtc = '2026-05-10T00:00:00Z'; listed = $true })
 				'NoPre.Package' = @(@{ version = '2.0.0-alpha.1'; publishedUtc = '2026-05-10T00:00:00Z'; listed = $true })
+				'ChannelOnly.Package' = @(
+					@{ version = '2.0.0'; publishedUtc = '2026-05-10T00:00:00Z'; listed = $true },
+					@{ version = '2.0.0-alpha.1'; publishedUtc = '2026-05-10T00:00:00Z'; listed = $true },
+					@{ version = '2.0.0-beta.1'; publishedUtc = '2026-05-10T00:00:00Z'; listed = $true }
+				)
 			}
 
 			InvokeUpdateNugetPackagesConvention -TestDirectory $testDirectory -Settings @{
@@ -270,7 +276,8 @@ Describe 'update-nuget-packages convention' {
 					@{ packages = 'Pinned.Package'; version = '7.0.0' },
 					@{ packages = 'Range.Package'; version = '[7.0.0, 8.0.0)' },
 					@{ packages = 'No.Package'; version = 'no-update' },
-					@{ packages = 'Pre.Package'; 'include-prerelease' = $true; 'prerelease-channel' = 'alpha' }
+						@{ packages = 'Pre.Package'; 'include-prerelease' = $true; 'prerelease-channel' = 'alpha' },
+						@{ packages = 'ChannelOnly.Package'; 'include-prerelease' = $false; 'prerelease-channel' = 'alpha' }
 				)
 			} | Out-Null
 
@@ -283,6 +290,7 @@ Describe 'update-nuget-packages convention' {
 			$content | Should -Match 'Include="No\.Package" Version="1\.0\.0"'
 			$content | Should -Match 'Include="Pre\.Package" Version="2\.0\.0-alpha\.1"'
 			$content | Should -Match 'Include="NoPre\.Package" Version="1\.0\.0"'
+			$content | Should -Match 'Include="ChannelOnly\.Package" Version="2\.0\.0-alpha\.1"'
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

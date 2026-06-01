@@ -465,13 +465,16 @@ internal static class VersionResolver
 
 	private static bool IsPrereleaseAllowed(NuGetVersion version, EffectiveRule rule)
 	{
+		if (rule.PrereleaseChannel is not null)
+			return version.IsPrerelease && UsesPrereleaseChannel(version, rule.PrereleaseChannel);
+
 		if (!version.IsPrerelease)
 			return true;
 
 		if (!rule.IncludePrerelease)
 			return false;
 
-		return rule.PrereleaseChannel is null || UsesPrereleaseChannel(version, rule.PrereleaseChannel);
+		return true;
 	}
 
 	private static bool IsAllowedByPolicy(NuGetVersion version, NuGetVersion currentVersion, EffectiveRule rule)
