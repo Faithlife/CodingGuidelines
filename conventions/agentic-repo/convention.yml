@@ -29,6 +29,7 @@ conventions:
         apm.yml
   - path: ../apm
     settings:
+      install: ${{ settings.apm-install }}
       update: true
 
 pull-request:
