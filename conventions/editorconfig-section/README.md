@@ -14,6 +14,8 @@ If `.editorconfig` does not exist, the convention creates it with the managed se
 
 When an apply creates or replaces the managed section, the convention removes duplicated unmanaged rules from matching sections and from sections that are conservatively recognized as subsets of managed section keys. For example, a managed `[*.{cs,cshtml,razor}]` section can remove the same rule from an unmanaged `[*.cs]` section. A managed `[*]` section is not treated as covering narrower sections for this cleanup. If the managed section is already current, unmanaged rules are left unchanged.
 
+When cleanup deletes unmanaged lines, repeated blank lines outside managed sections are collapsed to a single blank line so deleted content does not leave extra spacing behind.
+
 When the configured `text` contains a top-level `root = true` declaration and an apply creates or replaces the managed section, the convention treats the managed section as the root section and keeps it before other `.editorconfig` sections. It also removes unmanaged `root = true` declarations and removes configured `remove-root-rules` entries from unmanaged `[*]` sections.
 
 ## Example

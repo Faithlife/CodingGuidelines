@@ -142,4 +142,46 @@ insert_final_newline = true
 		}
 	}
 
+	It 'removes legacy root template markers without leaving a trailing blank line' {
+		$testDirectory = New-TemporaryDirectory
+
+		try {
+			# Arrange a repository with legacy template markers and unmanaged root rules.
+			Copy-TestConventionAssets -TestDirectory $testDirectory
+			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
+conventions:
+- path: ../conventions/editorconfig-root
+"@, $utf8)
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.editorconfig'), ([string]::Join("`n", @(
+				'# DO NOT EDIT - This file is a template managed at https://github.com/LogosBible/actions#templates',
+				'# template-source: LogosBible/actions/editorconfig-template',
+				'',
+				'root = true',
+				'',
+				'[*]',
+				'charset = utf-8',
+				'end_of_line = lf',
+				'trim_trailing_whitespace = true',
+				'',
+				'[*.fsd]',
+				'indent_size = tab'
+			))), $utf8)
+			Initialize-TestRepository -Path $testDirectory
+
+			# Apply the convention under test.
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
+
+			# Assert legacy markers were deleted and the moved root block did not leave a blank tail.
+			$content = Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw
+			$content | Should -Be "# DO NOT EDIT: root convention`nroot = true`n`n[*]`ncharset = utf-8`nend_of_line = lf`ntrim_trailing_whitespace = true`n# END DO NOT EDIT`n`n[*.fsd]`nindent_size = tab`n"
+			$content | Should -Not -Match '(?m)^# DO NOT EDIT -'
+			$content | Should -Not -Match '(?m)^# template-source:'
+			$content.EndsWith("`n`n", [System.StringComparison]::Ordinal) | Should -Be $false
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
 }

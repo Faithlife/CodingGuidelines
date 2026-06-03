@@ -427,6 +427,89 @@ function SetRedundantEditorConfigRuleRemoval {
 	return $changed
 }
 
+function SetRootEditorConfigLegacyMarkerRemoval {
+	param(
+		[Parameter(Mandatory = $true)]
+		[object[]] $Lines,
+
+		[Parameter(Mandatory = $true)]
+		[bool] $IsRoot
+	)
+
+	# Remove stale template-management marker comments that the root convention replaces.
+	if (-not $IsRoot) {
+		return $false
+	}
+
+	$changed = $false
+
+	foreach ($line in $Lines) {
+		if ($line.IsManaged) {
+			continue
+		}
+
+		if ($line.Text.StartsWith('# DO NOT EDIT', [System.StringComparison]::Ordinal) -or $line.Text.StartsWith('# template-source:', [System.StringComparison]::Ordinal)) {
+			$line.Remove = $true
+			$changed = $true
+		}
+	}
+
+	return $changed
+}
+
+function SetUnmanagedEditorConfigBlankLineCleanup {
+	param(
+		[Parameter(Mandatory = $true)]
+		[object[]] $Lines
+	)
+
+	# Collapse repeated blank lines outside managed blocks after cleanup removes unmanaged content.
+	$changed = $false
+	$previousUnmanagedBlankLine = $false
+
+	foreach ($line in $Lines) {
+		if ($line.Remove) {
+			continue
+		}
+
+		if ($line.IsManaged) {
+			$previousUnmanagedBlankLine = $false
+			continue
+		}
+
+		if ($line.Text.Trim().Length -eq 0) {
+			if ($previousUnmanagedBlankLine) {
+				$line.Remove = $true
+				$changed = $true
+				continue
+			}
+
+			$previousUnmanagedBlankLine = $true
+			continue
+		}
+
+		$previousUnmanagedBlankLine = $false
+	}
+
+	# Remove blank-only tails so deleted final content does not leave a blank line at EOF.
+	for ($index = $Lines.Count - 1; $index -ge 0; $index--) {
+		$line = $Lines[$index]
+
+		if ($line.Remove) {
+			continue
+		}
+
+		if ($line.IsManaged -or $line.Text.Trim().Length -ne 0) {
+			break
+		}
+
+		$line.Remove = $true
+		$changed = $true
+	}
+
+	return $changed
+}
+
 function SetEmptyEditorConfigSectionRemoval {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -580,7 +663,10 @@ function MoveRootEditorConfigBlockFirst {
 function InvokeEditorConfigSectionCleanup {
 	param(
 		[Parameter(Mandatory = $true)]
-		[System.Collections.IDictionary] $Settings
+		[System.Collections.IDictionary] $Settings,
+
+		[Parameter(Mandatory = $true)]
+		[bool] $RemoveRedundantRules
 	)
 
 	# Normalize the settings already consumed by the managed section writer.
@@ -602,8 +688,25 @@ function InvokeEditorConfigSectionCleanup {
 	$managedRules = GetManagedEditorConfigRules -Text $text
 	$lines = @(GetEditorConfigLineObjects -Content $content)
 	SetEditorConfigLineMetadata -Lines $lines
-	$changed = SetRedundantEditorConfigRuleRemoval -Lines $lines -ManagedRules $managedRules -IsRoot $isRoot -RemoveRootRuleNames $removeRootRuleNames
-	$changed = (SetEmptyEditorConfigSectionRemoval -Lines $lines) -or $changed
+	$changed = $false
+	$deletedUnmanagedLines = $false
+
+	# Delete redundant unmanaged rules only after this apply changed the managed section.
+	if ($RemoveRedundantRules) {
+		$removedRedundantRules = SetRedundantEditorConfigRuleRemoval -Lines $lines -ManagedRules $managedRules -IsRoot $isRoot -RemoveRootRuleNames $removeRootRuleNames
+		$changed = $removedRedundantRules -or $changed
+		$deletedUnmanagedLines = $removedRedundantRules -or $deletedUnmanagedLines
+	}
+
+	# Delete root-level legacy template markers whenever the root convention runs.
+	$removedLegacyMarkers = SetRootEditorConfigLegacyMarkerRemoval -Lines $lines -IsRoot $isRoot
+	$changed = $removedLegacyMarkers -or $changed
+	$deletedUnmanagedLines = $removedLegacyMarkers -or $deletedUnmanagedLines
+
+	# Remove unmanaged sections that became empty because cleanup deleted their rules.
+	$removedEmptySections = SetEmptyEditorConfigSectionRemoval -Lines $lines
+	$changed = $removedEmptySections -or $changed
+	$deletedUnmanagedLines = $removedEmptySections -or $deletedUnmanagedLines
 	$newContent = JoinEditorConfigLines -Lines $lines
 
 	# Keep the root managed section before other editorconfig sections.
@@ -611,6 +714,18 @@ function InvokeEditorConfigSectionCleanup {
 		$movedContent = MoveRootEditorConfigBlockFirst -Content $newContent -Name $name -LineEnding $lineEnding -TargetPath $editorConfigPath
 		$changed = ($movedContent -cne $newContent) -or $changed
 		$newContent = $movedContent
+	}
+
+	# Normalize blank lines after all removals and root block movement have settled.
+	if ($deletedUnmanagedLines) {
+		$blankLines = @(GetEditorConfigLineObjects -Content $newContent)
+		SetEditorConfigLineMetadata -Lines $blankLines
+		$cleanedBlankLines = SetUnmanagedEditorConfigBlankLineCleanup -Lines $blankLines
+		$changed = $cleanedBlankLines -or $changed
+
+		if ($cleanedBlankLines) {
+			$newContent = JoinEditorConfigLines -Lines $blankLines
+		}
 	}
 
 	# Write only when cleanup changed the editorconfig text.
@@ -631,7 +746,5 @@ $sectionSettings = @{
 }
 $sectionResult = Invoke-ConfigTextSection -Settings $sectionSettings -PassThru
 
-# Clean up unmanaged .editorconfig rules only when this apply changed the managed section.
-if ($sectionResult.Updated) {
-	InvokeEditorConfigSectionCleanup -Settings $settings
-}
+# Clean up unmanaged .editorconfig lines after the managed section writer has run.
+InvokeEditorConfigSectionCleanup -Settings $settings -RemoveRedundantRules $sectionResult.Updated

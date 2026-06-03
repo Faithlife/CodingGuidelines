@@ -215,6 +215,52 @@ indent_size = 4
 		}
 	}
 
+	It 'compacts unmanaged blank lines after deleting redundant rules' {
+		$testDirectory = New-TemporaryDirectory
+
+		try {
+			# Arrange an isolated repository with repeated blank lines exposed by rule cleanup.
+			Copy-TestConventionAssets -TestDirectory $testDirectory
+			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
+conventions:
+- path: ../conventions/editorconfig-section
+  settings:
+    name: markdown-files
+    text: |
+      [*.md]
+      trim_trailing_whitespace = false
+"@, $utf8)
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.editorconfig'), @"
+[*.md]
+trim_trailing_whitespace = false
+
+
+indent_size = 2
+
+[*.txt]
+indent_size = 4
+"@, $utf8)
+			Initialize-TestRepository -Path $testDirectory
+
+			# Apply the convention under test twice to verify blank cleanup idempotency.
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
+			$content = Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw
+			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
+
+			# Assert redundant cleanup left only single blank separators outside managed sections.
+			(Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw) | Should -Be $content
+			$content | Should -Match "(?m)^\[\*\.md\]\r?$"
+			$content | Should -Match "(?s)\[\*\.md\]\r?\n\r?\nindent_size = 2"
+			$content | Should -Not -Match "(?s)\r?\n\r?\n\r?\nindent_size = 2"
+			$content | Should -Match "(?m)^\[\*\.txt\]\r?$"
+			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
 	It 'does not treat wildcard managed sections as covering narrower sections' {
 		$testDirectory = New-TemporaryDirectory
 
