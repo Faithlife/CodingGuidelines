@@ -69,7 +69,7 @@ function SetBuildScriptExecutable {
 
 	# Use the platform chmod so later broad git-add operations preserve 100755.
 	$chmodCommand = Get-Command -Name chmod -ErrorAction Stop
-	& $chmodCommand '+x' '--' $Path
+	& $chmodCommand '+x' $Path
 
 	if ($LASTEXITCODE -ne 0) {
 		throw "Failed to mark '$Path' as executable in the worktree."
