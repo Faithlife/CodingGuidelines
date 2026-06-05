@@ -55,6 +55,27 @@ function GetGitIndexMode {
 	return ($indexLines[0] -split '\s+', 2)[0]
 }
 
+# Mark a copied build script executable in the worktree where Git can observe file modes.
+function SetBuildScriptExecutable {
+	param(
+		[Parameter(Mandatory = $true)]
+		[string] $Path
+	)
+
+	# Windows Git does not derive the executable bit from the filesystem.
+	if ($IsWindows) {
+		return
+	}
+
+	# Use the platform chmod so later broad git-add operations preserve 100755.
+	$chmodCommand = Get-Command -Name chmod -ErrorAction Stop
+	& $chmodCommand '+x' '--' $Path
+
+	if ($LASTEXITCODE -ne 0) {
+		throw "Failed to mark '$Path' as executable in the worktree."
+	}
+}
+
 # Copy the published build script into the repository root.
 $sourceBuildScriptPath = Join-Path $PSScriptRoot 'files' 'build.ps1'
 $targetBuildScriptPath = Join-Path (Get-Location) 'build.ps1'
@@ -69,7 +90,8 @@ elseif ($copyResult.Created) {
 	Write-Host "Created '$targetBuildScriptPath' from the published Faithlife build script."
 }
 
-# Stage the build script and mark it executable in Git.
+# Stage the build script and mark it executable in both the worktree and Git.
+SetBuildScriptExecutable -Path $targetBuildScriptPath
 InvokeGitCommand -Arguments @('add', '--', 'build.ps1') -FailureMessage "Failed to stage 'build.ps1'."
 InvokeGitCommand -Arguments @('update-index', '--chmod=+x', '--', 'build.ps1') -FailureMessage "Failed to mark 'build.ps1' as executable in Git."
 
