@@ -45,9 +45,9 @@ jobs:
     needs: test-matrix
     if: ${{ always() }}
     steps:
-    - name: Tests failed
+    - name: Test matrix failed
       if: ${{ needs.test-matrix.result != 'success' }}
-      run: Write-Host "Tests failed."; exit 1
-    - name: Tests succeeded
+      run: Write-Host "Test matrix failed. See the workflow summary for failed matrix jobs."; exit 1
+    - name: Test matrix succeeded
       if: ${{ needs.test-matrix.result == 'success' }}
-      run: Write-Host "Tests succeeded."
+      run: Write-Host "Test matrix succeeded."
