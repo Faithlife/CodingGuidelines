@@ -128,6 +128,20 @@ function Read-ConventionSettings {
 
 <#
 .SYNOPSIS
+Reads whether RepoConventions requested that git hooks be bypassed for this run.
+#>
+function Read-ConventionGitNoVerify {
+	param(
+		[Parameter(Mandatory = $true)]
+		[string] $InputPath
+	)
+
+	# RepoConventions exposes the --git-no-verify flag under git.noVerify.
+	return [bool] (Get-Content -LiteralPath $InputPath -Raw | ConvertFrom-Json -AsHashtable).git.noVerify
+}
+
+<#
+.SYNOPSIS
 Resolves a repository-root-relative path setting to a full path.
 #>
 function Get-RepositoryPath {
