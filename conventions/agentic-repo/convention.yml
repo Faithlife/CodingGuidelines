@@ -25,6 +25,7 @@ conventions:
       name: agentic-repo
       text: |
         .agents/
+        .github/instructions/
         apm.lock.yaml
         apm.yml
   - path: ../apm
