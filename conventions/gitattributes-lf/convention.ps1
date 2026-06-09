@@ -10,6 +10,9 @@ $OutputEncoding = $utf8
 $helpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'Helpers.ps1'
 . $helpersPath
 
+# Honor the RepoConventions git hook bypass request
+$gitNoVerify = Read-ConventionGitNoVerify -InputPath $args[0]
+
 $requiredRule = '* text=auto eol=lf'
 $gitattributesPath = Join-Path -Path (Get-Location) -ChildPath '.gitattributes'
 $gitattributesDisplayPath = Format-RepositoryRelativePath -Path $gitattributesPath
@@ -58,7 +61,12 @@ function NewCommitFromStagedChanges {
 		return $null
 	}
 
-	InvokeGit -Arguments @('commit', '-m', $Message) -FailureMessage "Failed to create commit '$Message'."
+	$commitArguments = @('commit', '-m', $Message)
+	if ($gitNoVerify) {
+		$commitArguments += '--no-verify'
+	}
+
+	InvokeGit -Arguments $commitArguments -FailureMessage "Failed to create commit '$Message'."
 	[string[]] $headLines = @(InvokeGit -Arguments @('rev-parse', 'HEAD') -CaptureOutput -FailureMessage 'Failed to read the current commit ID.')
 	return $headLines[0]
 }

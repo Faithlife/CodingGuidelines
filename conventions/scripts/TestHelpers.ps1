@@ -19,23 +19,26 @@ $helpersPath = Join-Path $PSScriptRoot 'Helpers.ps1'
 Creates a temporary RepoConventions input file for a test.
 #>
 function New-ConventionInputFile {
-	[CmdletBinding(DefaultParameterSetName = 'Settings')]
+	[CmdletBinding(DefaultParameterSetName = 'Structured')]
 	param(
-		[Parameter(Mandatory = $true, ParameterSetName = 'Settings')]
+		[Parameter(Mandatory = $true, ParameterSetName = 'Structured')]
 		[hashtable] $Settings,
 
-		[Parameter(Mandatory = $true, ParameterSetName = 'Json')]
+		[Parameter(ParameterSetName = 'Structured')]
+		[switch] $GitNoVerify,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Verbatim')]
 		[string] $InputJson
 	)
 
 	# Place each generated RepoConventions input in a unique temp JSON file.
 	$inputPath = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString('N') + '.json')
-	$content = if ($PSCmdlet.ParameterSetName -eq 'Settings') {
-		# Wrap settings in the input shape consumed by convention scripts.
-		@{ settings = $Settings } | ConvertTo-Json -Depth 10 -Compress
+	$content = if ($PSCmdlet.ParameterSetName -eq 'Structured') {
+		# Mirror the input shape RepoConventions produces.
+		@{ settings = $Settings; git = @{ noVerify = [bool] $GitNoVerify } } | ConvertTo-Json -Depth 10 -Compress
 	}
 	else {
-		# Use caller-supplied JSON verbatim for malformed-input tests.
+		# Use caller-supplied JSON verbatim for specialized (e.g., malformed) test cases.
 		$InputJson
 	}
 
