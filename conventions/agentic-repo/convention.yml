@@ -28,6 +28,7 @@ conventions:
         .github/instructions/
         apm.lock.yaml
         apm.yml
+        apm_modules/
   - path: ../apm
     settings:
       install: ${{ settings.apm-install }}
