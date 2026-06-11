@@ -53,6 +53,26 @@ Describe 'build-script convention' {
 				Pop-Location
 			}
 		}
+
+		function script:AddBuildScriptWithFileModeTracking {
+			# Restage build.ps1 as a file-mode-aware Git client would.
+			param(
+				[Parameter(Mandatory = $true)]
+				[string] $TestDirectory
+			)
+
+			Push-Location $TestDirectory
+			try {
+				& git -c core.fileMode=true add -- build.ps1
+
+				if ($LASTEXITCODE -ne 0) {
+					throw "Failed to restage 'build.ps1'."
+				}
+			}
+			finally {
+				Pop-Location
+			}
+		}
 	}
 
 	It 'creates build.ps1 in the repository root and marks it executable in Git' {
@@ -72,8 +92,7 @@ Describe 'build-script convention' {
 			(Get-Content -LiteralPath $buildScriptPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedBuildScriptPath -Raw)
 			(GetBuildScriptIndexMode -TestDirectory $testDirectory) | Should -Be '100755'
 			$status.Count | Should -Be 1
-			# On Windows: 'A  build.ps1' (no worktree change); on Linux/Mac: 'AM build.ps1' (mode differs in worktree)
-			$status[0] | Should -Match '^A.\sbuild\.ps1$'
+			$status[0] | Should -Be 'A  build.ps1'
 			(@($output | ForEach-Object { $_.ToString() }) -contains "Marked 'build.ps1' as executable in Git.") | Should -Be $true
 		}
 		finally {
@@ -107,9 +126,38 @@ Describe 'build-script convention' {
 			(Get-Content -LiteralPath $buildScriptPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedBuildScriptPath -Raw)
 			(GetBuildScriptIndexMode -TestDirectory $testDirectory) | Should -Be '100755'
 			$status.Count | Should -Be 1
-			# On Windows: 'M  build.ps1' (no worktree change); on Linux/Mac: 'MM build.ps1' (mode differs in worktree)
-			$status[0] | Should -Match '^M.\sbuild\.ps1$'
+			$status[0] | Should -Be 'M  build.ps1'
 			(@($output | ForEach-Object { $_.ToString() }) -contains "Updated '$buildScriptPath' from the published Faithlife build script.") | Should -Be $true
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'preserves executable mode when the build script is restaged after convention application' -Skip:$IsWindows {
+		$testDirectory = New-TemporaryDirectory
+
+		try {
+			# Arrange a repository with current build script content but non-executable git mode.
+			Initialize-TestRepository -Path $testDirectory
+			$buildScriptPath = Join-Path $testDirectory 'build.ps1'
+			Copy-Item -LiteralPath $expectedBuildScriptPath -Destination $buildScriptPath
+
+			Push-Location $testDirectory
+			try {
+				& git add -- build.ps1
+				& git commit -m 'Add non-executable build script' | Out-Null
+			}
+			finally {
+				Pop-Location
+			}
+
+			# Apply the convention, then simulate a later broad staging pass.
+			InvokeBuildScriptConvention -TestDirectory $testDirectory | Out-Null
+			AddBuildScriptWithFileModeTracking -TestDirectory $testDirectory
+
+			# Assert a later git add preserves the executable mode instead of reverting it.
+			(GetBuildScriptIndexMode -TestDirectory $testDirectory) | Should -Be '100755'
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -141,9 +189,7 @@ Describe 'build-script convention' {
 
 			# Assert the second run made no staged changes and reported idempotence.
 			$headAfterSecondRun | Should -Be $headAfterFirstRun
-			# On Linux/Mac, git tracks file mode and the working tree file may remain at mode
-			# 100644 while the index is 100755; only assert that nothing is staged.
-			(@($status | Where-Object { $_ -notmatch '^ ' })).Count | Should -Be 0
+			$status.Count | Should -Be 0
 			@($output).Count | Should -Be 0
 		}
 		finally {

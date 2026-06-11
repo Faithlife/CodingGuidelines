@@ -56,7 +56,7 @@ function GetRelativeDisplayPath {
 # Resolve the repository and discover test scripts before running them.
 $repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $conventionsRoot = GetConventionsRoot
-$testScriptPaths = GetTestScriptPaths -RepositoryRoot $repositoryRoot -ConventionsRoot $conventionsRoot
+$testScriptPaths = @(GetTestScriptPaths -RepositoryRoot $repositoryRoot -ConventionsRoot $conventionsRoot)
 
 # Fail clearly when no convention tests were discovered.
 if ($testScriptPaths.Count -eq 0) {
@@ -66,30 +66,53 @@ if ($testScriptPaths.Count -eq 0) {
 # Track failing scripts so the final output summarizes all failures.
 $failedScriptPaths = [System.Collections.Generic.List[string]]::new()
 
-# Run each Pester script independently and record failures.
-foreach ($testScriptPath in $testScriptPaths) {
-	$displayPath = GetRelativeDisplayPath -RootPath $repositoryRoot -ChildPath $testScriptPath.FullName
-	Write-Host "Running $displayPath"
+# Suppress GitHub step-summary output during test execution and restore it afterward.
+$hadGitHubStepSummary = Test-Path Env:GITHUB_STEP_SUMMARY
+$gitHubStepSummary = $env:GITHUB_STEP_SUMMARY
+$exitCode = 0
+Remove-Item Env:GITHUB_STEP_SUMMARY -ErrorAction Ignore
 
-	$testResult = Invoke-Pester -Path $testScriptPath.FullName -PassThru
+try {
+	# Run each Pester script independently and record failures.
+	foreach ($testScriptPath in $testScriptPaths) {
+		$displayPath = GetRelativeDisplayPath -RootPath $repositoryRoot -ChildPath $testScriptPath.FullName
+		Write-Host "Running $displayPath"
 
-	if ($testResult.FailedCount -gt 0) {
-		$failedScriptPaths.Add($displayPath)
+		$testResult = Invoke-Pester -Path $testScriptPath.FullName -PassThru
+
+		if ($testResult.FailedCount -gt 0) {
+			$failedScriptPaths.Add($displayPath)
+		}
+	}
+
+	# Emit the failing scripts and fail the aggregate run.
+	if ($failedScriptPaths.Count -gt 0) {
+		Write-Host ''
+		Write-Host 'Failing test scripts:'
+
+		foreach ($failedScriptPath in $failedScriptPaths) {
+			Write-Host "- $failedScriptPath"
+		}
+
+		$exitCode = 1
+	}
+	else {
+		# Report aggregate success after every script passes.
+		Write-Host ''
+		Write-Host "All $($testScriptPaths.Count) convention test scripts passed."
+	}
+}
+finally {
+	# Restore the GitHub step-summary environment variable for the parent step.
+	if ($hadGitHubStepSummary) {
+		$env:GITHUB_STEP_SUMMARY = $gitHubStepSummary
+	}
+	else {
+		Remove-Item Env:GITHUB_STEP_SUMMARY -ErrorAction Ignore
 	}
 }
 
-# Emit the failing scripts and fail the aggregate run.
-if ($failedScriptPaths.Count -gt 0) {
-	Write-Host ''
-	Write-Host 'Failing test scripts:'
-
-	foreach ($failedScriptPath in $failedScriptPaths) {
-		Write-Host "- $failedScriptPath"
-	}
-
-	exit 1
+# Exit with the aggregate test status after cleanup finishes.
+if ($exitCode -ne 0) {
+	exit $exitCode
 }
-
-# Report aggregate success after every script passes.
-Write-Host ''
-Write-Host "All $($testScriptPaths.Count) convention test scripts passed."

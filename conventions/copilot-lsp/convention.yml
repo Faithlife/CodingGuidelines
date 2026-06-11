@@ -1,2 +1,11 @@
+conventions:
+  - path: ../prettierignore-section
+    commit:
+      message: Update .prettierignore for copilot-lsp
+    settings:
+      name: copilot-lsp
+      text: |
+        .github/lsp.json
+
 pull-request:
   auto-merge: true

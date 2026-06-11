@@ -217,4 +217,79 @@ Describe 'gitattributes-lf convention' {
 		}
 	}
 
+	It 'bypasses commit hooks when git no-verify is requested' {
+		$testDirectory = New-TemporaryDirectory
+
+		try {
+			# Arrange a noncompliant repository whose commit-msg hook rejects every commit.
+			Initialize-TestRepository -Path $testDirectory
+			$gitattributesPath = Join-Path $testDirectory '.gitattributes'
+			[System.IO.File]::WriteAllText($gitattributesPath, "* -text`n", $utf8)
+			$hookPath = Join-Path $testDirectory '.git' 'hooks' 'commit-msg'
+			[System.IO.File]::WriteAllText($hookPath, "#!/bin/sh`nexit 1`n", $utf8)
+			if ($IsLinux -or $IsMacOS) {
+				& chmod '+x' $hookPath
+			}
+
+			Push-Location $testDirectory
+			try {
+				& git add -A
+				& git commit -m 'Add noncompliant gitattributes' --no-verify | Out-Null
+			}
+			finally {
+				Pop-Location
+			}
+
+			# Build a RepoConventions input that requests the git hook bypass.
+			$inputPath = New-ConventionInputFile -Settings @{} -GitNoVerify
+
+			try {
+				# Apply the convention; its commits must succeed despite the failing hook.
+				Invoke-ConventionScript -ScriptPath $script:conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath | Out-Null
+			}
+			finally {
+				Remove-Item -LiteralPath $inputPath -ErrorAction SilentlyContinue
+			}
+
+			# Assert the convention created its bypassing commit and left the tree clean.
+			$commitSubjects = @(Get-CommitSubjects -TestDirectory $testDirectory -Count 1)
+			$commitSubjects[0] | Should -Be 'Use LF'
+			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'fails on commit hooks when git no-verify is not requested' {
+		$testDirectory = New-TemporaryDirectory
+
+		try {
+			# Arrange a noncompliant repository whose commit-msg hook rejects every commit.
+			Initialize-TestRepository -Path $testDirectory
+			$gitattributesPath = Join-Path $testDirectory '.gitattributes'
+			[System.IO.File]::WriteAllText($gitattributesPath, "* -text`n", $utf8)
+			$hookPath = Join-Path $testDirectory '.git' 'hooks' 'commit-msg'
+			[System.IO.File]::WriteAllText($hookPath, "#!/bin/sh`nexit 1`n", $utf8)
+			if ($IsLinux -or $IsMacOS) {
+				& chmod '+x' $hookPath
+			}
+
+			Push-Location $testDirectory
+			try {
+				& git add -A
+				& git commit -m 'Add noncompliant gitattributes' --no-verify | Out-Null
+			}
+			finally {
+				Pop-Location
+			}
+
+			# Apply the convention without requesting the bypass; the hook must block the commit.
+			{ InvokeGitattributesLfConvention -TestDirectory $testDirectory } | Should -Throw "*Failed to create commit 'Use LF'.*"
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
 }
