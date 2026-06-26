@@ -26,6 +26,7 @@ conventions:
       text: |
         .agents/
         .github/instructions/
+        .github/lsp.json
         apm.lock.yaml
         apm.yml
         apm_modules/
