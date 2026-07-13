@@ -4,7 +4,7 @@ Applies the published C# GitHub Copilot CLI LSP server configuration.
 
 ## Behavior
 
-The convention applies a fixed `csharp` server definition that runs `dnx --yes --prerelease roslyn-language-server -- --stdio --autoLoadProjects` for `.cs` and `.cshtml` files.
+The convention applies a fixed `csharp` server definition that runs `dnx roslyn-language-server --yes --prerelease -- --stdio --autoLoadProjects`, sets the working directory to `${PLUGIN_ROOT}`, and applies the server mapping for `.cs`, `.razor`, and `.cshtml` files.
 
 ## Example
 
