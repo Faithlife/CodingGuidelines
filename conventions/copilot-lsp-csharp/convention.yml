@@ -14,3 +14,6 @@ conventions:
             .razor: aspnetcorerazor
             .cshtml: aspnetcorerazor
           warmupTimeoutMs: 120000
+
+pull-request:
+  auto-merge: true

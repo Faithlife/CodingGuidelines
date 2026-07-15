@@ -13,3 +13,6 @@ conventions:
             .tsx: typescriptreact
             .js: javascript
             .jsx: javascriptreact
+
+pull-request:
+  auto-merge: true
