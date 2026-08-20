@@ -371,6 +371,44 @@ Describe 'update-nuget-packages convention' {
 		}
 	}
 
+	It 'allows matching package rules to skip the publish cooldown' {
+		$testDirectory = New-TemporaryDirectory
+
+		try {
+			Initialize-TestRepository -Path $testDirectory
+			$projectPath = Join-Path $testDirectory 'App.csproj'
+			WriteTestFile -Path $projectPath -Content @'
+<Project>
+  <ItemGroup>
+    <PackageReference Include="Faithlife.Package" Version="1.0.0" />
+    <PackageReference Include="ThirdParty.Package" Version="1.0.0" />
+  </ItemGroup>
+</Project>
+'@
+
+			AddAndCommitAll -TestDirectory $testDirectory -Message 'Add project file'
+			$metadataPath = WriteMetadataFile -Packages @{
+				'Faithlife.Package' = @(@{ version = '2.0.0'; publishedUtc = '2026-05-20T00:00:00Z'; listed = $true })
+				'ThirdParty.Package' = @(@{ version = '2.0.0'; publishedUtc = '2026-05-20T00:00:00Z'; listed = $true })
+			}
+
+			InvokeUpdateNugetPackagesConvention -TestDirectory $testDirectory -Settings @{
+				'test-package-metadata-file' = $metadataPath
+				'now-utc' = '2026-05-27T12:00:00Z'
+				rules = @(
+					@{ packages = 'Faithlife.*'; 'publish-cooldown' = 'none' }
+				)
+			} | Out-Null
+
+			$content = Get-Content -LiteralPath $projectPath -Raw
+			$content | Should -Match 'Include="Faithlife\.Package" Version="2\.0\.0"'
+			$content | Should -Match 'Include="ThirdParty\.Package" Version="1\.0\.0"'
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
 	It 'updates same-file properties and MSBuild SDK references' {
 		$testDirectory = New-TemporaryDirectory
 
