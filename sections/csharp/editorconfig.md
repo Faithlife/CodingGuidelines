@@ -323,7 +323,7 @@ As of this writing, detection of unnecessary nullable warning suppressions using
 
 ```editorconfig
 dotnet_diagnostic.IDE0390.severity = suggestion
-dotnet_diagnostic.IDE0391.severity = suggestion
+dotnet_diagnostic.IDE0391.severity = none
 ```
 
 We prefer to use the `async` keyword for cleaner code, even when it is less efficient than returning `Task.FromResult` or `Task.CompletedTask`.
