@@ -193,6 +193,9 @@ internal sealed class ConventionInput
 
 			if (rule.PrereleaseChannel is not null)
 				effectiveRule.PrereleaseChannel = rule.PrereleaseChannel;
+
+			if (rule.PublishCooldownPolicy.HasValue)
+				effectiveRule.PublishCooldownPolicy = rule.PublishCooldownPolicy.Value;
 		}
 
 		return effectiveRule;
@@ -216,6 +219,7 @@ internal sealed class Rule
 	public VersionRange? AllowedVersionRange { get; }
 	public bool? IncludePrerelease { get; }
 	public string? PrereleaseChannel { get; }
+	public PublishCooldown? PublishCooldownPolicy { get; }
 
 	public static Rule Parse(JsonElement element)
 	{
@@ -286,7 +290,21 @@ internal sealed class Rule
 			prereleaseChannel = prereleaseChannelElement.GetString();
 		}
 
-		return new Rule(packages, hasVersion, versionPolicy, exactVersion, allowedVersionRange, includePrerelease, prereleaseChannel);
+		PublishCooldown? publishCooldown = null;
+		if (element.TryGetProperty("publish-cooldown", out var publishCooldownElement))
+		{
+			if (publishCooldownElement.ValueKind != JsonValueKind.String)
+				throw new InvalidOperationException("Rule 'publish-cooldown' must be a string.");
+
+			publishCooldown = publishCooldownElement.GetString() switch
+			{
+				"weekly" => PublishCooldown.Weekly,
+				"none" => PublishCooldown.None,
+				_ => throw new InvalidOperationException("Rule 'publish-cooldown' must be 'weekly' or 'none'.")
+			};
+		}
+
+		return new Rule(packages, hasVersion, versionPolicy, exactVersion, allowedVersionRange, includePrerelease, prereleaseChannel, publishCooldown);
 	}
 
 	public bool IsMatch(string packageId) => m_packagePatterns.Any(pattern => pattern.IsMatch(packageId));
@@ -319,7 +337,7 @@ internal sealed class Rule
 		return new Regex(regex, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 	}
 
-	private Rule(List<string> packages, bool hasVersion, VersionPolicy versionPolicy, NuGetVersion? exactVersion, VersionRange? allowedVersionRange, bool? includePrerelease, string? prereleaseChannel)
+	private Rule(List<string> packages, bool hasVersion, VersionPolicy versionPolicy, NuGetVersion? exactVersion, VersionRange? allowedVersionRange, bool? includePrerelease, string? prereleaseChannel, PublishCooldown? publishCooldown)
 	{
 		m_packagePatterns = packages.Select(CreateWildcardRegex).ToList();
 		HasVersion = hasVersion;
@@ -328,6 +346,7 @@ internal sealed class Rule
 		AllowedVersionRange = allowedVersionRange;
 		IncludePrerelease = includePrerelease;
 		PrereleaseChannel = prereleaseChannel;
+		PublishCooldownPolicy = publishCooldown;
 	}
 
 	private readonly List<Regex> m_packagePatterns;
@@ -340,6 +359,13 @@ internal sealed class EffectiveRule
 	public VersionRange? AllowedVersionRange { get; set; }
 	public bool IncludePrerelease { get; set; }
 	public string? PrereleaseChannel { get; set; }
+	public PublishCooldown PublishCooldownPolicy { get; set; } = PublishCooldown.Weekly;
+}
+
+internal enum PublishCooldown
+{
+	Weekly,
+	None
 }
 
 internal enum VersionPolicy
@@ -452,7 +478,7 @@ internal static class VersionResolver
 	{
 		var filteredCandidates = candidates
 			.Where(candidate => candidate.Listed)
-			.Where(candidate => candidate.PublishedUtc.HasValue && candidate.PublishedUtc.Value <= cutoffUtc)
+			.Where(candidate => rule.PublishCooldownPolicy == PublishCooldown.None || (candidate.PublishedUtc.HasValue && candidate.PublishedUtc.Value <= cutoffUtc))
 			.Where(candidate => candidate.Version.CompareTo(currentVersion) > 0)
 			.Where(candidate => IsPrereleaseAllowed(candidate.Version, rule))
 			.Where(candidate => IsAllowedByPolicy(candidate.Version, currentVersion, rule))
