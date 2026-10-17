@@ -516,6 +516,12 @@ dotnet_diagnostic.SA1134.severity = none
 
 The developer can decide how attributes are arranged.
 
+```editorconfig
+dotnet_diagnostic.SA1143.severity = none
+```
+
+The conditional expression rules are too restrictive.
+
 ## [StyleCop: Ordering Rules](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/OrderingRules.md)
 
 ```editorconfig
