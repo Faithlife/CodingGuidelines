@@ -1,5 +1,6 @@
 #:package NuGet.Configuration@7.3.1
 #:package NuGet.Protocol@7.3.1
+#:property NuGetAudit=false
 
 using NuGet.Common;
 using NuGet.Configuration;
