@@ -521,8 +521,6 @@ The developer can decide how attributes are arranged.
 dotnet_diagnostic.SA1143.severity = none
 ```
 
-The developer can decide how conditional expressions are line wrapped.
-
 ## [StyleCop: Ordering Rules](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/OrderingRules.md)
 
 ```editorconfig
@@ -573,8 +571,6 @@ We use `m_`, `s_`, and `c_` field prefixes.
 dotnet_diagnostic.SA1315.severity = none
 ```
 
-Parameter names may differ from inherited declarations.
-
 ## [StyleCop: Maintainability Rules](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/MaintainabilityRules.md)
 
 ```editorconfig
@@ -588,15 +584,11 @@ We don't require extra parentheses.
 dotnet_diagnostic.SA1413.severity = none
 ```
 
-We don't require trailing commas.
-
 ## [StyleCop: Layout Rules](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/LayoutRules.md)
 
 ```editorconfig
 dotnet_diagnostic.SA1500.severity = none
 ```
-
-The developer can decide when braces belong on the same line.
 
 ```editorconfig
 dotnet_diagnostic.SA1503.severity = none
@@ -639,15 +631,10 @@ dotnet_diagnostic.SA1629.severity = none
 dotnet_diagnostic.SA1633.severity = none
 dotnet_diagnostic.SA1642.severity = none
 dotnet_diagnostic.SA1643.severity = none
-```
-
-XML documentation is not required.
-
-```editorconfig
 dotnet_diagnostic.SA1653.severity = none
 ```
 
-Partial declarations may each have summary documentation.
+XML documentation is not required.
 
 ## [Quality: Design Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/design-warnings)
 
