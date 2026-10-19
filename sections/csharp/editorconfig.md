@@ -496,6 +496,7 @@ dotnet_diagnostic.SX1101.severity = warning
 We don't use `this.`.
 
 ```editorconfig
+dotnet_diagnostic.SA1111.severity = none
 dotnet_diagnostic.SA1116.severity = none
 dotnet_diagnostic.SA1117.severity = none
 dotnet_diagnostic.SA1118.severity = none
@@ -515,6 +516,12 @@ dotnet_diagnostic.SA1134.severity = none
 ```
 
 The developer can decide how attributes are arranged.
+
+```editorconfig
+dotnet_diagnostic.SA1143.severity = none
+```
+
+The developer can decide how conditional expressions are line wrapped.
 
 ## [StyleCop: Ordering Rules](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/OrderingRules.md)
 
@@ -562,6 +569,12 @@ dotnet_diagnostic.SA1311.severity = none
 
 We use `m_`, `s_`, and `c_` field prefixes.
 
+```editorconfig
+dotnet_diagnostic.SA1315.severity = none
+```
+
+Parameter names may differ from inherited declarations.
+
 ## [StyleCop: Maintainability Rules](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/MaintainabilityRules.md)
 
 ```editorconfig
@@ -571,7 +584,19 @@ dotnet_diagnostic.SA1408.severity = none
 
 We don't require extra parentheses.
 
+```editorconfig
+dotnet_diagnostic.SA1413.severity = none
+```
+
+We don't require trailing commas.
+
 ## [StyleCop: Layout Rules](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/LayoutRules.md)
+
+```editorconfig
+dotnet_diagnostic.SA1500.severity = none
+```
+
+The developer can decide when braces belong on the same line.
 
 ```editorconfig
 dotnet_diagnostic.SA1503.severity = none
@@ -617,6 +642,12 @@ dotnet_diagnostic.SA1643.severity = none
 ```
 
 XML documentation is not required.
+
+```editorconfig
+dotnet_diagnostic.SA1653.severity = none
+```
+
+Partial declarations may each have summary documentation.
 
 ## [Quality: Design Rules](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/design-warnings)
 
