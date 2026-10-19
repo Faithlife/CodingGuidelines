@@ -67,6 +67,7 @@ Describe 'faithlife-dotnet-library-workflow convention' {
 			# Assert the published workflow was created and reported.
 			(Test-Path -LiteralPath $ciWorkflowPath) | Should -Be $true
 			(Get-Content -LiteralPath $ciWorkflowPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedWorkflowPaths['ci.yml'] -Raw)
+			(Get-Content -LiteralPath $ciWorkflowPath -Raw) | Should -Match '(?m)^        user: LogosPackages\r?$'
 			(Test-Path -LiteralPath $copilotSetupWorkflowPath) | Should -Be $true
 			(Get-Content -LiteralPath $copilotSetupWorkflowPath -Raw) | Should -Be (Get-Content -LiteralPath $expectedWorkflowPaths['copilot-setup-steps.yml'] -Raw)
 			$status.Count | Should -Be 2
@@ -84,12 +85,13 @@ Describe 'faithlife-dotnet-library-workflow convention' {
 		$testDirectory = New-TemporaryDirectory
 
 		try {
-			# Arrange a repository with a committed placeholder workflow.
+			# Arrange a repository with the previous publishing account and a placeholder setup workflow.
 			Initialize-TestRepository -Path $testDirectory
 			$ciWorkflowPath = Join-Path $testDirectory '.github/workflows/ci.yml'
 			$copilotSetupWorkflowPath = Join-Path $testDirectory '.github/workflows/copilot-setup-steps.yml'
 			New-Item -ItemType Directory -Path (Split-Path -Parent $ciWorkflowPath) -Force | Out-Null
-			[System.IO.File]::WriteAllText($ciWorkflowPath, "name: Placeholder`n", $utf8)
+			$previousCiWorkflow = (Get-Content -LiteralPath $expectedWorkflowPaths['ci.yml'] -Raw).Replace('user: LogosPackages', 'user: bgrainger')
+			[System.IO.File]::WriteAllText($ciWorkflowPath, $previousCiWorkflow, $utf8)
 			[System.IO.File]::WriteAllText($copilotSetupWorkflowPath, "name: Placeholder`n", $utf8)
 
 			Push-Location $testDirectory
