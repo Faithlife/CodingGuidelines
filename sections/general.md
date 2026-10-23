@@ -54,7 +54,7 @@ Note: A good guideline to remember here is the object-oriented design practice t
 
 ### Write Designed Code
 
-**Design** means you take time to plan your program before you build it. Thoughts are cheaper than debugging. A good rule of thumb is to spend half your time on design. You need a functional spec (what the programs does) and an internal blueprint. APIs should be codified in writing.
+**Design** means you take time to plan your program before you build it. Thoughts are cheaper than debugging. A good rule of thumb is to spend half your time on design. You need a functional spec (what the program does) and an internal blueprint. APIs should be codified in writing.
 
 — Paul DiLascia
 

@@ -82,7 +82,7 @@ Named exports require the name to appear at the import site (even if it is local
 Some 3rd party APIs, like `React.lazy`, require the use of a default export. Feel free to bypass this guideline in cases where it makes your life easier.
 
 ## File Names Should Match Export Names
-This consistency makes code easier to locate, and it works better with refactoring tools like VSCode fixes that default to files names matching the name of the function or class being extracted.
+This consistency makes code easier to locate, and it works better with refactoring tools like VSCode fixes that default to file names matching the name of the function or class being extracted.
 
 ```js
 // bad
@@ -119,7 +119,7 @@ Async code should always clean up after itself. Avoid writing code that may prod
 ## Be Mindful of Dependency Weight
 While it's beneficial to leverage existing solutions, it's also important to consider the associated costs. JavaScript applications tend to have deep dependency trees that can bloat the application bundle. Once a dependency is added and built upon, it can be prohibitively difficult to remove later when application performance is suffering.
 
-When considering a new dependency, always investigate the cost to your application's bundle size. Ideal dependencies contain code that is fully exercised by your applications requirements, leaving no "dead code" in the application bundle. Some libraries are quite large, but distribute multiple entry points or support tree-shaking, letting you import just the functionality from the library that you actually need. Take care to ensure you're not shipping dead code to your users, and ensure you're importing responsible. Investigate or build alternatives when the weight of a dependency doesn't justify the functionality it provides.
+When considering a new dependency, always investigate the cost to your application's bundle size. Ideal dependencies contain code that is fully exercised by your application's requirements, leaving no "dead code" in the application bundle. Some libraries are quite large, but distribute multiple entry points or support tree-shaking, letting you import just the functionality from the library that you actually need. Take care to ensure you're not shipping dead code to your users, and ensure you're importing responsibly. Investigate or build alternatives when the weight of a dependency doesn't justify the functionality it provides.
 
 While this is primarily relevant to front-end projects, node.js is not immune to this issue. Node must parse and compile all scripts at import time, and large dependencies can noticeably slow down the startup of scripts and servers.
 
