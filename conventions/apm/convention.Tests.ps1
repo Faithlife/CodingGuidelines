@@ -344,6 +344,75 @@ exit 0
 		}
 	}
 
+	It 'removes deployed directories without per-file hashes before installing' {
+		# Set up a repository whose lockfile mixes legacy unhashed directories with hashed files.
+		$testDirectory = New-TemporaryDirectory
+		$toolDirectory = New-TemporaryDirectory
+		$argumentsPath = Join-Path $toolDirectory 'apm-arguments.txt'
+		$inputPath = New-ConventionInputFile -Settings @{}
+		$originalPath = $env:PATH
+		$legacySkillPath = Join-Path $testDirectory '.agents' 'skills' 'legacy'
+		$hashedSkillPath = Join-Path $testDirectory '.agents' 'skills' 'hashed'
+		$instructionPath = Join-Path $testDirectory '.github' 'instructions' 'sample.instructions.md'
+
+		try {
+			# Arrange deployed files and a lockfile in the formats written by older and newer apm versions.
+			New-Item -ItemType Directory -Path $legacySkillPath, $hashedSkillPath, (Split-Path $instructionPath) -Force | Out-Null
+			[System.IO.File]::WriteAllText((Join-Path $legacySkillPath 'SKILL.md'), "legacy`n", $utf8)
+			[System.IO.File]::WriteAllText((Join-Path $hashedSkillPath 'SKILL.md'), "hashed`n", $utf8)
+			[System.IO.File]::WriteAllText($instructionPath, "instructions`n", $utf8)
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'apm.yml'), "packages: []`ntargets:`n- copilot`n", $utf8)
+			$lockContent = @(
+				"lockfile_version: '1'"
+				'dependencies:'
+				'- repo_url: example/legacy'
+				'  deployed_files:'
+				'  - .agents/skills/legacy'
+				'  - .agents/skills/missing'
+				'  content_hash: sha256:00'
+				'- repo_url: example/hashed'
+				'  deployed_files:'
+				'  - .agents/skills/hashed'
+				'  - .agents/skills/hashed/SKILL.md'
+				'  - .github/instructions/sample.instructions.md'
+				'  deployed_file_hashes:'
+				'    .agents/skills/hashed/SKILL.md: sha256:01'
+				'    .github/instructions/sample.instructions.md: sha256:02'
+				'  content_hash: sha256:03'
+			) -join "`n"
+			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'apm.lock.yaml'), $lockContent + "`n", $utf8)
+			Initialize-TestRepository -Path $testDirectory
+			NewFakeApmCommand -ToolDirectory $toolDirectory -WindowsScript @'
+@echo off
+setlocal
+> "%APM_ARGUMENTS_PATH%" echo %*
+exit /b 0
+'@ -BashScript @'
+#!/usr/bin/env bash
+printf '%s\n' "$*" > "$APM_ARGUMENTS_PATH"
+exit 0
+'@
+
+			$env:APM_ARGUMENTS_PATH = $argumentsPath
+			$env:PATH = $toolDirectory + [System.IO.Path]::PathSeparator + $originalPath
+
+			# Run the convention and assert only the unhashed directory was removed before install.
+			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
+			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install'
+			Test-Path -LiteralPath $legacySkillPath | Should -Be $false
+			Test-Path -LiteralPath (Join-Path $hashedSkillPath 'SKILL.md') | Should -Be $true
+			Test-Path -LiteralPath $instructionPath | Should -Be $true
+		}
+		finally {
+			# Restore process state and remove temporary files.
+			$env:PATH = $originalPath
+			Remove-Item Env:APM_ARGUMENTS_PATH -ErrorAction SilentlyContinue
+			Remove-Item -LiteralPath $inputPath -Force
+			Remove-Item -LiteralPath $toolDirectory -Recurse -Force
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
 	It 'reverts apm.lock.yaml when it is the only changed file' {
 		# Set up a repository where apm can only update the lock file.
 		$testDirectory = New-TemporaryDirectory

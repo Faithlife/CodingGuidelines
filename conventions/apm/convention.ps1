@@ -86,6 +86,53 @@ function RemoveApmManifestAuthor {
 	[System.IO.File]::WriteAllText($apmManifestPath, $manifestText, $utf8)
 }
 
+function RemoveUnhashedDeployedDirectories {
+	# Resolve the lockfile path from the target repository root PowerShell location.
+	$repositoryRoot = (Get-Location).ProviderPath
+	$lockFilePath = Join-Path $repositoryRoot 'apm.lock.yaml'
+	if (-not (Test-Path -LiteralPath $lockFilePath)) {
+		return
+	}
+
+	# Scan the lockfile for deployed paths and per-file hashes without a YAML parser.
+	$deployedPaths = [System.Collections.Generic.List[string]]::new()
+	$hashedPaths = [System.Collections.Generic.List[string]]::new()
+	$inDeployedFiles = $false
+	foreach ($line in [System.IO.File]::ReadAllLines($lockFilePath)) {
+		if ($line -match '^\s*deployed_files\s*:\s*$') {
+			$inDeployedFiles = $true
+			continue
+		}
+		if ($inDeployedFiles -and $line -match '^\s*-\s+(\S.*?)\s*$') {
+			$deployedPaths.Add($Matches[1].Trim("'", '"'))
+			continue
+		}
+		$inDeployedFiles = $false
+		if ($line -match '^\s+(\S[^:]*):\s*sha256:[0-9a-f]+\s*$' -and $Matches[1] -ne 'content_hash') {
+			$hashedPaths.Add($Matches[1].Trim("'", '"'))
+		}
+	}
+
+	# Older apm versions recorded deployed skill directories without per-file hashes. Newer versions
+	# refuse to replace such a directory ("no trustworthy local deployment baseline") unless it is
+	# identical to what they would deploy, so remove it and let apm redeploy it and record hashes.
+	foreach ($deployedPath in $deployedPaths) {
+		if ([System.IO.Path]::IsPathRooted($deployedPath) -or ($deployedPath -split '[\\/]') -contains '..') {
+			continue
+		}
+		$item = Get-Item -LiteralPath (Join-Path $repositoryRoot $deployedPath) -Force -ErrorAction SilentlyContinue
+		if ($null -eq $item -or -not $item.PSIsContainer -or $null -ne $item.LinkType) {
+			continue
+		}
+		$prefix = $deployedPath.TrimEnd('/') + '/'
+		if (@($hashedPaths | Where-Object { $_.StartsWith($prefix, [System.StringComparison]::Ordinal) }).Count -gt 0) {
+			continue
+		}
+		Write-Host "Removing '$deployedPath' so apm can redeploy it with per-file hashes."
+		Remove-Item -LiteralPath $item.FullName -Recurse -Force
+	}
+}
+
 function InvokeApmCommand {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -126,6 +173,9 @@ if ($packagesToInstall.Count -gt 0 -and -not (Test-Path -LiteralPath 'apm.yml'))
 
 # Ensure apm can resolve the Copilot target from the repository manifest.
 EnsureApmManifestTargets
+
+# Remove deployed directories that older apm versions recorded without per-file hashes.
+RemoveUnhashedDeployedDirectories
 
 # Install configured packages or the repository manifest before updating.
 $installArguments = @('install')

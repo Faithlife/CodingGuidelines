@@ -13,6 +13,8 @@ The convention requires the `apm` command to be available when it runs. If packa
 
 If no packages are configured and the repository has no root `apm.yml`, the convention leaves the repository unchanged. The convention runs `apm install`, passing configured packages when present, and then runs `apm update --yes` when `update` is `true`. After `apm` completes, if the only changed file is `apm.lock.yaml`, the convention restores that file so update-only no-op runs stay clean.
 
+Before installing, the convention removes any directory listed under `deployed_files` in `apm.lock.yaml` that has no per-file entries in `deployed_file_hashes`. Older `apm` versions recorded deployed skill directories that way, and newer versions refuse to replace such a directory unless it is identical to what they would deploy ("no trustworthy local deployment baseline"). Removing the directory lets `apm install` redeploy it and record per-file hashes without resorting to `--force`, which would also bypass `apm` security checks.
+
 ## Examples
 
 Install specific packages:
