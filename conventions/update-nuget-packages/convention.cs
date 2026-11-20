@@ -4,6 +4,7 @@
 
 using NuGet.Common;
 using NuGet.Configuration;
+using NuGet.Frameworks;
 using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
@@ -57,25 +58,73 @@ internal sealed class UpdateNugetPackagesApp
 
 		var replacementsByFile = new Dictionary<string, List<Replacement>>(StringComparer.Ordinal);
 		var updatedPackageSummaries = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+		var heldPackageMessages = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+		var frameworkResolver = new TargetFrameworkResolver(repositoryRoot, trackedFiles);
+
+		// Returns the eligible versions that support every target framework using the reference, newest first.
+		async Task<List<NuGetVersion>> GetAllowedVersionsAsync(VersionReference reference, NuGetVersion currentVersion)
+		{
+			var rule = input.GetEffectiveRule(reference.PackageId);
+			if (rule.VersionPolicy == VersionPolicy.NoUpdate)
+				return [];
+
+			var candidates = await metadataSource.GetVersionsAsync(reference.PackageId);
+			var eligibleCandidates = VersionResolver.GetEligibleCandidates(currentVersion, candidates, rule, cutoffUtc);
+			if (eligibleCandidates.Count == 0 || !TargetFrameworkCompatibility.IsApplicable(reference) || eligibleCandidates.All(x => x.Frameworks is null))
+				return eligibleCandidates.Select(x => x.Version).ToList();
+
+			var requirement = frameworkResolver.GetRequirement(reference);
+			var currentFrameworks = candidates.FirstOrDefault(x => x.Version == currentVersion && x.Frameworks is not null)?.Frameworks;
+			var allowedVersions = new List<NuGetVersion>();
+			string? firstIncompatibility = null;
+
+			foreach (var candidate in eligibleCandidates)
+			{
+				var incompatibility = TargetFrameworkCompatibility.FindIncompatibility(candidate, requirement, currentFrameworks);
+				if (incompatibility is null)
+					allowedVersions.Add(candidate.Version);
+				else if (allowedVersions.Count == 0)
+					firstIncompatibility ??= incompatibility;
+			}
+
+			if (firstIncompatibility is not null)
+			{
+				var heldVersion = (allowedVersions.FirstOrDefault() ?? currentVersion).ToNormalizedString();
+				heldPackageMessages.Add(string.Create(CultureInfo.InvariantCulture, $"{reference.PackageId} held at {heldVersion}: {eligibleCandidates[0].Version.ToNormalizedString()} does not support {firstIncompatibility}"));
+			}
+
+			return allowedVersions;
+		}
 
 		foreach (var (relativePath, references) in referencesByFile.OrderBy(x => x.Key, StringComparer.Ordinal))
 		{
-			foreach (var reference in references.OrderBy(x => x.SpanStart))
+			// References that share a version property must all move to the same version.
+			foreach (var group in references.GroupBy(x => (x.SpanStart, x.SpanLength)).OrderBy(x => x.Key.SpanStart))
 			{
+				var groupReferences = group.ToList();
+				var reference = groupReferences[0];
 				if (!NuGetVersion.TryParse(reference.CurrentVersion, out var currentVersion) || currentVersion is null)
 				{
 					continue;
 				}
 
-				var rule = input.GetEffectiveRule(reference.PackageId);
+				var allowedVersionsByReference = new List<List<NuGetVersion>>();
+				foreach (var groupReference in groupReferences)
+					allowedVersionsByReference.Add(await GetAllowedVersionsAsync(groupReference, currentVersion));
 
-				if (rule.VersionPolicy == VersionPolicy.NoUpdate)
+				var selectedVersion = allowedVersionsByReference[0].FirstOrDefault(version => allowedVersionsByReference.All(x => x.Contains(version)));
+				if (groupReferences.Count > 1)
 				{
-					continue;
+					for (var index = 0; index < groupReferences.Count; index++)
+					{
+						var bestVersion = allowedVersionsByReference[index].FirstOrDefault();
+						if (bestVersion is not null && bestVersion != selectedVersion)
+						{
+							var otherPackageIds = string.Join(", ", groupReferences.Where((_, otherIndex) => otherIndex != index).Select(x => x.PackageId).Distinct(StringComparer.OrdinalIgnoreCase));
+							heldPackageMessages.Add(string.Create(CultureInfo.InvariantCulture, $"{groupReferences[index].PackageId} held at {(selectedVersion ?? currentVersion).ToNormalizedString()}: {bestVersion.ToNormalizedString()} is not available for every package that shares its version property ({otherPackageIds})"));
+						}
+					}
 				}
-
-				var candidates = await metadataSource.GetVersionsAsync(reference.PackageId);
-				var selectedVersion = VersionResolver.SelectVersion(reference.PackageId, currentVersion, candidates, rule, cutoffUtc);
 
 				if (selectedVersion is null)
 				{
@@ -83,15 +132,15 @@ internal sealed class UpdateNugetPackagesApp
 				}
 
 				var selectedVersionText = selectedVersion.ToNormalizedString();
-				var replacement = new Replacement(reference.SpanStart, reference.SpanLength, reference.CurrentVersion, selectedVersionText, reference.Line, reference.PackageId);
 				if (!replacementsByFile.TryGetValue(relativePath, out var fileReplacements))
 				{
 					fileReplacements = new List<Replacement>();
 					replacementsByFile.Add(relativePath, fileReplacements);
 				}
 
-				fileReplacements.Add(replacement);
-				updatedPackageSummaries.Add(string.Create(CultureInfo.InvariantCulture, $"{reference.PackageId} {selectedVersionText} (from {reference.CurrentVersion})"));
+				fileReplacements.Add(new Replacement(reference.SpanStart, reference.SpanLength, reference.CurrentVersion, selectedVersionText, reference.Line, reference.PackageId));
+				foreach (var groupReference in groupReferences)
+					updatedPackageSummaries.Add(string.Create(CultureInfo.InvariantCulture, $"{groupReference.PackageId} {selectedVersionText} (from {groupReference.CurrentVersion})"));
 			}
 		}
 
@@ -104,6 +153,9 @@ internal sealed class UpdateNugetPackagesApp
 			if (!string.Equals(content.Text, updatedText, StringComparison.Ordinal))
 				content.Write(updatedText);
 		}
+
+		foreach (var heldPackageMessage in heldPackageMessages)
+			Console.WriteLine(heldPackageMessage);
 
 		if (updatedPackageSummaries.Count != 0)
 		{
@@ -381,7 +433,8 @@ internal enum VersionPolicy
 internal sealed record VersionReference(string RelativePath, string PackageId, string CurrentVersion, int SpanStart, int SpanLength, int Line, string Kind);
 internal sealed record Replacement(int Start, int Length, string OldText, string NewText, int Line, string PackageId);
 
-internal sealed record CandidateVersion(NuGetVersion Version, DateTimeOffset? PublishedUtc, bool Listed);
+// Frameworks are the dependency group target frameworks; null means the package declares none and is treated as compatible.
+internal sealed record CandidateVersion(NuGetVersion Version, DateTimeOffset? PublishedUtc, bool Listed, IReadOnlyList<NuGetFramework>? Frameworks = null);
 
 internal interface IMetadataSource
 {
@@ -410,7 +463,12 @@ internal sealed class FileMetadataSource : IMetadataSource
 					publishedUtc = DateTimeOffset.Parse(publishedElement.GetString()!, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
 
 				var listed = !versionElement.TryGetProperty("listed", out var listedElement) || listedElement.GetBoolean();
-				candidates.Add(new CandidateVersion(version, publishedUtc, listed));
+
+				List<NuGetFramework>? frameworks = null;
+				if (versionElement.TryGetProperty("frameworks", out var frameworksElement) && frameworksElement.ValueKind == JsonValueKind.Array)
+					frameworks = frameworksElement.EnumerateArray().Select(x => NuGetFramework.Parse(x.GetString()!)).ToList();
+
+				candidates.Add(new CandidateVersion(version, publishedUtc, listed, frameworks is { Count: > 0 } ? frameworks : null));
 			}
 
 			m_versions.Add(packageProperty.Name, candidates);
@@ -455,10 +513,12 @@ internal sealed class NuGetMetadataSource : IMetadataSource
 				foreach (var item in metadata)
 				{
 					var publishedUtc = repository.PackageSource.IsHttp ? item.Published : DateTimeOffset.MinValue;
+					var frameworks = item.DependencySets.Select(x => x.TargetFramework).ToList();
 					versions.Add(new CandidateVersion(
 						item.Identity.Version,
 						publishedUtc,
-						item.IsListed));
+						item.IsListed,
+						frameworks.Count != 0 ? frameworks : null));
 				}
 			}
 			catch (Exception exception) when (exception is FatalProtocolException or HttpRequestException or TaskCanceledException)
@@ -475,19 +535,18 @@ internal sealed class NuGetMetadataSource : IMetadataSource
 
 internal static class VersionResolver
 {
-	public static NuGetVersion? SelectVersion(string packageId, NuGetVersion currentVersion, IReadOnlyList<CandidateVersion> candidates, EffectiveRule rule, DateTimeOffset cutoffUtc)
+	public static List<CandidateVersion> GetEligibleCandidates(NuGetVersion currentVersion, IReadOnlyList<CandidateVersion> candidates, EffectiveRule rule, DateTimeOffset cutoffUtc)
 	{
-		var filteredCandidates = candidates
+		return candidates
 			.Where(candidate => candidate.Listed)
 			.Where(candidate => rule.PublishCooldownPolicy == PublishCooldown.None || (candidate.PublishedUtc.HasValue && candidate.PublishedUtc.Value <= cutoffUtc))
 			.Where(candidate => candidate.Version.CompareTo(currentVersion) > 0)
 			.Where(candidate => IsPrereleaseAllowed(candidate.Version, rule))
 			.Where(candidate => IsAllowedByPolicy(candidate.Version, currentVersion, rule))
-			.Select(candidate => candidate.Version)
-			.OrderDescending()
+			.GroupBy(candidate => candidate.Version)
+			.Select(group => group.FirstOrDefault(candidate => candidate.Frameworks is not null) ?? group.First())
+			.OrderByDescending(candidate => candidate.Version)
 			.ToList();
-
-		return filteredCandidates.FirstOrDefault();
 	}
 
 	private static bool IsPrereleaseAllowed(NuGetVersion version, EffectiveRule rule)
@@ -523,6 +582,275 @@ internal static class VersionResolver
 	{
 		return version.Release.Split('.', StringSplitOptions.RemoveEmptyEntries).Any(part => string.Equals(part, channel, StringComparison.OrdinalIgnoreCase));
 	}
+}
+
+internal sealed record TargetFrameworkRequirement(IReadOnlyList<NuGetFramework> Frameworks, bool HasUnknownProjects);
+
+internal static class TargetFrameworkCompatibility
+{
+	// MSBuild SDKs and .NET tools are not restored against project target frameworks.
+	public static bool IsApplicable(VersionReference reference) => reference.Kind.StartsWith("xml-", StringComparison.Ordinal);
+
+	public static string? FindIncompatibility(CandidateVersion candidate, TargetFrameworkRequirement requirement, IReadOnlyList<NuGetFramework>? currentFrameworks)
+	{
+		if (candidate.Frameworks is null)
+			return null;
+
+		// Only enforce frameworks that the current version's dependency groups support. Restore already works with the
+		// current version, so a framework it doesn't list means the groups don't describe compatibility (e.g. build-only packages).
+		foreach (var framework in requirement.Frameworks.Where(x => currentFrameworks is null || Supports(currentFrameworks, x)))
+		{
+			if (!Supports(candidate.Frameworks, framework))
+				return framework.GetShortFolderName();
+		}
+
+		// When some projects have unknown target frameworks, don't drop a framework that the current version supports.
+		if (requirement.HasUnknownProjects && currentFrameworks is not null)
+		{
+			foreach (var framework in currentFrameworks.Where(IsSpecific))
+			{
+				if (!Supports(candidate.Frameworks, framework))
+					return framework.GetShortFolderName();
+			}
+		}
+
+		return null;
+	}
+
+	private static bool Supports(IReadOnlyList<NuGetFramework> packageFrameworks, NuGetFramework projectFramework) =>
+		!IsSpecific(projectFramework) ||
+		packageFrameworks.Any(packageFramework => !IsSpecific(packageFramework) || DefaultCompatibilityProvider.Instance.IsCompatible(projectFramework, packageFramework));
+
+	private static bool IsSpecific(NuGetFramework framework) => !framework.IsAny && !framework.IsUnsupported && !framework.IsAgnostic;
+}
+
+internal sealed class TargetFrameworkResolver
+{
+	public TargetFrameworkResolver(string repositoryRoot, IReadOnlyList<string> trackedFiles)
+	{
+		m_repositoryRoot = repositoryRoot;
+		m_projectPaths = trackedFiles.Where(IsProjectPath).ToList();
+	}
+
+	public TargetFrameworkRequirement GetRequirement(VersionReference reference)
+	{
+		var referencePath = reference.RelativePath;
+		IEnumerable<string> projects;
+		if (IsProjectPath(referencePath))
+		{
+			projects = [referencePath];
+		}
+		else
+		{
+			// A shared MSBuild file applies to the projects below it; a central PackageVersion applies only to projects that use the package.
+			var directory = Path.GetDirectoryName(referencePath) ?? "";
+			var scopedProjects = m_projectPaths.Where(x => directory.Length == 0 || x.StartsWith(directory + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)).ToList();
+			if (scopedProjects.Count == 0)
+				scopedProjects = m_projectPaths;
+
+			projects = IsPackageVersion(reference) ?
+				scopedProjects.Where(x => GetPackageIds(x).Contains(reference.PackageId)) :
+				scopedProjects;
+		}
+
+		var frameworks = new List<NuGetFramework>();
+		var hasProjects = false;
+		var hasUnknownProjects = false;
+		foreach (var project in projects)
+		{
+			hasProjects = true;
+			var projectFrameworks = GetFrameworks(project);
+			if (projectFrameworks is null)
+				hasUnknownProjects = true;
+			else
+				frameworks.AddRange(projectFrameworks.Where(x => !frameworks.Contains(x)));
+		}
+
+		return new TargetFrameworkRequirement(frameworks, hasUnknownProjects || !hasProjects);
+	}
+
+	private IReadOnlyList<NuGetFramework>? GetFrameworks(string projectPath)
+	{
+		if (!m_frameworksByProject.TryGetValue(projectPath, out var frameworks))
+		{
+			frameworks = ReadFrameworks(projectPath);
+			if (frameworks is null)
+				Console.Error.WriteLine($"Could not determine target frameworks for '{projectPath}'; not updating packages to versions that drop a currently supported framework.");
+
+			m_frameworksByProject.Add(projectPath, frameworks);
+		}
+
+		return frameworks;
+	}
+
+	private List<NuGetFramework>? ReadFrameworks(string projectPath)
+	{
+		var absolutePath = Path.Combine(m_repositoryRoot, projectPath);
+		var projectText = ReadText(absolutePath);
+		if (projectText is null)
+			return null;
+
+		// Prefer literal values in the project, then in Directory.Build.props files above it.
+		var files = new List<string> { projectText };
+		files.AddRange(GetAncestorFiles(absolutePath, "Directory.Build.props").Select(ReadText).OfType<string>());
+
+		foreach (var text in files)
+		{
+			var values = TargetFrameworkRegex.Matches(text).Select(x => x.Groups["value"].Value.Trim()).ToList();
+			if (values.Count == 0)
+				continue;
+
+			var resolvedValues = values.Select(x => ResolveProperties(x, files)).ToList();
+			if (resolvedValues.All(x => x is not null))
+				return ParseFrameworks(resolvedValues!);
+
+			break;
+		}
+
+		// Fall back to MSBuild evaluation for SDK-style projects whose frameworks aren't literal.
+		return SdkProjectRegex.IsMatch(projectText) ? ReadFrameworksWithMSBuild(absolutePath) : null;
+	}
+
+	private static string? ResolveProperties(string value, IReadOnlyList<string> files)
+	{
+		for (var depth = 0; depth < 5 && value.Contains("$(", StringComparison.Ordinal); depth++)
+		{
+			var unresolved = false;
+			value = PropertyReferenceRegex.Replace(value, match =>
+			{
+				var name = match.Groups["name"].Value;
+				foreach (var text in files)
+				{
+					var definitions = Regex.Matches(text, @"<" + Regex.Escape(name) + @"\b[^>]*>(?<value>[^<]*)</" + Regex.Escape(name) + ">", RegexOptions.CultureInvariant);
+					if (definitions.Count == 1)
+						return definitions[0].Groups["value"].Value.Trim();
+				}
+
+				unresolved = true;
+				return match.Value;
+			});
+
+			if (unresolved)
+				return null;
+		}
+
+		return value.Contains("$(", StringComparison.Ordinal) ? null : value;
+	}
+
+	private static List<NuGetFramework>? ParseFrameworks(IEnumerable<string> values)
+	{
+		var frameworks = values
+			.SelectMany(x => x.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+			.Select(x => NuGetFramework.Parse(x))
+			.Distinct()
+			.ToList();
+
+		return frameworks.Count != 0 && frameworks.All(x => !x.IsUnsupported) ? frameworks : null;
+	}
+
+	private static List<NuGetFramework>? ReadFrameworksWithMSBuild(string absolutePath)
+	{
+		try
+		{
+			var startInfo = new ProcessStartInfo("dotnet")
+			{
+				WorkingDirectory = Path.GetDirectoryName(absolutePath)!,
+				RedirectStandardOutput = true,
+				RedirectStandardError = true,
+				UseShellExecute = false,
+			};
+			foreach (var argument in new[] { "msbuild", absolutePath, "-nologo", "-getProperty:TargetFramework", "-getProperty:TargetFrameworks" })
+				startInfo.ArgumentList.Add(argument);
+
+			using var process = Process.Start(startInfo);
+			if (process is null)
+				return null;
+
+			var outputTask = process.StandardOutput.ReadToEndAsync();
+			_ = process.StandardError.ReadToEndAsync();
+			if (!process.WaitForExit(TimeSpan.FromMinutes(2)))
+			{
+				process.Kill(entireProcessTree: true);
+				return null;
+			}
+
+			if (process.ExitCode != 0)
+				return null;
+
+			using var document = JsonDocument.Parse(outputTask.Result);
+			var properties = document.RootElement.GetProperty("Properties");
+			return ParseFrameworks(new[] { "TargetFramework", "TargetFrameworks" }.Select(x => properties.TryGetProperty(x, out var value) ? value.GetString() ?? "" : ""));
+		}
+		catch (Exception exception) when (exception is InvalidOperationException or JsonException or System.ComponentModel.Win32Exception or KeyNotFoundException)
+		{
+			return null;
+		}
+	}
+
+	private HashSet<string> GetPackageIds(string projectPath)
+	{
+		if (!m_packageIdsByProject.TryGetValue(projectPath, out var packageIds))
+		{
+			var absolutePath = Path.Combine(m_repositoryRoot, projectPath);
+			var files = new List<string> { absolutePath };
+			files.AddRange(GetAncestorFiles(absolutePath, "Directory.Build.props"));
+			files.AddRange(GetAncestorFiles(absolutePath, "Directory.Build.targets"));
+
+			packageIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+			foreach (var text in files.Select(ReadText).OfType<string>())
+			{
+				foreach (Match match in PackageReferenceRegex.Matches(text))
+					packageIds.Add(match.Groups["id"].Value.Trim());
+			}
+
+			m_packageIdsByProject.Add(projectPath, packageIds);
+		}
+
+		return packageIds;
+	}
+
+	private IEnumerable<string> GetAncestorFiles(string absoluteProjectPath, string fileName)
+	{
+		var root = Path.GetFullPath(m_repositoryRoot).TrimEnd(Path.DirectorySeparatorChar);
+		var directory = Path.GetDirectoryName(Path.GetFullPath(absoluteProjectPath));
+		while (directory is not null && directory.Length >= root.Length)
+		{
+			var path = Path.Combine(directory, fileName);
+			if (File.Exists(path))
+				yield return path;
+
+			directory = Path.GetDirectoryName(directory);
+		}
+	}
+
+	private bool IsPackageVersion(VersionReference reference)
+	{
+		var text = ReadText(Path.Combine(m_repositoryRoot, reference.RelativePath));
+		if (text is null || reference.SpanStart > text.Length)
+			return false;
+
+		// Find the nearest package element that starts before the version text.
+		var before = text[..reference.SpanStart];
+		var packageVersionStart = before.LastIndexOf("<PackageVersion", StringComparison.Ordinal);
+		var otherStart = Math.Max(before.LastIndexOf("<PackageReference", StringComparison.Ordinal), before.LastIndexOf("<GlobalPackageReference", StringComparison.Ordinal));
+		return packageVersionStart > otherStart;
+	}
+
+	private static string? ReadText(string path) => File.Exists(path) ? FileContent.Read(path).Text : null;
+
+	private static bool IsProjectPath(string path) =>
+		Path.GetExtension(path) is var extension &&
+		(extension.Equals(".csproj", StringComparison.OrdinalIgnoreCase) || extension.Equals(".fsproj", StringComparison.OrdinalIgnoreCase) || extension.Equals(".vbproj", StringComparison.OrdinalIgnoreCase));
+
+	private static Regex TargetFrameworkRegex { get; } = new(@"<(?<name>TargetFrameworks?)\b[^>]*>(?<value>[^<]*)</\k<name>>", RegexOptions.CultureInvariant);
+	private static Regex PropertyReferenceRegex { get; } = new(@"\$\((?<name>[A-Za-z_][A-Za-z0-9_.-]*)\)", RegexOptions.CultureInvariant);
+	private static Regex PackageReferenceRegex { get; } = new(@"<PackageReference\b[^>]*?\b(?:Include|Update)\s*=\s*([""'])(?<id>[^""']+)\1", RegexOptions.CultureInvariant);
+	private static Regex SdkProjectRegex { get; } = new(@"<(?:Project|Import)\b[^>]*\bSdk\s*=|<Sdk\b", RegexOptions.CultureInvariant);
+
+	private readonly string m_repositoryRoot;
+	private readonly List<string> m_projectPaths;
+	private readonly Dictionary<string, IReadOnlyList<NuGetFramework>?> m_frameworksByProject = new(StringComparer.Ordinal);
+	private readonly Dictionary<string, HashSet<string>> m_packageIdsByProject = new(StringComparer.Ordinal);
 }
 
 internal static class ReferenceFinder

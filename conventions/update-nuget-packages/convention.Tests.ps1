@@ -453,6 +453,230 @@ Describe 'update-nuget-packages convention' {
 		}
 	}
 
+	It 'only updates to versions that support the project target frameworks' {
+		$testDirectory = New-TemporaryDirectory
+
+		try {
+			Initialize-TestRepository -Path $testDirectory
+			$legacyProjectPath = Join-Path $testDirectory 'src' 'Legacy' 'Legacy.csproj'
+			$multiProjectPath = Join-Path $testDirectory 'src' 'Multi' 'Multi.csproj'
+			$modernProjectPath = Join-Path $testDirectory 'src' 'Modern' 'Modern.csproj'
+
+			# Legacy inherits its framework from Directory.Build.props through a property.
+			WriteTestFile -Path (Join-Path $testDirectory 'src' 'Legacy' 'Directory.Build.props') -Content @'
+<Project>
+  <PropertyGroup>
+    <LegacyFramework>net472</LegacyFramework>
+    <TargetFramework>$(LegacyFramework)</TargetFramework>
+  </PropertyGroup>
+</Project>
+'@
+			WriteTestFile -Path $legacyProjectPath -Content @'
+<Project>
+  <ItemGroup>
+    <PackageReference Include="Split.Package" Version="1.0.0" />
+  </ItemGroup>
+</Project>
+'@
+			WriteTestFile -Path $multiProjectPath -Content @'
+<Project>
+  <PropertyGroup>
+    <TargetFrameworks>net472;net10.0</TargetFrameworks>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Split.Package" Version="1.0.0" />
+  </ItemGroup>
+</Project>
+'@
+			WriteTestFile -Path $modernProjectPath -Content @'
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Split.Package" Version="1.0.0" />
+  </ItemGroup>
+</Project>
+'@
+			AddAndCommitAll -TestDirectory $testDirectory -Message 'Add projects'
+
+			$metadataPath = WriteMetadataFile -Packages @{
+				'Split.Package' = @(
+					@{ version = '1.0.0'; publishedUtc = '2026-05-01T00:00:00Z'; frameworks = @('net472', 'net10.0') },
+					@{ version = '1.1.0'; publishedUtc = '2026-05-01T00:00:00Z'; frameworks = @('netstandard2.0') },
+					@{ version = '2.0.0'; publishedUtc = '2026-05-01T00:00:00Z'; frameworks = @('net10.0') }
+				)
+			}
+
+			$output = InvokeUpdateNugetPackagesConvention -TestDirectory $testDirectory -Settings @{
+				'test-package-metadata-file' = $metadataPath
+				'now-utc' = '2026-05-27T12:00:00Z'
+			}
+
+			(Get-Content -LiteralPath $legacyProjectPath -Raw) | Should -Match 'Version="1\.1\.0"'
+			(Get-Content -LiteralPath $multiProjectPath -Raw) | Should -Match 'Version="1\.1\.0"'
+			(Get-Content -LiteralPath $modernProjectPath -Raw) | Should -Match 'Version="2\.0\.0"'
+			$output | Should -Contain 'Split.Package held at 1.1.0: 2.0.0 does not support net472'
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'uses the frameworks of projects that reference a central package version' {
+		$testDirectory = New-TemporaryDirectory
+
+		try {
+			Initialize-TestRepository -Path $testDirectory
+			$packagesPath = Join-Path $testDirectory 'Directory.Packages.props'
+
+			WriteTestFile -Path $packagesPath -Content @'
+<Project>
+  <ItemGroup>
+    <PackageVersion Include="Shared.Package" Version="1.0.0" />
+    <PackageVersion Include="Modern.Package" Version="1.0.0" />
+    <GlobalPackageReference Include="Build.Package" Version="1.0.0" />
+  </ItemGroup>
+</Project>
+'@
+			WriteTestFile -Path (Join-Path $testDirectory 'src' 'Legacy' 'Legacy.csproj') -Content @'
+<Project>
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Shared.Package" />
+  </ItemGroup>
+</Project>
+'@
+			WriteTestFile -Path (Join-Path $testDirectory 'src' 'Modern' 'Modern.csproj') -Content @'
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Shared.Package" />
+    <PackageReference Include="Modern.Package" />
+  </ItemGroup>
+</Project>
+'@
+			AddAndCommitAll -TestDirectory $testDirectory -Message 'Add central package versions'
+
+			$metadataPath = WriteMetadataFile -Packages @{
+				'Shared.Package' = @(
+					@{ version = '1.0.0'; publishedUtc = '2026-05-01T00:00:00Z'; frameworks = @('netstandard2.0', 'net10.0') },
+					@{ version = '1.5.0'; publishedUtc = '2026-05-01T00:00:00Z'; frameworks = @('netstandard2.0', 'net10.0') },
+					@{ version = '2.0.0'; publishedUtc = '2026-05-01T00:00:00Z'; frameworks = @('net10.0') }
+				)
+				# Build-only packages list the frameworks of the MSBuild host, which projects need not match.
+				'Build.Package' = @(
+					@{ version = '1.0.0'; publishedUtc = '2026-05-01T00:00:00Z'; frameworks = @('net472', 'net8.0') },
+					@{ version = '2.0.0'; publishedUtc = '2026-05-01T00:00:00Z'; frameworks = @('net472', 'net10.0') }
+				)
+				'Modern.Package' = @(
+					@{ version = '2.0.0'; publishedUtc = '2026-05-01T00:00:00Z'; frameworks = @('net10.0') }
+				)
+			}
+
+			$output = InvokeUpdateNugetPackagesConvention -TestDirectory $testDirectory -Settings @{
+				'test-package-metadata-file' = $metadataPath
+				'now-utc' = '2026-05-27T12:00:00Z'
+			}
+
+			$content = Get-Content -LiteralPath $packagesPath -Raw
+			$content | Should -Match 'Include="Shared\.Package" Version="1\.5\.0"'
+			$content | Should -Match 'Include="Modern\.Package" Version="2\.0\.0"'
+			$content | Should -Match 'Include="Build\.Package" Version="2\.0\.0"'
+			$output | Should -Contain 'Shared.Package held at 1.5.0: 2.0.0 does not support netstandard2.0'
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'updates packages that share a version property to a version available for all of them' {
+		$testDirectory = New-TemporaryDirectory
+
+		try {
+			Initialize-TestRepository -Path $testDirectory
+			$packagesPath = Join-Path $testDirectory 'Directory.Packages.props'
+
+			WriteTestFile -Path $packagesPath -Content @'
+<Project>
+  <PropertyGroup>
+    <SharedVersion>1.0.0</SharedVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="Shared.Server" Version="$(SharedVersion)" />
+    <PackageVersion Include="Shared.Client" Version="$(SharedVersion)" />
+  </ItemGroup>
+</Project>
+'@
+			AddAndCommitAll -TestDirectory $testDirectory -Message 'Add shared version property'
+
+			$metadataPath = WriteMetadataFile -Packages @{
+				'Shared.Server' = @(
+					@{ version = '1.5.0'; publishedUtc = '2026-05-01T00:00:00Z' },
+					@{ version = '2.0.0'; publishedUtc = '2026-05-01T00:00:00Z' }
+				)
+				'Shared.Client' = @(
+					@{ version = '1.5.0'; publishedUtc = '2026-05-01T00:00:00Z' },
+					@{ version = '2.0.0'; publishedUtc = '2026-05-26T00:00:00Z' }
+				)
+			}
+
+			$output = InvokeUpdateNugetPackagesConvention -TestDirectory $testDirectory -Settings @{
+				'test-package-metadata-file' = $metadataPath
+				'now-utc' = '2026-05-27T12:00:00Z'
+			}
+
+			(Get-Content -LiteralPath $packagesPath -Raw) | Should -Match '<SharedVersion>1\.5\.0</SharedVersion>'
+			$output | Should -Contain 'Shared.Server held at 1.5.0: 2.0.0 is not available for every package that shares its version property (Shared.Client)'
+			$output | Should -Contain '- Shared.Client 1.5.0 (from 1.0.0)'
+			$output | Should -Contain '- Shared.Server 1.5.0 (from 1.0.0)'
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	It 'does not drop frameworks supported by the current version when project frameworks are unknown' {
+		$testDirectory = New-TemporaryDirectory
+
+		try {
+			Initialize-TestRepository -Path $testDirectory
+			$projectPath = Join-Path $testDirectory 'App.csproj'
+
+			WriteTestFile -Path $projectPath -Content @'
+<Project>
+  <ItemGroup>
+    <PackageReference Include="Split.Package" Version="1.0.0" />
+  </ItemGroup>
+</Project>
+'@
+			AddAndCommitAll -TestDirectory $testDirectory -Message 'Add project'
+
+			$metadataPath = WriteMetadataFile -Packages @{
+				'Split.Package' = @(
+					@{ version = '1.0.0'; publishedUtc = '2026-05-01T00:00:00Z'; frameworks = @('net472') },
+					@{ version = '1.1.0'; publishedUtc = '2026-05-01T00:00:00Z'; frameworks = @('net472', 'net10.0') },
+					@{ version = '2.0.0'; publishedUtc = '2026-05-01T00:00:00Z'; frameworks = @('net10.0') }
+				)
+			}
+
+			$output = InvokeUpdateNugetPackagesConvention -TestDirectory $testDirectory -Settings @{
+				'test-package-metadata-file' = $metadataPath
+				'now-utc' = '2026-05-27T12:00:00Z'
+			}
+
+			(Get-Content -LiteralPath $projectPath -Raw) | Should -Match 'Version="1\.1\.0"'
+			$output | Should -Contain 'Split.Package held at 1.1.0: 2.0.0 does not support net472'
+		}
+		finally {
+			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
 	It 'uses package sources from nuget.config' {
 		$testDirectory = New-TemporaryDirectory
 
