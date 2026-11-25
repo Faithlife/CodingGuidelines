@@ -14,7 +14,7 @@ Describe 'editorconfig-yaml convention' {
 		. $script:testHelpersPath
 	}
 
-	It 'creates .editorconfig with the YAML indentation section' {
+	It 'creates .editorconfig with the YAML indentation section and commits with the packaged commit message' {
 		$testDirectory = New-TemporaryDirectory
 
 		try {
@@ -26,6 +26,7 @@ conventions:
 - path: ../conventions/editorconfig-yaml
 "@, $utf8)
 			Initialize-TestRepository -Path $testDirectory
+			$initialHead = Get-CommitId -TestDirectory $testDirectory
 
 			# Apply the convention under test.
 			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
@@ -35,10 +36,13 @@ conventions:
 			$normalizedContent = ($content -replace "`r`n", "`n")
 			$expectedSection = ((Get-Content -LiteralPath (Join-Path $testDirectory 'conventions/editorconfig-yaml/files/.editorconfig') -Raw) -replace "`r`n", "`n").TrimEnd("`n")
 
-			# Assert the generated file contains the managed YAML section.
+			# Assert the generated file contains the managed YAML section and was committed cleanly.
 			$content | Should -Match "(?m)^# DO NOT EDIT: yaml convention\r?$"
 			$content | Should -Match "(?m)^\[\*\.\{yml,yaml\}\]\r?$"
 			$normalizedContent.Contains($expectedSection) | Should -Be $true
+			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should -Be $initialHead
+			(@(Get-CommitSubjects -TestDirectory $testDirectory -Count 1))[0] | Should -Be 'Update .editorconfig for YAML'
+			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -82,33 +86,6 @@ trim_trailing_whitespace = false
 			$normalizedContent.Contains($expectedSection) | Should -Be $true
 			$content | Should -Match "(?m)^\[\*\.md\]\r?$"
 			$content | Should -Match "(?m)^trim_trailing_whitespace = false\r?$"
-		}
-		finally {
-			Remove-Item -LiteralPath $testDirectory -Recurse -Force
-		}
-	}
-
-	It 'commits .editorconfig changes with the packaged commit message' {
-		$testDirectory = New-TemporaryDirectory
-
-		try {
-			# Arrange an isolated repository with the YAML editorconfig convention enabled.
-			Copy-TestConventionAssets -TestDirectory $testDirectory
-			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
-			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
-conventions:
-- path: ../conventions/editorconfig-yaml
-"@, $utf8)
-			Initialize-TestRepository -Path $testDirectory
-			$initialHead = Get-CommitId -TestDirectory $testDirectory
-
-			# Apply the convention and allow it to create its packaged commit.
-			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
-
-			# Assert the commit message and clean working tree match expectations.
-			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should -Be $initialHead
-			(@(Get-CommitSubjects -TestDirectory $testDirectory -Count 1))[0] | Should -Be 'Update .editorconfig for YAML'
-			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force

@@ -48,11 +48,11 @@ conventions:
 		}
 	}
 
-	It 'updates the managed root section and preserves unrelated content' {
+	It 'updates the managed root section, preserves unrelated content, and avoids a trailing blank line' {
 		$testDirectory = New-TemporaryDirectory
 
 		try {
-			# Arrange a repository with stale managed root settings and unrelated content.
+			# Arrange a repository with stale managed root settings and a final unmanaged root-wide section.
 			Copy-TestConventionAssets -TestDirectory $testDirectory
 			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
 			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
@@ -81,59 +81,7 @@ insert_final_newline = true
 			# Apply the convention under test.
 			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
 
-			# Read the updated editorconfig for assertions.
-			$content = Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw
-
-			# Assert the root section changed while unrelated settings remained.
-			$content | Should -Match "(?m)^charset = utf-8\r?$"
-			$content | Should -Match "(?m)^end_of_line = lf\r?$"
-			$content | Should -Match "(?m)^trim_trailing_whitespace = true\r?$"
-			$content | Should -Match "(?m)^\[\*\.md\]\r?$"
-			$content | Should -Match "(?m)^trim_trailing_whitespace = false\r?$"
-			$content | Should -Not -Match '(?m)^indent_size = 2\r?$'
-			$content | Should -Not -Match '(?m)^indent_style = space\r?$'
-			$content | Should -Not -Match '(?m)^tab_width = 2\r?$'
-			$content | Should -Not -Match '(?m)^insert_final_newline = true\r?$'
-		}
-		finally {
-			Remove-Item -LiteralPath $testDirectory -Recurse -Force
-		}
-	}
-
-	It 'does not leave a trailing blank line when removing a final root-wide section' {
-		$testDirectory = New-TemporaryDirectory
-
-		try {
-			# Arrange a repository with a final unmanaged root-wide section delegated to the convention.
-			Copy-TestConventionAssets -TestDirectory $testDirectory
-			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
-			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
-conventions:
-- path: ../conventions/editorconfig-root
-"@, $utf8)
-			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.editorconfig'), @"
-# DO NOT EDIT: root convention
-root = true
-
-[*]
-charset = latin1
-# END DO NOT EDIT
-
-[*.md]
-trim_trailing_whitespace = false
-
-[*]
-indent_size = 2
-indent_style = space
-tab_width = 2
-insert_final_newline = true
-"@, $utf8)
-			Initialize-TestRepository -Path $testDirectory
-
-			# Apply the convention under test.
-			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
-
-			# Assert the removed final section did not leave an extra blank line at the end of the file.
+			# Assert the managed root section updated, unrelated content remained, and no trailing blank line was left.
 			$content = Get-Content -LiteralPath (Join-Path $testDirectory '.editorconfig') -Raw
 			$content | Should -Be "# DO NOT EDIT: root convention`nroot = true`n`n[*]`ncharset = utf-8`nend_of_line = lf`ntrim_trailing_whitespace = true`n# END DO NOT EDIT`n`n[*.md]`ntrim_trailing_whitespace = false`n"
 		}

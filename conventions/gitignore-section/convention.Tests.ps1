@@ -9,31 +9,41 @@ $OutputEncoding = $utf8
 
 Describe 'gitignore-section convention' {
 	BeforeAll {
-		# Load shared test helpers for temporary repositories and convention execution.
+		# Load the convention script and shared test helpers for temporary repositories and convention execution.
+		$script:conventionScriptPath = Join-Path $PSScriptRoot 'convention.ps1'
 		$script:testHelpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'TestHelpers.ps1'
 		. $script:testHelpersPath
+
+		# Invoke the convention script directly with temporary JSON input for each scenario.
+		function script:InvokeGitIgnoreSectionConvention {
+			param(
+				[Parameter(Mandatory = $true)]
+				[string] $TestDirectory,
+
+				[Parameter(Mandatory = $true)]
+				[hashtable] $Settings
+			)
+
+			$inputPath = New-ConventionInputFile -Settings $Settings
+
+			try {
+				return Invoke-ConventionScript -ScriptPath $script:conventionScriptPath -RepositoryRoot $TestDirectory -InputPath $inputPath
+			}
+			finally {
+				Remove-Item -LiteralPath $inputPath -ErrorAction SilentlyContinue
+			}
+		}
 	}
 
 	It 'creates .gitignore with the configured managed section' {
 		$testDirectory = New-TemporaryDirectory
 
 		try {
-			# Arrange an isolated repository with a configured gitignore section.
-			Copy-TestConventionAssets -TestDirectory $testDirectory
-			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
-			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
-conventions:
-- path: ../conventions/gitignore-section
-  settings:
-    name: build-output
-    text: |
-      bin/
-      obj/
-"@, $utf8)
-			Initialize-TestRepository -Path $testDirectory
-
-			# Apply the convention under test.
-			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
+			# Apply the convention under test directly against a temporary repository.
+			{ InvokeGitIgnoreSectionConvention -TestDirectory $testDirectory -Settings @{
+				name = 'build-output'
+				text = "bin/`nobj/`n"
+			} } | Should -Not -Throw
 
 			# Assert the configured managed section was written exactly.
 			$gitIgnorePath = Join-Path $testDirectory '.gitignore'
@@ -54,17 +64,6 @@ conventions:
 
 		try {
 			# Arrange an isolated repository with unmanaged patterns duplicated by the managed section.
-			Copy-TestConventionAssets -TestDirectory $testDirectory
-			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
-			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
-conventions:
-- path: ../conventions/gitignore-section
-  settings:
-    name: build-output
-    text: |
-      bin/
-      obj/
-"@, $utf8)
 			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.gitignore'), @"
 bin/
 obj/
@@ -73,12 +72,15 @@ obj/
 # local Visual Studio state
 .vs/
 "@, $utf8)
-			Initialize-TestRepository -Path $testDirectory
+			$settings = @{
+				name = 'build-output'
+				text = "bin/`nobj/`n"
+			}
 
 			# Apply the convention under test twice to verify cleanup idempotency.
-			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
+			{ InvokeGitIgnoreSectionConvention -TestDirectory $testDirectory -Settings $settings } | Should -Not -Throw
 			$content = Get-Content -LiteralPath (Join-Path $testDirectory '.gitignore') -Raw
-			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
+			$secondOutput = InvokeGitIgnoreSectionConvention -TestDirectory $testDirectory -Settings $settings
 
 			# Assert duplicate unmanaged patterns were removed but unrelated content remained.
 			(Get-Content -LiteralPath (Join-Path $testDirectory '.gitignore') -Raw) | Should -Be $content
@@ -87,7 +89,7 @@ obj/
 			$content | Should -Match "(?m)^\*\.user\r?$"
 			$content | Should -Match "(?m)^# local Visual Studio state\r?$"
 			$content | Should -Match "(?m)^\.vs/\r?$"
-			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0
+			@($secondOutput).Count | Should -Be 0
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -99,17 +101,6 @@ obj/
 
 		try {
 			# Arrange an isolated repository whose managed section is already current.
-			Copy-TestConventionAssets -TestDirectory $testDirectory
-			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
-			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
-conventions:
-- path: ../conventions/gitignore-section
-  settings:
-    name: build-output
-    text: |
-      bin/
-      obj/
-"@, $utf8)
 			$expectedContent = @"
 # DO NOT EDIT: build-output convention
 bin/
@@ -120,16 +111,16 @@ bin/
 obj/
 "@
 			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.gitignore'), $expectedContent, $utf8)
-			Initialize-TestRepository -Path $testDirectory
-			$initialHead = Get-CommitId -TestDirectory $testDirectory
 
 			# Apply the convention under test.
-			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
+			$output = InvokeGitIgnoreSectionConvention -TestDirectory $testDirectory -Settings @{
+				name = 'build-output'
+				text = "bin/`nobj/`n"
+			}
 
 			# Assert the redundant unmanaged patterns remain because the managed section did not change.
 			(Get-Content -LiteralPath (Join-Path $testDirectory '.gitignore') -Raw) | Should -Be $expectedContent
-			(Get-CommitId -TestDirectory $testDirectory) | Should -Be $initialHead
-			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0
+			@($output).Count | Should -Be 0
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -141,26 +132,17 @@ obj/
 
 		try {
 			# Arrange an isolated repository with another managed section that overlaps the configured patterns.
-			Copy-TestConventionAssets -TestDirectory $testDirectory
-			[System.IO.Directory]::CreateDirectory((Join-Path $testDirectory '.github')) | Out-Null
-			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.github/conventions.yml'), @"
-conventions:
-- path: ../conventions/gitignore-section
-  settings:
-    name: build-output
-    text: |
-      bin/
-      obj/
-"@, $utf8)
 			[System.IO.File]::WriteAllText((Join-Path $testDirectory '.gitignore'), @"
 # DO NOT EDIT: other convention
 bin/
 # END DO NOT EDIT
 "@, $utf8)
-			Initialize-TestRepository -Path $testDirectory
 
 			# Apply the convention under test.
-			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
+			{ InvokeGitIgnoreSectionConvention -TestDirectory $testDirectory -Settings @{
+				name = 'build-output'
+				text = "bin/`nobj/`n"
+			} } | Should -Not -Throw
 
 			# Assert the preexisting managed section remains intact.
 			$content = Get-Content -LiteralPath (Join-Path $testDirectory '.gitignore') -Raw

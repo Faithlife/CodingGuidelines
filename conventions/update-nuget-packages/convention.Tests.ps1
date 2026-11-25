@@ -13,6 +13,15 @@ Describe 'update-nuget-packages convention' {
 		$script:testHelpersPath = Join-Path $PSScriptRoot '..' 'scripts' 'TestHelpers.ps1'
 		. $script:testHelpersPath
 
+		# Build the file-based C# app once so individual tests execute the compiled assembly directly.
+		$script:buildDirectory = New-TemporaryDirectory
+		$appPath = Join-Path $PSScriptRoot 'convention.cs'
+		& dotnet build $appPath -o $script:buildDirectory --nologo -v q | Out-Null
+		if ($LASTEXITCODE -ne 0) {
+			throw "Failed to build '$appPath' for tests."
+		}
+		$script:compiledAssemblyPath = Join-Path $script:buildDirectory 'convention.dll'
+
 		function script:WriteTestFile {
 			param(
 				[Parameter(Mandatory = $true)]
@@ -82,15 +91,18 @@ Describe 'update-nuget-packages convention' {
 
 			$inputPath = New-ConventionInputFile -Settings $Settings
 			$previousTestMode = [Environment]::GetEnvironmentVariable('UPDATE_NUGET_PACKAGES_TEST_MODE', 'Process')
+			$previousTestAssembly = [Environment]::GetEnvironmentVariable('UPDATE_NUGET_PACKAGES_TEST_ASSEMBLY', 'Process')
 
 			Push-Location $TestDirectory
 			try {
 				[Environment]::SetEnvironmentVariable('UPDATE_NUGET_PACKAGES_TEST_MODE', '1', 'Process')
+				[Environment]::SetEnvironmentVariable('UPDATE_NUGET_PACKAGES_TEST_ASSEMBLY', $script:compiledAssemblyPath, 'Process')
 				return @(& $script:conventionScriptPath $inputPath 3>&1 6>&1)
 			}
 			finally {
 				Pop-Location
 				[Environment]::SetEnvironmentVariable('UPDATE_NUGET_PACKAGES_TEST_MODE', $previousTestMode, 'Process')
+				[Environment]::SetEnvironmentVariable('UPDATE_NUGET_PACKAGES_TEST_ASSEMBLY', $previousTestAssembly, 'Process')
 				Remove-Item -LiteralPath $inputPath -ErrorAction SilentlyContinue
 			}
 		}
@@ -713,6 +725,13 @@ Describe 'update-nuget-packages convention' {
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
+		}
+	}
+
+	AfterAll {
+		# Remove the compiled test assembly output directory.
+		if (-not [string]::IsNullOrWhiteSpace($script:buildDirectory) -and (Test-Path -LiteralPath $script:buildDirectory)) {
+			Remove-Item -LiteralPath $script:buildDirectory -Recurse -Force
 		}
 	}
 }

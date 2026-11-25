@@ -1,5 +1,9 @@
 #requires -PSEdition Core
 #requires -Version 7.0
+param(
+	[string] $WorkerScriptPath
+)
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $utf8 = [System.Text.UTF8Encoding]::new($false)
@@ -29,7 +33,7 @@ function GetTestScriptPaths {
 	$testRoots = [System.Collections.Generic.List[string]]::new()
 	$testRoots.Add($ConventionsRoot)
 
-	$githubConventionsRoot = [System.IO.Path]::GetFullPath((Join-Path (Join-Path $RepositoryRoot '.github') 'conventions'))
+	$githubConventionsRoot = [System.IO.Path]::GetFullPath((Join-Path $RepositoryRoot '.github' 'conventions'))
 
 	if (Test-Path -LiteralPath $githubConventionsRoot -PathType Container) {
 		$testRoots.Add($githubConventionsRoot)
@@ -53,8 +57,57 @@ function GetRelativeDisplayPath {
 	return [System.IO.Path]::GetRelativePath($RootPath, $ChildPath)
 }
 
-# Resolve the repository and discover test scripts before running them.
+# Order test scripts so heavier suites start first and minimize parallel tail latency.
+function SortTestScriptPaths {
+	param(
+		[Parameter(Mandatory = $true)]
+		[object[]] $TestScriptPaths,
+
+		[Parameter(Mandatory = $true)]
+		[string] $RepositoryRoot
+	)
+
+	$priorityOrder = @(
+		'conventions/dotnet-common-props/convention.Tests.ps1',
+		'conventions/update-nuget-packages/convention.Tests.ps1',
+		'conventions/faithlife-dotnet-library-build/convention.Tests.ps1',
+		'conventions/editorconfig-root/convention.Tests.ps1',
+		'conventions/editorconfig-yaml/convention.Tests.ps1',
+		'conventions/editorconfig-json/convention.Tests.ps1',
+		'conventions/editorconfig-md/convention.Tests.ps1',
+		'conventions/editorconfig-ps1/convention.Tests.ps1',
+		'conventions/gitattributes-lf/convention.Tests.ps1',
+		'conventions/apm/convention.Tests.ps1',
+		'conventions/editorconfig-section/convention.Tests.ps1',
+		'conventions/editorconfig-csharp/convention.Tests.ps1',
+		'conventions/gitattributes-csharp/convention.Tests.ps1'
+	)
+
+	return @($TestScriptPaths | Sort-Object {
+		$relativePath = (GetRelativeDisplayPath -RootPath $RepositoryRoot -ChildPath $_.FullName).Replace('\', '/')
+		$index = [Array]::IndexOf($priorityOrder, $relativePath)
+		if ($index -ge 0) { $index } else { $priorityOrder.Count }
+	}, FullName)
+}
+
+# Resolve the repository root used for display paths and worker execution.
 $repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+
+# Execute a single test script when invoked as an isolated worker process.
+if (-not [string]::IsNullOrWhiteSpace($WorkerScriptPath)) {
+	$displayPath = GetRelativeDisplayPath -RootPath $repositoryRoot -ChildPath $WorkerScriptPath
+	Write-Host "Running $displayPath"
+
+	$testResult = Invoke-Pester -Path $WorkerScriptPath -PassThru
+
+	if ($testResult.FailedCount -gt 0) {
+		exit 1
+	}
+
+	exit 0
+}
+
+# Discover convention test scripts before running them.
 $conventionsRoot = GetConventionsRoot
 $testScriptPaths = @(GetTestScriptPaths -RepositoryRoot $repositoryRoot -ConventionsRoot $conventionsRoot)
 
@@ -69,19 +122,50 @@ $failedScriptPaths = [System.Collections.Generic.List[string]]::new()
 # Suppress GitHub step-summary output during test execution and restore it afterward.
 $hadGitHubStepSummary = Test-Path Env:GITHUB_STEP_SUMMARY
 $gitHubStepSummary = $env:GITHUB_STEP_SUMMARY
+$hadRepoConventionsExe = Test-Path Env:REPO_CONVENTIONS_EXE
+$previousRepoConventionsExe = $env:REPO_CONVENTIONS_EXE
+$repoConventionsToolDir = $null
 $exitCode = 0
 Remove-Item Env:GITHUB_STEP_SUMMARY -ErrorAction Ignore
 
 try {
-	# Run each Pester script independently and record failures.
-	foreach ($testScriptPath in $testScriptPaths) {
-		$displayPath = GetRelativeDisplayPath -RootPath $repositoryRoot -ChildPath $testScriptPath.FullName
-		Write-Host "Running $displayPath"
+	# Install repo-conventions once for the entire test run when no binary is already available.
+	if ([string]::IsNullOrWhiteSpace($env:REPO_CONVENTIONS_EXE) -and $null -eq (Get-Command 'repo-conventions' -ErrorAction SilentlyContinue)) {
+		$repoConventionsToolDir = Join-Path ([System.IO.Path]::GetTempPath()) ('repo-conventions-tool-' + [System.Guid]::NewGuid().ToString('N'))
+		& dotnet tool install repo-conventions --tool-path $repoConventionsToolDir | Out-Null
+		if ($LASTEXITCODE -eq 0) {
+			$toolBinaryName = if ($IsWindows) { 'repo-conventions.exe' } else { 'repo-conventions' }
+			$installedExe = Join-Path $repoConventionsToolDir $toolBinaryName
+			if (Test-Path -LiteralPath $installedExe) {
+				$env:REPO_CONVENTIONS_EXE = $installedExe
+			}
+		}
+	}
 
-		$testResult = Invoke-Pester -Path $testScriptPath.FullName -PassThru
+	# Run each test script in an isolated parallel PowerShell process, starting heaviest suites first.
+	$workerCount = [Math]::Min($testScriptPaths.Count, [Math]::Max(2, [Math]::Min([Environment]::ProcessorCount, 8)))
+	$orderedScriptPaths = SortTestScriptPaths -TestScriptPaths $testScriptPaths -RepositoryRoot $repositoryRoot
+	$pwshPath = (Get-Process -Id $PID).Path
+	$runnerScriptPath = $PSCommandPath
+	$workerOutputs = @($orderedScriptPaths | ForEach-Object -Parallel {
+		$scriptFullPath = $_.FullName
+		$displayPath = [System.IO.Path]::GetRelativePath($using:repositoryRoot, $scriptFullPath)
+		$lines = @(& $using:pwshPath -NoProfile -NonInteractive -File $using:runnerScriptPath -WorkerScriptPath $scriptFullPath 2>&1)
+		[pscustomobject]@{
+			DisplayPath = $displayPath
+			ExitCode = $LASTEXITCODE
+			Lines = $lines
+		}
+	} -ThrottleLimit $workerCount)
 
-		if ($testResult.FailedCount -gt 0) {
-			$failedScriptPaths.Add($displayPath)
+	# Print each script's buffered output cleanly and record any failed scripts.
+	foreach ($workerOutput in $workerOutputs) {
+		foreach ($line in $workerOutput.Lines) {
+			Write-Host $line
+		}
+
+		if ($workerOutput.ExitCode -ne 0) {
+			$failedScriptPaths.Add($workerOutput.DisplayPath)
 		}
 	}
 
@@ -103,7 +187,19 @@ try {
 	}
 }
 finally {
-	# Restore the GitHub step-summary environment variable for the parent step.
+	# Clean up the temporary tool directory.
+	if (-not [string]::IsNullOrWhiteSpace($repoConventionsToolDir) -and (Test-Path -LiteralPath $repoConventionsToolDir)) {
+		Remove-Item -LiteralPath $repoConventionsToolDir -Recurse -Force -ErrorAction Ignore
+	}
+
+	# Restore environment variables for the parent step.
+	if ($hadRepoConventionsExe) {
+		$env:REPO_CONVENTIONS_EXE = $previousRepoConventionsExe
+	}
+	else {
+		Remove-Item Env:REPO_CONVENTIONS_EXE -ErrorAction Ignore
+	}
+
 	if ($hadGitHubStepSummary) {
 		$env:GITHUB_STEP_SUMMARY = $gitHubStepSummary
 	}

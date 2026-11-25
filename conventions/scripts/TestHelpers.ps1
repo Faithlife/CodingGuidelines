@@ -93,9 +93,27 @@ function Initialize-TestRepository {
 	Push-Location $Path
 	try {
 		& git init -b master | Out-Null
-		& git config user.email 'test@example.com'
-		& git config user.name 'Test User'
-		& git config core.autocrlf false
+
+		# Write test Git settings directly to avoid spawning multiple git config processes.
+		$gitConfigPath = Join-Path $Path '.git' 'config'
+		[System.IO.File]::AppendAllText($gitConfigPath, "`n[user]`n`temail = test@example.com`n`tname = Test User`n[core]`n`tautocrlf = false`n", $utf8)
+
+		# Exclude linked convention assets from Git tracking so tests do not stage and commit the entire conventions tree.
+		$excludeLines = [System.Collections.Generic.List[string]]::new()
+		foreach ($linkedName in @('conventions', 'sections')) {
+			$linkedPath = Join-Path $Path $linkedName
+			if (Test-Path -LiteralPath $linkedPath) {
+				$linkedItem = Get-Item -LiteralPath $linkedPath -Force
+				if ($null -ne $linkedItem.LinkType) {
+					$excludeLines.Add("$linkedName/")
+				}
+			}
+		}
+
+		if ($excludeLines.Count -gt 0) {
+			$excludePath = Join-Path $Path '.git' 'info' 'exclude'
+			[System.IO.File]::AppendAllText($excludePath, "`n" + ($excludeLines -join "`n") + "`n", $utf8)
+		}
 
 		# Create a baseline commit so tests can inspect later convention changes.
 		[System.IO.File]::WriteAllText((Join-Path $Path 'README.md'), "# Test`n", $utf8)
@@ -187,9 +205,10 @@ function Copy-TestConventionAssets {
 	# Locate the source repository root relative to the shared test helper script.
 	$sourceRepositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..' '..'))
 
-	# Copy published conventions and shared sections into the temp repository.
-	Copy-Item -LiteralPath (Join-Path $sourceRepositoryRoot 'conventions') -Destination (Join-Path $TestDirectory 'conventions') -Recurse
-	Copy-Item -LiteralPath (Join-Path $sourceRepositoryRoot 'sections') -Destination (Join-Path $TestDirectory 'sections') -Recurse
+	# Link published conventions and shared sections into the temp repository to avoid copying hundreds of files per test.
+	$linkType = if ($IsWindows) { 'Junction' } else { 'SymbolicLink' }
+	New-Item -ItemType $linkType -Path (Join-Path $TestDirectory 'conventions') -Target (Join-Path $sourceRepositoryRoot 'conventions') | Out-Null
+	New-Item -ItemType $linkType -Path (Join-Path $TestDirectory 'sections') -Target (Join-Path $sourceRepositoryRoot 'sections') | Out-Null
 }
 
 <#
@@ -202,9 +221,18 @@ function Invoke-RepoConventionsApply {
 		[string] $TestDirectory
 	)
 
-	# Run repo-conventions from the temporary repository under test.
+	# Run repo-conventions from the temporary repository under test, preferring a preinstalled tool binary over dotnet dnx.
 	Push-Location $TestDirectory
 	try {
+		if (-not [string]::IsNullOrWhiteSpace($env:REPO_CONVENTIONS_EXE) -and (Test-Path -LiteralPath $env:REPO_CONVENTIONS_EXE)) {
+			return @(& $env:REPO_CONVENTIONS_EXE apply 6>&1)
+		}
+
+		$repoConventionsCommand = Get-Command 'repo-conventions' -ErrorAction SilentlyContinue
+		if ($null -ne $repoConventionsCommand) {
+			return @(& $repoConventionsCommand.Source apply 6>&1)
+		}
+
 		return @(& dotnet dnx -y repo-conventions -- apply 6>&1)
 	}
 	finally {

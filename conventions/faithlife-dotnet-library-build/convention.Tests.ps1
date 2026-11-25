@@ -120,17 +120,8 @@ EndGlobal
 			$output[2].ToString() | Should -Be 'Creating a root solution with dotnet new sln.'
 			$output[3].ToString() | Should -Be "Adding './tools/Build' to the root solution."
 
-			# Read the solution project list after the convention updates it.
-			Push-Location $testDirectory
-			try {
-				$listedProjects = @(& dotnet sln list)
-			}
-			finally {
-				Pop-Location
-			}
-
 			# Assert the generated solution references the build project.
-			($listedProjects -join "`n") | Should -Match 'tools[/\\]Build[/\\]Build\.csproj'
+			(Get-Content -LiteralPath $solutionPaths[0].FullName -Raw) | Should -Match 'tools[/\\]Build[/\\]Build\.csproj'
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
@@ -250,17 +241,8 @@ EndGlobal
 			$output[0].ToString() | Should -Match "Created '.+tools[/\\]Build[/\\]Build\.csproj'\."
 			$output[1].ToString() | Should -Be "Adding './tools/Build' to the root solution."
 
-			# Read the solution project list after adding the build project.
-			Push-Location $testDirectory
-			try {
-				$listedProjects = @(& dotnet sln list)
-			}
-			finally {
-				Pop-Location
-			}
-
 			# Assert the existing solution references the build project.
-			($listedProjects -join "`n") | Should -Match 'tools[/\\]Build[/\\]Build\.csproj'
+			(Get-Content -LiteralPath $solutionPath -Raw) | Should -Match 'tools[/\\]Build[/\\]Build\.csproj'
 		}
 		finally {
 			Remove-Item -LiteralPath $testDirectory -Recurse -Force
