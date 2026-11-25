@@ -109,7 +109,7 @@ exit 0
 
 			# Run the convention and assert it invokes apm with the default arguments.
 			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
-			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install'
+			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install --no-frozen'
 		}
 		finally {
 			# Restore process state and remove temporary files.
@@ -153,7 +153,7 @@ exit 0
 			(Get-Content -LiteralPath $manifestPath -Raw) | Should -Be "packages: []`ntargets:`n- copilot`n"
 			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
 			(Get-Content -LiteralPath $manifestPath -Raw) | Should -Be "packages: []`ntargets:`n- copilot`n"
-			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install'
+			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install --no-frozen'
 		}
 		finally {
 			# Restore process state and remove temporary files.
@@ -229,7 +229,7 @@ exit 0
 
 			# Run the convention and assert the update command is used after install.
 			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
-			Get-Content -LiteralPath $argumentsPath | Should -Be @('install', 'update --yes')
+			Get-Content -LiteralPath $argumentsPath | Should -Be @('install --no-frozen', 'update --yes')
 		}
 		finally {
 			# Restore process state and remove temporary files.
@@ -274,7 +274,7 @@ exit 0
 
 			# Run the convention and assert configured packages are appended.
 			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
-			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install richlander/dotnet-inspect/skills/dotnet-inspect microsoft/playwright-cli/skills/playwright-cli'
+			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install --no-frozen richlander/dotnet-inspect/skills/dotnet-inspect microsoft/playwright-cli/skills/playwright-cli'
 		}
 		finally {
 			# Restore process state and remove temporary files.
@@ -331,7 +331,7 @@ exit 0
 
 			# Run the convention and assert it initializes, cleans, targets, installs, and updates in order.
 			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
-			Get-Content -LiteralPath $argumentsPath | Should -Be @('init --yes', 'install richlander/dotnet-inspect/skills/dotnet-inspect', 'update --yes')
+			Get-Content -LiteralPath $argumentsPath | Should -Be @('init --yes', 'install --no-frozen richlander/dotnet-inspect/skills/dotnet-inspect', 'update --yes')
 			(Get-Content -LiteralPath $manifestPath -Raw) | Should -Be "name: Generated`ndependencies: {}`ntargets:`n- copilot`n"
 		}
 		finally {
@@ -398,7 +398,7 @@ exit 0
 
 			# Run the convention and assert only the unhashed directory was removed before install.
 			{ Invoke-ConventionScript -ScriptPath $conventionScriptPath -RepositoryRoot $testDirectory -InputPath $inputPath } | Should -Not -Throw
-			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install'
+			((Get-Content -LiteralPath $argumentsPath -Raw).TrimEnd("`r", "`n")) | Should -Be 'install --no-frozen'
 			Test-Path -LiteralPath $legacySkillPath | Should -Be $false
 			Test-Path -LiteralPath (Join-Path $hashedSkillPath 'SKILL.md') | Should -Be $true
 			Test-Path -LiteralPath $instructionPath | Should -Be $true
