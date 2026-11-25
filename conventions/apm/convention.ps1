@@ -177,8 +177,10 @@ EnsureApmManifestTargets
 # Remove deployed directories that older apm versions recorded without per-file hashes.
 RemoveUnhashedDeployedDirectories
 
-# Install configured packages or the repository manifest before updating.
-$installArguments = @('install')
+# Install configured packages or the repository manifest before updating. Pass --no-frozen because
+# apm 0.37+ verifies a committed lockfile like --frozen when CI is set, but this convention exists
+# to update the lockfile (e.g., to record per-file hashes or newly deployed files).
+$installArguments = @('install', '--no-frozen')
 if ($packagesToInstall.Count -gt 0) {
 	$installArguments += $packagesToInstall
 }
