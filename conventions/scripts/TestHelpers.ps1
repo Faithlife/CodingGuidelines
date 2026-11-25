@@ -7,8 +7,13 @@ $utf8 = [System.Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding = $utf8
 $OutputEncoding = $utf8
 
-if ((Get-Module -ListAvailable Pester | Sort-Object Version -Descending | Select-Object -First 1).Version -lt [version]'5.0.0') {
-	throw "Pester 5 is required to run these tests. Currently using $((Get-Module Pester).Version)."
+# Ensure Pester 5+ is available without re-scanning module paths when already loaded.
+$pesterModule = Get-Module Pester | Sort-Object Version -Descending | Select-Object -First 1
+if ($null -eq $pesterModule) {
+	$pesterModule = Get-Module -ListAvailable Pester | Sort-Object Version -Descending | Select-Object -First 1
+}
+if ($null -eq $pesterModule -or $pesterModule.Version -lt [version]'5.0.0') {
+	throw "Pester 5 is required to run these tests. Currently using $(if ($null -ne $pesterModule) { $pesterModule.Version } else { 'none' })."
 }
 
 $helpersPath = Join-Path $PSScriptRoot 'Helpers.ps1'
