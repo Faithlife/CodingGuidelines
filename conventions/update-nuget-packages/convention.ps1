@@ -15,9 +15,14 @@ if ($settings.ContainsKey('rules') -and $settings.rules -isnot [object[]]) {
 	throw "The 'rules' setting must be an array."
 }
 
-# Run the checked-in .NET 10 file-based app from the target repository root.
-$appPath = Join-Path $PSScriptRoot 'convention.cs'
-& dotnet $appPath $args[0]
+# Run the prebuilt test assembly when running under the test suite, otherwise run the checked-in .NET 10 file-based app.
+if ($env:UPDATE_NUGET_PACKAGES_TEST_MODE -eq '1' -and -not [string]::IsNullOrWhiteSpace($env:UPDATE_NUGET_PACKAGES_TEST_ASSEMBLY)) {
+	& dotnet $env:UPDATE_NUGET_PACKAGES_TEST_ASSEMBLY $args[0]
+}
+else {
+	$appPath = Join-Path $PSScriptRoot 'convention.cs'
+	& dotnet $appPath $args[0]
+}
 
 if ($LASTEXITCODE -ne 0) {
 	exit $LASTEXITCODE

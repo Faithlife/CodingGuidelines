@@ -100,7 +100,7 @@ conventions:
 		}
 	}
 
-	It 'creates the fixed managed property group in a minimal MSBuild file' {
+	It 'creates the fixed managed property group in a minimal MSBuild file and commits with the packaged commit message' {
 		# Set up a minimal MSBuild file with no repository-specific properties.
 		$testDirectory = New-TemporaryDirectory
 
@@ -113,11 +113,12 @@ conventions:
 			# Apply the packaged convention with no settings.
 			InitializePropsConventionTestRepository -TestDirectory $testDirectory
 			Initialize-TestRepository -Path $testDirectory
+			$initialHead = Get-CommitId -TestDirectory $testDirectory
 			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
 			$buildPropsContent = Get-Content -LiteralPath $buildPropsPath -Raw
 			$packagePropsContent = Get-Content -LiteralPath $packagePropsPath -Raw
 
-			# Assert the fixed managed properties are present and repository-specific values are absent.
+			# Assert the fixed managed properties are present, repository-specific values are absent, and the commit matches expectations.
 			$buildPropsContent | Should -Match '<Nullable>enable</Nullable>'
 			$buildPropsContent | Should -Match ([regex]::Escape('<Authors Condition=" ''$(Authors)'' == '''' ">$(GitHubOrganization)</Authors>'))
 			$buildPropsContent | Should -Match '<EnableStrictModeForCompatibleTfms>true</EnableStrictModeForCompatibleTfms>'
@@ -128,28 +129,6 @@ conventions:
 			$buildPropsContent | Should -Not -Match '<PackageLicenseExpression>'
 			$packagePropsContent | Should -Match '<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>'
 			$packagePropsContent | Should -Match '<GlobalPackageReference Include="Faithlife.Analyzers" Version="1\.\*" />'
-		}
-		finally {
-			# Remove the isolated repository after the test completes.
-			Remove-Item -LiteralPath $testDirectory -Recurse -Force
-		}
-	}
-
-	It 'commits Directory.Build.props changes with the packaged commit message' {
-		# Set up a minimal repository that needs the props convention.
-		$testDirectory = New-TemporaryDirectory
-
-		try {
-			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'Directory.Build.props'), "<Project>`n</Project>`n", $utf8)
-			[System.IO.File]::WriteAllText((Join-Path $testDirectory 'Directory.Packages.props'), "<Project>`n</Project>`n", $utf8)
-			InitializePropsConventionTestRepository -TestDirectory $testDirectory
-			Initialize-TestRepository -Path $testDirectory
-			$initialHead = Get-CommitId -TestDirectory $testDirectory
-
-			# Apply the convention and allow RepoConventions to create the packaged commit.
-			{ Invoke-RepoConventionsApply -TestDirectory $testDirectory } | Should -Not -Throw
-
-			# Assert the commit message and clean working tree match expectations.
 			(Get-CommitId -TestDirectory $testDirectory -Revision 'HEAD~1') | Should -Be $initialHead
 			(@(Get-CommitSubjects -TestDirectory $testDirectory -Count 1))[0] | Should -Be 'Update .NET library props'
 			(@(Get-GitStatusLines -TestDirectory $testDirectory)).Count | Should -Be 0
